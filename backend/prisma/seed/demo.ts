@@ -1,7 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import {
   ASSESSMENT_AUDIENCE,
-  ASSESSMENT_PURPOSE,
   ASSESSMENT_VERSION_STATUS,
   ENROLLMENT_STATUS,
   QUESTION_TYPE,

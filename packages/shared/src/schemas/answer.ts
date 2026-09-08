@@ -128,6 +128,14 @@ export function safeParseAnswer(
   return ANSWER_SCHEMAS[type].safeParse(value) as z.SafeParseReturnType<unknown, Answer>;
 }
 
+/*
+ * Los dos `switch` siguientes son exhaustivos sobre los trece tipos de
+ * pregunta: es justamente lo que hace que TypeScript avise si mañana se añade
+ * un tipo y alguien olvida contemplarlo aquí. La métrica de complejidad los
+ * penaliza, pero partirlos en funciones sueltas perdería esa garantía.
+ */
+/* eslint-disable complexity */
+
 /** Respuesta vacía inicial para cada tipo, usada por el runner del estudiante. */
 export function emptyAnswer(type: QuestionType): Answer {
   switch (type) {
@@ -187,3 +195,4 @@ export function isAnswerEmpty(answer: Answer): boolean {
       return answer.regionIds.length === 0;
   }
 }
+/* eslint-enable complexity */

@@ -2,6 +2,7 @@
   "name": "medienpass",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Plataforma de evaluación académica y competencias digitales KMK",
   "engines": {
     "node": ">=20.11"

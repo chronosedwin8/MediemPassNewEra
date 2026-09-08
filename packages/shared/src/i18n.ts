@@ -10,11 +10,16 @@ import { LANGUAGE, SUPPORTED_LANGUAGES, type Language } from './enums.js';
  * preguntas no se traducen automáticamente, porque hacerlo sería incorrecto
  * desde el punto de vista académico.
  */
-export interface LocalizedText {
+/*
+ * Alias de tipo, no interfaz: TypeScript solo considera asignables a una
+ * firma de índice los alias de tipo, y Prisma exige eso para las columnas
+ * JSONB. Con `interface` cada asignación exigiría una conversión explícita.
+ */
+export type LocalizedText = {
   es: string;
   de: string;
   en: string;
-}
+};
 
 export const localizedTextSchema = z.object({
   es: z.string().trim().min(1),

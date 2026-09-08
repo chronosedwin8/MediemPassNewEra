@@ -77,11 +77,19 @@ export default tseslint.config(
     },
   },
 
+  // Las semillas son carga de datos lineal: partirlas en funciones diminutas
+  // no las haría más legibles, solo más difíciles de seguir.
+  {
+    files: ['backend/prisma/seed/**/*.ts'],
+    rules: { 'max-lines-per-function': 'off', complexity: 'off' },
+  },
+
   // Los tests relajan solo lo imprescindible.
   {
-    files: ['**/*.spec.ts', '**/*.test.ts', 'tests/**/*.ts'],
+    files: ['**/*.spec.ts', '**/*.test.ts', '**/tests/**/*.ts'],
     rules: {
       'max-lines-per-function': 'off',
+      complexity: 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
