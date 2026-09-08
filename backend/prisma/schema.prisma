@@ -1,0 +1,1242 @@
+// =============================================================================
+// Medienpass — modelo de datos
+//
+// Documentación razonada en docs/DATABASE.md. Reglas estructurales que
+// sostienen todo lo demás:
+//
+//  1. `User` es la única identidad. `Student` y `Teacher` son perfiles 1:1.
+//     Los intentos cuelgan de `User`, no de `Student`: por eso un único motor
+//     sirve a estudiantes, docentes y capacitación.
+//  2. Evaluación → Versión → Preguntas. Una versión publicada es inmutable.
+//     Los intentos apuntan a una versión concreta, de modo que editar una
+//     evaluación jamás altera resultados ya emitidos.
+//  3. `AttemptAnswer` desnormaliza competencia KMK, materia, grupo y periodo
+//     en el momento de calificar: toda la analítica por competencia es un
+//     GROUP BY sobre una sola tabla indexada.
+//  4. El resultado fija la escala usada (`gradingScaleId`): cambiar la escala
+//     no reescribe el significado de notas históricas.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMERACIONES
+// =============================================================================
+
+enum UserStatus {
+  PENDING_ACTIVATION
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum IdentityProvider {
+  LOCAL
+  ENTRA_ID
+}
+
+enum ExternalSource {
+  PHIDIAS
+}
+
+/// Estado de matrícula normalizado. Phidias devuelve texto libre en español
+/// con mayúsculas inconsistentes; el mapeo es tolerante y un valor no
+/// reconocido cae en UNKNOWN sin romper la sincronización.
+enum EnrollmentStatus {
+  ACTIVE
+  ENROLLED
+  ADMITTED
+  PENDING
+  SUSPENDED
+  WITHDRAWN
+  UNKNOWN
+}
+
+enum Language {
+  es
+  de
+  en
+}
+
+enum AssessmentAudience {
+  STUDENT
+  TEACHER
+}
+
+enum AssessmentPurpose {
+  EVALUATION
+  TRAINING
+  DIAGNOSTIC
+}
+
+enum AssessmentVersionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Difficulty {
+  BASIC
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  OPEN_TEXT
+  FILL_BLANK
+  MATCHING
+  GROUPING
+  TIMELINE
+  ORDERING
+  IMAGE_CHOICE
+  HOTSPOT
+  SHORT_ANSWER
+  LONG_ANSWER
+}
+
+enum AssignmentTargetType {
+  USER
+  GROUP
+}
+
+enum AssignmentStatus {
+  SCHEDULED
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum RecipientStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  PENDING_REVIEW
+  GRADED
+  EXPIRED
+  ABANDONED
+}
+
+enum ScaleKind {
+  BANDED
+  PERCENTAGE
+}
+
+enum TrainingContentType {
+  TEXT
+  VIDEO
+  DOCUMENT
+  LINK
+  ACTIVITY
+}
+
+enum TrainingProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AiGenerationStatus {
+  PENDING
+  IN_PROGRESS
+  VALIDATED
+  APPLIED
+  REJECTED
+  FAILED
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum SyncType {
+  STUDENTS
+  ACADEMIC_YEARS
+  PERIODS
+  GROUPS
+}
+
+// =============================================================================
+// IDENTIDAD Y CONTROL DE ACCESO
+// =============================================================================
+
+model User {
+  id        String     @id @default(uuid(7))
+  /// Nulo a propósito: en la matrícula real hay estudiantes sin correo.
+  /// Ellos acceden con credenciales locales emitidas por un administrador.
+  email     String?
+  username  String
+  firstName String     @map("first_name")
+  lastName  String     @map("last_name")
+  status    UserStatus @default(PENDING_ACTIVATION)
+
+  /// Argon2id. Nulo cuando la cuenta solo accede por SSO.
+  passwordHash        String?   @map("password_hash")
+  passwordUpdatedAt   DateTime? @map("password_updated_at")
+  mustChangePassword  Boolean   @default(false) @map("must_change_password")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastLoginAt         DateTime? @map("last_login_at")
+
+  preferredLanguage Language @default(es) @map("preferred_language")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  roles                UserRole[]
+  identities           UserIdentity[]
+  refreshTokens        RefreshToken[]
+  student              Student?
+  teacher              Teacher?
+  attempts             AssessmentAttempt[]
+  assignmentRecipients AssignmentRecipient[]
+  trainingProgress     TrainingProgress[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+
+  createdAssessments   Assessment[]        @relation("AssessmentCreatedBy")
+  publishedVersions    AssessmentVersion[] @relation("VersionPublishedBy")
+  createdAssignments   Assignment[]        @relation("AssignmentAssignedBy")
+  gradedAnswers        AttemptAnswer[]     @relation("AnswerGradedBy")
+  createdScales        GradingScale[]      @relation("ScaleCreatedBy")
+  updatedSettings      SystemSetting[]     @relation("SettingUpdatedBy")
+  aiRequests           AiGenerationRequest[]
+  triggeredSyncs       PhidiasSyncLog[]
+  createdPlans         EvaluationPlan[]    @relation("PlanCreatedBy")
+  homeroomGroups       Group[]             @relation("GroupHomeroomTeacher")
+
+  /// El borrado es lógico, pero los identificadores únicos se liberan al
+  /// borrar: el servicio pone `email` a null y renombra `username` con un
+  /// prefijo. Así se conserva el historial académico del usuario sin bloquear
+  /// para siempre un correo que la institución puede necesitar reasignar.
+  @@unique([email], map: "users_email_key")
+  @@unique([username], map: "users_username_key")
+  @@index([status])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// Vincula una cuenta con un proveedor de identidad. Un mismo usuario puede
+/// tener credenciales locales y SSO simultáneamente: el SSO de Entra ID no
+/// cubre a los estudiantes sin correo institucional.
+model UserIdentity {
+  id             String           @id @default(uuid(7))
+  userId         String           @map("user_id")
+  provider       IdentityProvider
+  /// `oid` de Entra ID. Estable aunque el usuario cambie de correo.
+  providerUserId String           @map("provider_user_id")
+  email          String?
+  lastUsedAt     DateTime?        @map("last_used_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("user_identities")
+}
+
+/// Token de refresco rotativo. Se guarda solo el hash: si la base se filtra,
+/// los tokens no son utilizables. `family` permite detectar reutilización de
+/// un token ya rotado, señal de robo, y revocar la cadena completa.
+model RefreshToken {
+  id        String    @id @default(uuid(7))
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  family    String
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  userAgent String?   @map("user_agent")
+  ipAddress String?   @map("ip_address")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([family])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Role {
+  id          String   @id @default(uuid(7))
+  code        String   @unique
+  name        Json
+  description Json?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+/// Permiso atómico con forma `recurso:acción` (p. ej. `assessment:publish`).
+model Permission {
+  id          String   @id @default(uuid(7))
+  code        String   @unique
+  resource    String
+  action      String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@index([resource])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId     String   @map("user_id")
+  roleId     String   @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+// =============================================================================
+// ESTRUCTURA ACADÉMICA
+// =============================================================================
+
+/// Año escolar. `externalId` es el identificador interno de Phidias, que NO es
+/// el año calendario: el curso 2026-2027 es `year=6`. Ver docs/PHIDIAS.md.
+model AcademicYear {
+  id         String   @id @default(uuid(7))
+  externalId Int?     @map("external_id")
+  code       String   @unique
+  name       String
+  startDate  DateTime @map("start_date") @db.Date
+  endDate    DateTime @map("end_date") @db.Date
+  isCurrent  Boolean  @default(false) @map("is_current")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  periods AcademicPeriod[]
+  groups  Group[]
+  plans   EvaluationPlan[]
+
+  @@unique([externalId])
+  @@index([isCurrent])
+  @@map("academic_years")
+}
+
+/// Periodo académico. Phidias expone varias familias de periodos solapadas
+/// (`category`), y su endpoint de categorías está caído, así que el
+/// administrador designa cuál es la oficial mediante configuración.
+model AcademicPeriod {
+  id                 String   @id @default(uuid(7))
+  academicYearId     String   @map("academic_year_id")
+  externalId         Int?     @map("external_id")
+  externalCategoryId Int?     @map("external_category_id")
+  name               String
+  position           Int
+  startDate          DateTime @map("start_date") @db.Date
+  endDate            DateTime @map("end_date") @db.Date
+  weight             Int      @default(0)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  academicYear AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  planItems    EvaluationPlanItem[]
+  answers      AttemptAnswer[]
+
+  @@unique([externalId])
+  @@index([academicYearId, position])
+  @@index([startDate, endDate])
+  @@map("academic_periods")
+}
+
+/// Nivel educativo (KINDERGARTEN, PRIMARIA, SECUNDARIA).
+model EducationLevel {
+  id        String   @id @default(uuid(7))
+  code      String   @unique
+  name      Json
+  position  Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  gradeLevels GradeLevel[]
+
+  @@map("education_levels")
+}
+
+/// Grado (KLASSE 1 … KLASSE 12). Estable entre años: los identificadores de
+/// Phidias cambian cada curso, así que la correspondencia se resuelve por
+/// nombre durante la sincronización y se materializa en `Group`.
+model GradeLevel {
+  id               String   @id @default(uuid(7))
+  educationLevelId String   @map("education_level_id")
+  code             String   @unique
+  name             Json
+  /// Número de grado cuando aplica (1–12). Nulo en preescolar.
+  ordinal          Int?
+  position         Int
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  educationLevel EducationLevel @relation(fields: [educationLevelId], references: [id])
+  groups         Group[]
+  students       Student[]
+  assessments    Assessment[]
+  plans          EvaluationPlan[]
+
+  @@index([educationLevelId, position])
+  @@map("grade_levels")
+}
+
+/// Área académica. Curada por el administrador, no importada a ciegas: las
+/// 262 "áreas" que devuelve Phidias incluyen propósitos pedagógicos y rúbricas
+/// que no son áreas de conocimiento. `PhidiasService` las expone para que el
+/// administrador elija, pero la sincronización automática no las crea.
+model AcademicArea {
+  id        String    @id @default(uuid(7))
+  code      String
+  name      Json
+  color     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  subjects    Subject[]
+  teachers    TeacherArea[]
+  assessments Assessment[]
+
+  @@unique([code])
+  @@index([active])
+  @@map("academic_areas")
+}
+
+model Subject {
+  id        String    @id @default(uuid(7))
+  areaId    String    @map("area_id")
+  code      String
+  name      Json
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  area        AcademicArea     @relation(fields: [areaId], references: [id])
+  teachers    TeacherSubject[]
+  groups      Group[]
+  assessments Assessment[]
+  plans       EvaluationPlan[]
+  answers     AttemptAnswer[]
+
+  @@unique([code])
+  @@index([areaId, active])
+  @@map("subjects")
+}
+
+/// Grupo de estudiantes (K8A, K10B…). Es por naturaleza anual, por lo que el
+/// identificador externo se clava junto al año: Phidias reasigna sus ids de
+/// sección en cada curso.
+model Group {
+  id                String         @id @default(uuid(7))
+  academicYearId    String         @map("academic_year_id")
+  gradeLevelId      String         @map("grade_level_id")
+  subjectId         String?        @map("subject_id")
+  homeroomTeacherId String?        @map("homeroom_teacher_id")
+  code              String
+  name              String
+  externalSource    ExternalSource? @map("external_source")
+  externalId        Int?            @map("external_id")
+  active            Boolean        @default(true)
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  deletedAt         DateTime?      @map("deleted_at")
+
+  academicYear    AcademicYear      @relation(fields: [academicYearId], references: [id])
+  gradeLevel      GradeLevel        @relation(fields: [gradeLevelId], references: [id])
+  subject         Subject?          @relation(fields: [subjectId], references: [id])
+  homeroomTeacher User?             @relation("GroupHomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  memberships     GroupMembership[]
+  assignments     Assignment[]
+  answers         AttemptAnswer[]
+
+  @@unique([academicYearId, code])
+  @@unique([externalSource, externalId, academicYearId])
+  @@index([academicYearId, active])
+  @@index([gradeLevelId])
+  @@index([homeroomTeacherId])
+  @@map("groups")
+}
+
+model GroupMembership {
+  id        String    @id @default(uuid(7))
+  groupId   String    @map("group_id")
+  studentId String    @map("student_id")
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+  active    Boolean   @default(true)
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, studentId])
+  @@index([studentId, active])
+  @@index([groupId, active])
+  @@map("group_memberships")
+}
+
+// =============================================================================
+// PERFILES
+// =============================================================================
+
+/// Perfil de estudiante. `externalId` es el `person.id` de Phidias, que sí es
+/// estable entre cursos, a diferencia de los ids de sección.
+model Student {
+  id               String           @id @default(uuid(7))
+  userId           String           @unique @map("user_id")
+  externalSource   ExternalSource?  @map("external_source")
+  externalId       Int?             @map("external_id")
+  /// Código institucional. Ausente en parte de la matrícula real.
+  code             String?
+  gradeLevelId     String?          @map("grade_level_id")
+  enrollmentStatus EnrollmentStatus @default(UNKNOWN) @map("enrollment_status")
+  /// Valor original de Phidias, conservado para diagnosticar mapeos nuevos.
+  rawEnrollmentStatus String?       @map("raw_enrollment_status")
+  lastSyncedAt     DateTime?        @map("last_synced_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gradeLevel  GradeLevel?       @relation(fields: [gradeLevelId], references: [id])
+  memberships GroupMembership[]
+
+  @@unique([externalSource, externalId])
+  @@index([enrollmentStatus])
+  @@index([gradeLevelId])
+  @@map("students")
+}
+
+model Teacher {
+  id           String    @id @default(uuid(7))
+  userId       String    @unique @map("user_id")
+  employeeCode String?   @unique @map("employee_code")
+  hireDate     DateTime? @map("hire_date") @db.Date
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areas    TeacherArea[]
+  subjects TeacherSubject[]
+
+  @@index([active])
+  @@map("teachers")
+}
+
+/// Un docente puede pertenecer a varias áreas: la especificación lo contempla
+/// explícitamente y la realidad del colegio lo exige (alemán e inglés, por
+/// ejemplo, comparten profesorado).
+model TeacherArea {
+  teacherId String  @map("teacher_id")
+  areaId    String  @map("area_id")
+  isPrimary Boolean @default(false) @map("is_primary")
+
+  teacher Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  area    AcademicArea @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, areaId])
+  @@index([areaId])
+  @@map("teacher_areas")
+}
+
+model TeacherSubject {
+  teacherId String @map("teacher_id")
+  subjectId String @map("subject_id")
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, subjectId])
+  @@index([subjectId])
+  @@map("teacher_subjects")
+}
+
+// =============================================================================
+// COMPETENCIAS KMK
+//
+// Tres niveles desde el inicio (competencia → subcompetencia → indicador),
+// aunque los dos inferiores nazcan vacíos. Los nombres son JSONB
+// `{ es, de, en }`: son catálogo del sistema, no contenido pedagógico, y sí
+// deben traducirse.
+// =============================================================================
+
+model KmkCompetency {
+  id          String   @id @default(uuid(7))
+  code        String   @unique
+  name        Json
+  description Json
+  color       String
+  icon        String?
+  position    Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subcompetencies KmkSubcompetency[]
+  questions       Question[]
+  answers         AttemptAnswer[]
+  trainingModules TrainingModule[]
+  planItems       EvaluationPlanItem[]
+
+  @@index([position])
+  @@map("kmk_competencies")
+}
+
+model KmkSubcompetency {
+  id           String   @id @default(uuid(7))
+  competencyId String   @map("competency_id")
+  code         String   @unique
+  name         Json
+  description  Json?
+  position     Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  competency KmkCompetency   @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  indicators KmkIndicator[]
+  questions  Question[]
+  answers    AttemptAnswer[]
+
+  @@index([competencyId, position])
+  @@map("kmk_subcompetencies")
+}
+
+model KmkIndicator {
+  id                String   @id @default(uuid(7))
+  subcompetencyId   String   @map("subcompetency_id")
+  code              String   @unique
+  name              Json
+  description       Json?
+  position          Int
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  subcompetency KmkSubcompetency @relation(fields: [subcompetencyId], references: [id], onDelete: Cascade)
+
+  @@index([subcompetencyId, position])
+  @@map("kmk_indicators")
+}
+
+// =============================================================================
+// ESCALAS DE CALIFICACIÓN
+//
+// Versionadas: editar una escala en uso crea una versión nueva en lugar de
+// mutar la vigente. Cada resultado guarda la escala con la que se calculó,
+// de modo que cambiar la configuración no reescribe notas ya emitidas.
+// =============================================================================
+
+model GradingScale {
+  id                String             @id @default(uuid(7))
+  code              String
+  version           Int                @default(1)
+  name              Json
+  audience          AssessmentAudience
+  kind              ScaleKind
+  passingPercentage Decimal            @map("passing_percentage") @db.Decimal(5, 2)
+  /// `true` cuando un valor menor es mejor (escala alemana 1.0–6.0).
+  lowerIsBetter     Boolean            @default(true) @map("lower_is_better")
+  isActive          Boolean            @default(true) @map("is_active")
+  createdById       String?            @map("created_by_id")
+  createdAt         DateTime           @default(now()) @map("created_at")
+
+  createdBy User?               @relation("ScaleCreatedBy", fields: [createdById], references: [id])
+  bands     GradingScaleBand[]
+  versions  AssessmentVersion[]
+  attempts  AssessmentAttempt[]
+
+  @@unique([code, version])
+  @@index([audience, isActive])
+  @@map("grading_scales")
+}
+
+/// `minPercentage` es el único umbral autoritativo. El límite superior se
+/// deriva de la banda inmediatamente mejor, con lo que la escala no puede
+/// tener huecos ni solapamientos.
+model GradingScaleBand {
+  id            String  @id @default(uuid(7))
+  scaleId       String  @map("scale_id")
+  position      Int
+  value         Decimal @db.Decimal(4, 2)
+  minPercentage Decimal @map("min_percentage") @db.Decimal(5, 2)
+  label         Json
+  color         String
+
+  scale GradingScale @relation(fields: [scaleId], references: [id], onDelete: Cascade)
+
+  @@unique([scaleId, position])
+  @@unique([scaleId, value])
+  @@index([scaleId, minPercentage])
+  @@map("grading_scale_bands")
+}
+
+// =============================================================================
+// EVALUACIONES
+// =============================================================================
+
+/// Contenedor lógico y estable de una evaluación. Todo lo que puede cambiar
+/// vive en sus versiones.
+model Assessment {
+  id           String             @id @default(uuid(7))
+  title        String
+  audience     AssessmentAudience
+  purpose      AssessmentPurpose  @default(EVALUATION)
+  subjectId    String?            @map("subject_id")
+  areaId       String?            @map("area_id")
+  gradeLevelId String?            @map("grade_level_id")
+  language     Language           @default(es)
+  createdById  String             @map("created_by_id")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  deletedAt    DateTime?          @map("deleted_at")
+
+  createdBy      User                @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
+  subject        Subject?            @relation(fields: [subjectId], references: [id])
+  area           AcademicArea?       @relation(fields: [areaId], references: [id])
+  gradeLevel     GradeLevel?         @relation(fields: [gradeLevelId], references: [id])
+  versions       AssessmentVersion[]
+  planItems      EvaluationPlanItem[]
+  trainingModule TrainingModule?
+
+  @@index([createdById, deletedAt])
+  @@index([audience, purpose])
+  @@index([subjectId])
+  @@map("assessments")
+}
+
+/// Instantánea inmutable una vez publicada. Contiene la configuración con la
+/// que se resolverá cualquier intento que la referencie, incluida la escala.
+model AssessmentVersion {
+  id            String                  @id @default(uuid(7))
+  assessmentId  String                  @map("assessment_id")
+  versionNumber Int                     @map("version_number")
+  status        AssessmentVersionStatus @default(DRAFT)
+
+  name         String
+  description  String?
+  instructions String?
+  difficulty   Difficulty @default(INTERMEDIATE)
+  language     Language   @default(es)
+
+  timeLimitMinutes Int?    @map("time_limit_minutes")
+  /// Si es nulo se usa el de la escala. Permite endurecer una evaluación
+  /// concreta sin tocar la configuración global.
+  passingPercentage Decimal? @map("passing_percentage") @db.Decimal(5, 2)
+  gradingScaleId   String?  @map("grading_scale_id")
+
+  showResultsImmediately Boolean @default(true) @map("show_results_immediately")
+  showCorrectAnswers     Boolean @default(true) @map("show_correct_answers")
+  showFeedback           Boolean @default(true) @map("show_feedback")
+  shuffleQuestions       Boolean @default(false) @map("shuffle_questions")
+  shuffleOptions         Boolean @default(false) @map("shuffle_options")
+
+  /// Materializados al publicar para no recalcularlos en cada listado.
+  totalPoints   Decimal @default(0) @map("total_points") @db.Decimal(8, 2)
+  questionCount Int     @default(0) @map("question_count")
+
+  publishedAt   DateTime? @map("published_at")
+  publishedById String?   @map("published_by_id")
+  archivedAt    DateTime? @map("archived_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  assessment   Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  publishedBy  User?                @relation("VersionPublishedBy", fields: [publishedById], references: [id])
+  gradingScale GradingScale?        @relation(fields: [gradingScaleId], references: [id])
+  questions    Question[]
+  assignments  Assignment[]
+  attempts     AssessmentAttempt[]
+  aiRequests   AiGenerationRequest[]
+
+  @@unique([assessmentId, versionNumber])
+  @@index([assessmentId, status])
+  @@index([status])
+  @@map("assessment_versions")
+}
+
+/// Pregunta.
+///
+/// Modelo híbrido deliberado: se normaliza todo lo que se consulta o agrega
+/// (tipo, puntos, orden, dificultad, competencia) y el contenido específico
+/// del tipo va en `payload` JSONB validado por un esquema Zod propio de cada
+/// tipo. Así se añaden tipos nuevos sin migrar las evaluaciones existentes.
+model Question {
+  id                  String       @id @default(uuid(7))
+  assessmentVersionId String       @map("assessment_version_id")
+  type                QuestionType
+  statement           String
+  instructions        String?
+  points              Decimal      @default(1) @db.Decimal(6, 2)
+  position            Int
+  difficulty          Difficulty   @default(INTERMEDIATE)
+
+  /// Obligatoria: toda pregunta mide una competencia KMK (sección 16).
+  kmkCompetencyId    String  @map("kmk_competency_id")
+  kmkSubcompetencyId String? @map("kmk_subcompetency_id")
+
+  feedbackCorrect   String? @map("feedback_correct")
+  feedbackIncorrect String? @map("feedback_incorrect")
+  explanation       String?
+
+  /// Contenido específico del tipo: opciones, pares, huecos, zonas…
+  payload  Json
+  mediaUrl String? @map("media_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  version         AssessmentVersion @relation(fields: [assessmentVersionId], references: [id], onDelete: Cascade)
+  kmkCompetency   KmkCompetency     @relation(fields: [kmkCompetencyId], references: [id])
+  kmkSubcompetency KmkSubcompetency? @relation(fields: [kmkSubcompetencyId], references: [id])
+  answers         AttemptAnswer[]
+
+  @@unique([assessmentVersionId, position])
+  @@index([assessmentVersionId])
+  @@index([kmkCompetencyId])
+  @@index([type])
+  @@map("questions")
+}
+
+// =============================================================================
+// ASIGNACIÓN
+//
+// Se separa el acto de asignar (`Assignment`) de cada destinatario concreto
+// (`AssignmentRecipient`). Así el seguimiento individual es una consulta
+// indexada directa y un estudiante que entra al grupo más tarde puede
+// incorporarse sin reescribir la asignación.
+// =============================================================================
+
+model Assignment {
+  id                  String               @id @default(uuid(7))
+  assessmentVersionId String               @map("assessment_version_id")
+  assignedById        String               @map("assigned_by_id")
+  targetType          AssignmentTargetType @map("target_type")
+  groupId             String?              @map("group_id")
+  planItemId          String?              @map("plan_item_id")
+
+  startAt          DateTime         @map("start_at")
+  endAt            DateTime?        @map("end_at")
+  attemptsAllowed  Int              @default(1) @map("attempts_allowed")
+  /// Sobreescribe el de la versión para esta asignación concreta.
+  timeLimitMinutes Int?             @map("time_limit_minutes")
+  status           AssignmentStatus @default(SCHEDULED)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  version    AssessmentVersion     @relation(fields: [assessmentVersionId], references: [id])
+  assignedBy User                  @relation("AssignmentAssignedBy", fields: [assignedById], references: [id])
+  group      Group?                @relation(fields: [groupId], references: [id])
+  planItem   EvaluationPlanItem?   @relation(fields: [planItemId], references: [id])
+  recipients AssignmentRecipient[]
+
+  @@index([assessmentVersionId])
+  @@index([groupId, status])
+  @@index([assignedById])
+  @@index([startAt, endAt])
+  @@map("assignments")
+}
+
+model AssignmentRecipient {
+  id             String          @id @default(uuid(7))
+  assignmentId   String          @map("assignment_id")
+  userId         String          @map("user_id")
+  status         RecipientStatus @default(PENDING)
+  attemptsUsed   Int             @default(0) @map("attempts_used")
+  bestPercentage Decimal?        @map("best_percentage") @db.Decimal(5, 2)
+  lastActivityAt DateTime?       @map("last_activity_at")
+  completedAt    DateTime?       @map("completed_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  assignment Assignment          @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempts   AssessmentAttempt[]
+
+  @@unique([assignmentId, userId])
+  @@index([userId, status])
+  @@index([assignmentId, status])
+  @@map("assignment_recipients")
+}
+
+// =============================================================================
+// INTENTOS Y RESPUESTAS
+// =============================================================================
+
+/// Intento y resultado en una sola entidad: la relación es 1:1 real y
+/// separarlas solo añadiría un JOIN a la consulta más frecuente del sistema.
+model AssessmentAttempt {
+  id                    String        @id @default(uuid(7))
+  assignmentRecipientId String        @map("assignment_recipient_id")
+  assessmentVersionId   String        @map("assessment_version_id")
+  userId                String        @map("user_id")
+  attemptNumber         Int           @map("attempt_number")
+  status                AttemptStatus @default(IN_PROGRESS)
+
+  startedAt   DateTime  @default(now()) @map("started_at")
+  /// Momento límite calculado por el servidor al iniciar. El cliente nunca
+  /// es autoridad sobre el tiempo.
+  deadlineAt  DateTime? @map("deadline_at")
+  submittedAt DateTime? @map("submitted_at")
+  gradedAt    DateTime? @map("graded_at")
+  durationSeconds Int?  @map("duration_seconds")
+
+  pointsEarned   Decimal @default(0) @map("points_earned") @db.Decimal(8, 2)
+  pointsPossible Decimal @default(0) @map("points_possible") @db.Decimal(8, 2)
+  percentage     Decimal @default(0) @db.Decimal(5, 2)
+
+  /// Escala y umbral fijados en el momento del cálculo: garantizan que el
+  /// resultado siga significando lo mismo dentro de dos años.
+  gradingScaleId    String?  @map("grading_scale_id")
+  gradeValue        Decimal? @map("grade_value") @db.Decimal(4, 2)
+  gradeLabel        Json?    @map("grade_label")
+  passingPercentage Decimal? @map("passing_percentage") @db.Decimal(5, 2)
+  passed            Boolean  @default(false)
+  starsFilled       Int?     @map("stars_filled")
+  starsTotal        Int?     @map("stars_total")
+
+  requiresManualGrading Boolean @default(false) @map("requires_manual_grading")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  recipient    AssignmentRecipient @relation(fields: [assignmentRecipientId], references: [id], onDelete: Cascade)
+  version      AssessmentVersion   @relation(fields: [assessmentVersionId], references: [id])
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gradingScale GradingScale?       @relation(fields: [gradingScaleId], references: [id])
+  answers      AttemptAnswer[]
+
+  @@unique([assignmentRecipientId, attemptNumber])
+  @@index([userId, status])
+  @@index([assessmentVersionId, status])
+  @@index([status, deadlineAt])
+  @@index([submittedAt])
+  @@map("assessment_attempts")
+}
+
+/// Respuesta a una pregunta dentro de un intento.
+///
+/// Desnormaliza competencia, materia, grupo y periodo en el momento de
+/// calificar. Es la tabla sobre la que se apoya toda la analítica KMK: sin
+/// esto, cada estadística tendría que atravesar intento → versión → pregunta,
+/// lo que no aguanta el volumen objetivo de 100.000 intentos.
+model AttemptAnswer {
+  id         String @id @default(uuid(7))
+  attemptId  String @map("attempt_id")
+  questionId String @map("question_id")
+
+  /// Respuesta del estudiante, con forma propia de cada tipo de pregunta.
+  response Json?
+
+  isCorrect      Boolean? @map("is_correct")
+  pointsEarned   Decimal  @default(0) @map("points_earned") @db.Decimal(6, 2)
+  pointsPossible Decimal  @default(0) @map("points_possible") @db.Decimal(6, 2)
+  autoGraded     Boolean  @default(false) @map("auto_graded")
+  requiresManualGrading Boolean @default(false) @map("requires_manual_grading")
+
+  teacherFeedback String?   @map("teacher_feedback")
+  gradedById      String?   @map("graded_by_id")
+  gradedAt        DateTime? @map("graded_at")
+
+  answeredAt DateTime  @default(now()) @map("answered_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // --- Copias para analítica. Se fijan al calificar y no se recalculan. ---
+  questionType       QuestionType @map("question_type")
+  kmkCompetencyId    String       @map("kmk_competency_id")
+  kmkSubcompetencyId String?      @map("kmk_subcompetency_id")
+  subjectId          String?      @map("subject_id")
+  groupId            String?      @map("group_id")
+  academicPeriodId   String?      @map("academic_period_id")
+
+  attempt          AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         Question          @relation(fields: [questionId], references: [id])
+  gradedBy         User?             @relation("AnswerGradedBy", fields: [gradedById], references: [id])
+  kmkCompetency    KmkCompetency     @relation(fields: [kmkCompetencyId], references: [id])
+  kmkSubcompetency KmkSubcompetency? @relation(fields: [kmkSubcompetencyId], references: [id])
+  subject          Subject?          @relation(fields: [subjectId], references: [id])
+  group            Group?            @relation(fields: [groupId], references: [id])
+  academicPeriod   AcademicPeriod?   @relation(fields: [academicPeriodId], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@index([kmkCompetencyId, answeredAt])
+  @@index([subjectId, kmkCompetencyId])
+  @@index([groupId, kmkCompetencyId])
+  @@index([academicPeriodId, kmkCompetencyId])
+  @@index([requiresManualGrading, gradedAt])
+  @@map("attempt_answers")
+}
+
+// =============================================================================
+// PLANES DE EVALUACIÓN
+// =============================================================================
+
+model EvaluationPlan {
+  id             String    @id @default(uuid(7))
+  academicYearId String    @map("academic_year_id")
+  subjectId      String?   @map("subject_id")
+  gradeLevelId   String?   @map("grade_level_id")
+  name           String
+  description    String?
+  createdById    String    @map("created_by_id")
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  academicYear AcademicYear         @relation(fields: [academicYearId], references: [id])
+  subject      Subject?             @relation(fields: [subjectId], references: [id])
+  gradeLevel   GradeLevel?          @relation(fields: [gradeLevelId], references: [id])
+  createdBy    User                 @relation("PlanCreatedBy", fields: [createdById], references: [id])
+  items        EvaluationPlanItem[]
+
+  @@index([academicYearId, active])
+  @@index([createdById])
+  @@map("evaluation_plans")
+}
+
+model EvaluationPlanItem {
+  id               String    @id @default(uuid(7))
+  planId           String    @map("plan_id")
+  academicPeriodId String    @map("academic_period_id")
+  assessmentId     String?   @map("assessment_id")
+  kmkCompetencyId  String?   @map("kmk_competency_id")
+  title            String
+  position         Int
+  dueAt            DateTime? @map("due_at")
+  required         Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  plan           EvaluationPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  academicPeriod AcademicPeriod  @relation(fields: [academicPeriodId], references: [id])
+  assessment     Assessment?     @relation(fields: [assessmentId], references: [id])
+  kmkCompetency  KmkCompetency?  @relation(fields: [kmkCompetencyId], references: [id])
+  assignments    Assignment[]
+
+  @@unique([planId, position])
+  @@index([academicPeriodId])
+  @@index([assessmentId])
+  @@map("evaluation_plan_items")
+}
+
+// =============================================================================
+// CAPACITACIÓN DOCENTE
+//
+// La evaluación de un módulo es una `Assessment` normal con audiencia TEACHER
+// y propósito TRAINING: se reutiliza el motor en lugar de duplicarlo.
+// =============================================================================
+
+model TrainingModule {
+  id               String   @id @default(uuid(7))
+  kmkCompetencyId  String   @map("kmk_competency_id")
+  assessmentId     String?  @unique @map("assessment_id")
+  code             String   @unique
+  title            Json
+  description      Json
+  position         Int
+  estimatedMinutes Int?     @map("estimated_minutes")
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  kmkCompetency KmkCompetency      @relation(fields: [kmkCompetencyId], references: [id])
+  assessment    Assessment?        @relation(fields: [assessmentId], references: [id])
+  contents      TrainingContent[]
+  progress      TrainingProgress[]
+
+  @@index([kmkCompetencyId, position])
+  @@map("training_modules")
+}
+
+model TrainingContent {
+  id        String              @id @default(uuid(7))
+  moduleId  String              @map("module_id")
+  type      TrainingContentType
+  title     Json
+  body      Json?
+  url       String?
+  position  Int
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, position])
+  @@map("training_contents")
+}
+
+model TrainingProgress {
+  id            String                 @id @default(uuid(7))
+  moduleId      String                 @map("module_id")
+  userId        String                 @map("user_id")
+  status        TrainingProgressStatus @default(NOT_STARTED)
+  contentsSeen  Int                    @default(0) @map("contents_seen")
+  startedAt     DateTime?              @map("started_at")
+  completedAt   DateTime?              @map("completed_at")
+  lastAccessAt  DateTime?              @map("last_access_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, userId])
+  @@index([userId, status])
+  @@map("training_progress")
+}
+
+// =============================================================================
+// INTELIGENCIA ARTIFICIAL
+// =============================================================================
+
+/// Trazabilidad completa de cada generación. La respuesta cruda se conserva
+/// para poder auditar qué produjo el modelo, incluso cuando fue rechazada.
+/// Una generación nunca publica: siempre aterriza en una versión DRAFT.
+model AiGenerationRequest {
+  id          String             @id @default(uuid(7))
+  requestedById String           @map("requested_by_id")
+  status      AiGenerationStatus @default(PENDING)
+  provider    String
+  model       String
+  /// Parámetros pedidos por el docente: materia, grado, competencia, tema…
+  params      Json
+  rawResponse Json?              @map("raw_response")
+  /// Motivo del rechazo cuando la respuesta no superó validación.
+  validationErrors Json?         @map("validation_errors")
+  assessmentVersionId String?    @map("assessment_version_id")
+  promptTokens     Int?          @map("prompt_tokens")
+  completionTokens Int?          @map("completion_tokens")
+  durationMs       Int?          @map("duration_ms")
+  errorMessage     String?       @map("error_message")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  completedAt DateTime?          @map("completed_at")
+
+  requestedBy User               @relation(fields: [requestedById], references: [id])
+  version     AssessmentVersion? @relation(fields: [assessmentVersionId], references: [id])
+
+  @@index([requestedById, createdAt])
+  @@index([status])
+  @@map("ai_generation_requests")
+}
+
+// =============================================================================
+// SISTEMA
+// =============================================================================
+
+/// Configuración con valor JSONB, validado por un esquema Zod propio de cada
+/// clave. Solo alberga ajustes sin efecto histórico: las escalas, que sí lo
+/// tienen, son entidades versionadas aparte.
+model SystemSetting {
+  key         String   @id
+  value       Json
+  description String?
+  updatedById String?  @map("updated_by_id")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  updatedBy User? @relation("SettingUpdatedBy", fields: [updatedById], references: [id])
+
+  @@map("system_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid(7))
+  userId     String?  @map("user_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  /// Nunca debe contener contraseñas, tokens ni documentos de identidad.
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model PhidiasSyncLog {
+  id            String     @id @default(uuid(7))
+  syncType      SyncType   @map("sync_type")
+  status        SyncStatus @default(RUNNING)
+  startedAt     DateTime   @default(now()) @map("started_at")
+  finishedAt    DateTime?  @map("finished_at")
+  created       Int        @default(0)
+  updated       Int        @default(0)
+  deactivated   Int        @default(0)
+  skipped       Int        @default(0)
+  failed        Int        @default(0)
+  /// Incidencias por registro (correo duplicado, estado desconocido…).
+  issues        Json?
+  errorMessage  String?    @map("error_message")
+  triggeredById String?    @map("triggered_by_id")
+
+  triggeredBy User? @relation(fields: [triggeredById], references: [id])
+
+  @@index([syncType, startedAt])
+  @@map("phidias_sync_logs")
+}
+
+model Notification {
+  id        String    @id @default(uuid(7))
+  userId    String    @map("user_id")
+  type      String
+  title     Json
+  body      Json?
+  data      Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
