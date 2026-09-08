@@ -1,0 +1,42 @@
+# Dependencias
+node_modules/
+.npm/
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Entorno — NUNCA versionar secretos
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Tests
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+.playwright/
+
+# Datos crudos de integraciones externas (pueden contener datos personales)
+/tools/phidias-probe-output/
+*.raw.json
+
+# Editores y sistema operativo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/migrations/dev.db*
