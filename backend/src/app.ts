@@ -9,6 +9,12 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { generalRateLimit } from './middleware/rate-limit.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
+import { kmkRouter } from './modules/kmk/kmk.routes.js';
+import { areasRouter, calendarRouter, subjectsRouter } from './modules/academic/academic.routes.js';
+import { groupsRouter } from './modules/groups/groups.routes.js';
+import { teachersRouter } from './modules/teachers/teachers.routes.js';
+import { studentsRouter } from './modules/students/students.routes.js';
+import { settingsRouter } from './modules/settings/settings.routes.js';
 
 /**
  * Composición de la aplicación.
@@ -80,6 +86,14 @@ export function createApp(): Express {
 
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);
+  app.use('/api/teachers', teachersRouter);
+  app.use('/api/students', studentsRouter);
+  app.use('/api/groups', groupsRouter);
+  app.use('/api/areas', areasRouter);
+  app.use('/api/subjects', subjectsRouter);
+  app.use('/api/academic', calendarRouter);
+  app.use('/api/kmk', kmkRouter);
+  app.use('/api/settings', settingsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
