@@ -16,6 +16,9 @@ import { teachersRouter } from './modules/teachers/teachers.routes.js';
 import { studentsRouter } from './modules/students/students.routes.js';
 import { settingsRouter } from './modules/settings/settings.routes.js';
 import { phidiasRouter } from './modules/integrations/phidias/phidias.routes.js';
+import { assessmentsRouter } from './modules/assessments/assessments.routes.js';
+import { assignmentsRouter } from './modules/assignments/assignments.routes.js';
+import { attemptsRouter } from './modules/attempts/attempts.routes.js';
 
 /**
  * Composición de la aplicación.
@@ -95,6 +98,9 @@ export function createApp(): Express {
   app.use('/api/academic', calendarRouter);
   app.use('/api/kmk', kmkRouter);
   app.use('/api/settings', settingsRouter);
+  app.use('/api/assessments', assessmentsRouter);
+  app.use('/api/assignments', assignmentsRouter);
+  app.use('/api/attempts', attemptsRouter);
   app.use('/api/integrations/phidias', phidiasRouter);
 
   app.use(notFoundHandler);

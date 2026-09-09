@@ -1,0 +1,557 @@
+import { z } from 'zod';
+import {
+  ASSESSMENT_AUDIENCE,
+  ASSESSMENT_PURPOSE,
+  ASSESSMENT_VERSION_STATUS,
+  AUDIT_ACTION,
+  DIFFICULTY,
+  ERROR_CODE,
+  LANGUAGE,
+  type AssessmentAudience,
+  type Paginated,
+  type Role,
+} from '@medienpass/shared';
+import { prisma } from '../../infrastructure/database/prisma.js';
+import { AppError } from '../../shared/errors/app-error.js';
+import { buildPaginationMeta } from '../../shared/http/response.js';
+import { assertOwnership, isAdmin } from '../../middleware/authorize.js';
+import { recordAudit } from '../audit/audit.service.js';
+import { getActiveScale } from '../settings/scales.service.js';
+import type { PaginationQuery } from '../../middleware/validate.js';
+
+/**
+ * Evaluaciones y sus versiones.
+ *
+ * La regla que gobierna todo este archivo: **una versión publicada es
+ * inmutable**. Editar una evaluación publicada no la modifica, crea la versión
+ * siguiente en borrador. Así, un docente puede corregir una pregunta después
+ * de que ochenta estudiantes la hayan respondido sin que ninguno de esos
+ * resultados cambie de significado.
+ */
+
+export const createAssessmentSchema = z.object({
+  title: z.string().trim().min(3).max(200),
+  description: z.string().trim().max(2000).optional(),
+  instructions: z.string().trim().max(5000).optional(),
+  audience: z.enum([ASSESSMENT_AUDIENCE.STUDENT, ASSESSMENT_AUDIENCE.TEACHER]).default(ASSESSMENT_AUDIENCE.STUDENT),
+  purpose: z
+    .enum([ASSESSMENT_PURPOSE.EVALUATION, ASSESSMENT_PURPOSE.TRAINING, ASSESSMENT_PURPOSE.DIAGNOSTIC])
+    .default(ASSESSMENT_PURPOSE.EVALUATION),
+  subjectId: z.string().uuid().nullable().optional(),
+  areaId: z.string().uuid().nullable().optional(),
+  gradeLevelId: z.string().uuid().nullable().optional(),
+  language: z.enum([LANGUAGE.ES, LANGUAGE.DE, LANGUAGE.EN]).default(LANGUAGE.ES),
+  difficulty: z
+    .enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED])
+    .default(DIFFICULTY.INTERMEDIATE),
+  timeLimitMinutes: z.number().int().min(0).max(600).nullable().optional(),
+});
+
+export const updateVersionSchema = z.object({
+  name: z.string().trim().min(3).max(200).optional(),
+  description: z.string().trim().max(2000).nullable().optional(),
+  instructions: z.string().trim().max(5000).nullable().optional(),
+  difficulty: z.enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED]).optional(),
+  timeLimitMinutes: z.number().int().min(0).max(600).nullable().optional(),
+  passingPercentage: z.number().min(0).max(100).nullable().optional(),
+  showResultsImmediately: z.boolean().optional(),
+  showCorrectAnswers: z.boolean().optional(),
+  showFeedback: z.boolean().optional(),
+  shuffleQuestions: z.boolean().optional(),
+  shuffleOptions: z.boolean().optional(),
+});
+
+export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
+export type UpdateVersionInput = z.infer<typeof updateVersionSchema>;
+
+interface Actor {
+  userId: string;
+  roles: Role[];
+}
+
+export interface AssessmentSummary {
+  id: string;
+  title: string;
+  audience: string;
+  purpose: string;
+  language: string;
+  createdBy: { id: string; firstName: string; lastName: string };
+  subject: { id: string; code: string } | null;
+  gradeLevel: { id: string; code: string } | null;
+  versionCount: number;
+  latestVersion: {
+    id: string;
+    versionNumber: number;
+    status: string;
+    questionCount: number;
+    totalPoints: number;
+  } | null;
+  createdAt: Date;
+}
+
+const assessmentInclude = {
+  createdBy: { select: { id: true, firstName: true, lastName: true } },
+  subject: { select: { id: true, code: true } },
+  gradeLevel: { select: { id: true, code: true } },
+  versions: {
+    orderBy: { versionNumber: 'desc' as const },
+    take: 1,
+    select: {
+      id: true,
+      versionNumber: true,
+      status: true,
+      questionCount: true,
+      totalPoints: true,
+    },
+  },
+  _count: { select: { versions: true } },
+} as const;
+
+type AssessmentRow = {
+  id: string;
+  title: string;
+  audience: string;
+  purpose: string;
+  language: string;
+  createdAt: Date;
+  createdBy: { id: string; firstName: string; lastName: string };
+  subject: { id: string; code: string } | null;
+  gradeLevel: { id: string; code: string } | null;
+  versions: Array<{
+    id: string;
+    versionNumber: number;
+    status: string;
+    questionCount: number;
+    totalPoints: unknown;
+  }>;
+  _count: { versions: number };
+};
+
+function toSummary(row: AssessmentRow): AssessmentSummary {
+  const latest = row.versions[0];
+  return {
+    id: row.id,
+    title: row.title,
+    audience: row.audience,
+    purpose: row.purpose,
+    language: row.language,
+    createdBy: row.createdBy,
+    subject: row.subject,
+    gradeLevel: row.gradeLevel,
+    versionCount: row._count.versions,
+    latestVersion: latest
+      ? {
+          id: latest.id,
+          versionNumber: latest.versionNumber,
+          status: latest.status,
+          questionCount: latest.questionCount,
+          totalPoints: Number(latest.totalPoints),
+        }
+      : null,
+    createdAt: row.createdAt,
+  };
+}
+
+/**
+ * Alcance de lectura.
+ *
+ * Un docente ve las suyas salvo que tenga el permiso de ver todas. No se
+ * resuelve en el middleware porque depende de la fila, no de la acción.
+ */
+function scopeFor(actor: Actor, canReadAll: boolean): Record<string, unknown> {
+  if (isAdmin(actor) || canReadAll) return {};
+  return { createdById: actor.userId };
+}
+
+export async function listAssessments(
+  actor: Actor,
+  canReadAll: boolean,
+  query: PaginationQuery & { audience?: AssessmentAudience; subjectId?: string; status?: string },
+): Promise<Paginated<AssessmentSummary>> {
+  const where = {
+    deletedAt: null,
+    ...scopeFor(actor, canReadAll),
+    ...(query.audience ? { audience: query.audience } : {}),
+    ...(query.subjectId ? { subjectId: query.subjectId } : {}),
+    ...(query.search ? { title: { contains: query.search, mode: 'insensitive' as const } } : {}),
+    ...(query.status ? { versions: { some: { status: query.status as never } } } : {}),
+  };
+
+  const [total, rows] = await Promise.all([
+    prisma.assessment.count({ where }),
+    prisma.assessment.findMany({
+      where,
+      orderBy: { createdAt: query.order },
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+      include: assessmentInclude,
+    }),
+  ]);
+
+  return {
+    items: rows.map((row) => toSummary(row as unknown as AssessmentRow)),
+    meta: buildPaginationMeta(query.page, query.pageSize, total),
+  };
+}
+
+/** Recupera la evaluación comprobando además que el actor puede tocarla. */
+export async function getAssessmentForEditing(actor: Actor, id: string) {
+  const assessment = await prisma.assessment.findFirst({
+    where: { id, deletedAt: null },
+    include: { versions: { orderBy: { versionNumber: 'desc' } } },
+  });
+  if (!assessment) throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { id });
+
+  assertOwnership(actor, assessment.createdById, { assessmentId: id });
+  return assessment;
+}
+
+export async function getAssessment(actor: Actor, canReadAll: boolean, id: string) {
+  const assessment = await prisma.assessment.findFirst({
+    where: { id, deletedAt: null, ...scopeFor(actor, canReadAll) },
+    include: {
+      ...assessmentInclude,
+      versions: {
+        orderBy: { versionNumber: 'desc' },
+        include: { _count: { select: { questions: true, assignments: true } } },
+      },
+    },
+  });
+  if (!assessment) throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { id });
+  return assessment;
+}
+
+/**
+ * Crea la evaluación junto con su primera versión en borrador.
+ *
+ * Se hacen a la vez porque una evaluación sin versión no es editable ni
+ * publicable: sería un registro inútil que habría que limpiar después.
+ */
+export async function createAssessment(
+  actor: Actor,
+  input: CreateAssessmentInput,
+): Promise<{ assessmentId: string; versionId: string }> {
+  const scale = await getActiveScale(input.audience);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const assessment = await tx.assessment.create({
+      data: {
+        title: input.title,
+        audience: input.audience,
+        purpose: input.purpose,
+        subjectId: input.subjectId ?? null,
+        areaId: input.areaId ?? null,
+        gradeLevelId: input.gradeLevelId ?? null,
+        language: input.language,
+        createdById: actor.userId,
+      },
+    });
+
+    const version = await tx.assessmentVersion.create({
+      data: {
+        assessmentId: assessment.id,
+        versionNumber: 1,
+        status: ASSESSMENT_VERSION_STATUS.DRAFT,
+        name: input.title,
+        description: input.description ?? null,
+        instructions: input.instructions ?? null,
+        difficulty: input.difficulty,
+        language: input.language,
+        timeLimitMinutes: input.timeLimitMinutes ?? null,
+        gradingScaleId: scale.id,
+      },
+    });
+
+    return { assessmentId: assessment.id, versionId: version.id };
+  });
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.CREATE_ASSESSMENT,
+    entityType: 'assessment',
+    entityId: result.assessmentId,
+    metadata: { title: input.title, audience: input.audience },
+  });
+
+  return result;
+}
+
+/** Comprueba que la versión existe, es del actor y admite modificación. */
+export async function getEditableVersion(actor: Actor, versionId: string) {
+  const version = await prisma.assessmentVersion.findUnique({
+    where: { id: versionId },
+    include: { assessment: { select: { id: true, createdById: true, deletedAt: true } } },
+  });
+
+  if (!version || version.assessment.deletedAt) {
+    throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { versionId });
+  }
+
+  assertOwnership(actor, version.assessment.createdById, { versionId });
+
+  if (version.status !== ASSESSMENT_VERSION_STATUS.DRAFT) {
+    throw AppError.conflict(
+      ERROR_CODE.VERSION_IMMUTABLE,
+      'A published version cannot be modified. Create a new version instead.',
+      { versionId, status: version.status },
+    );
+  }
+
+  return version;
+}
+
+/**
+ * Traduce la entrada parcial a datos de actualización de la versión.
+ *
+ * Se recorren los campos declarados en lugar de encadenar difusiones
+ * condicionales: añadir un ajuste nuevo pasa a ser una línea en la lista.
+ */
+function buildVersionUpdate(input: UpdateVersionInput): Record<string, unknown> {
+  const fields = [
+    'name',
+    'description',
+    'instructions',
+    'difficulty',
+    'timeLimitMinutes',
+    'passingPercentage',
+    'showResultsImmediately',
+    'showCorrectAnswers',
+    'showFeedback',
+    'shuffleQuestions',
+    'shuffleOptions',
+  ] as const;
+
+  const data: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (input[field] !== undefined) data[field] = input[field];
+  }
+  return data;
+}
+
+export async function updateVersion(actor: Actor, versionId: string, input: UpdateVersionInput) {
+  await getEditableVersion(actor, versionId);
+
+  const updated = await prisma.assessmentVersion.update({
+    where: { id: versionId },
+    data: buildVersionUpdate(input) as never,
+  });
+
+  // El título de la evaluación refleja el de su última versión, para que los
+  // listados no obliguen a un JOIN en cada fila.
+  if (input.name) {
+    await prisma.assessment.update({
+      where: { id: updated.assessmentId },
+      data: { title: input.name },
+    });
+  }
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.UPDATE_ASSESSMENT,
+    entityType: 'assessment_version',
+    entityId: versionId,
+  });
+
+  return updated;
+}
+
+/**
+ * Publica una versión.
+ *
+ * A partir de aquí la versión no se puede tocar. Se materializan el total de
+ * puntos y el número de preguntas para no recalcularlos en cada listado, y se
+ * fija la escala vigente: es lo que permite que el resultado siga
+ * significando lo mismo dentro de dos años.
+ */
+export async function publishVersion(actor: Actor, versionId: string) {
+  const version = await getEditableVersion(actor, versionId);
+
+  const questions = await prisma.question.findMany({
+    where: { assessmentVersionId: versionId },
+    select: { id: true, points: true, kmkCompetencyId: true },
+  });
+
+  if (questions.length === 0) {
+    throw AppError.conflict(
+      ERROR_CODE.ASSESSMENT_HAS_NO_QUESTIONS,
+      'An assessment cannot be published without questions',
+    );
+  }
+
+  // Cada pregunta debe medir una competencia: es el requisito sobre el que se
+  // sostiene toda la analítica KMK.
+  const orphan = questions.find((question) => !question.kmkCompetencyId);
+  if (orphan) {
+    throw new AppError(
+      ERROR_CODE.KMK_COMPETENCY_REQUIRED,
+      'Every question must be linked to a KMK competency',
+      { details: { questionId: orphan.id } },
+    );
+  }
+
+  const totalPoints = questions.reduce((sum, question) => sum + Number(question.points), 0);
+
+  const assessment = await prisma.assessment.findUniqueOrThrow({
+    where: { id: version.assessmentId },
+    select: { audience: true },
+  });
+  const scale = await getActiveScale(assessment.audience as AssessmentAudience);
+
+  const published = await prisma.assessmentVersion.update({
+    where: { id: versionId },
+    data: {
+      status: ASSESSMENT_VERSION_STATUS.PUBLISHED,
+      publishedAt: new Date(),
+      publishedById: actor.userId,
+      totalPoints,
+      questionCount: questions.length,
+      gradingScaleId: version.gradingScaleId ?? scale.id,
+    },
+  });
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.PUBLISH_ASSESSMENT,
+    entityType: 'assessment_version',
+    entityId: versionId,
+    metadata: { versionNumber: published.versionNumber, questions: questions.length, totalPoints },
+  });
+
+  return published;
+}
+
+/**
+ * Crea una versión nueva a partir de la última, copiando sus preguntas.
+ *
+ * Las preguntas se **copian**, no se comparten: si se referenciaran, editarlas
+ * alteraría la versión anterior y con ella los resultados ya emitidos, que es
+ * exactamente lo que el versionado existe para impedir.
+ */
+export async function createNewVersion(actor: Actor, assessmentId: string) {
+  const assessment = await getAssessmentForEditing(actor, assessmentId);
+
+  const latest = assessment.versions[0];
+  if (!latest) throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { assessmentId });
+
+  if (latest.status === ASSESSMENT_VERSION_STATUS.DRAFT) {
+    throw AppError.conflict(
+      ERROR_CODE.CONFLICT,
+      'There is already a draft version; finish or publish it first',
+      { versionId: latest.id },
+    );
+  }
+
+  const questions = await prisma.question.findMany({
+    where: { assessmentVersionId: latest.id },
+    orderBy: { position: 'asc' },
+  });
+
+  const created = await prisma.$transaction(async (tx) => {
+    const version = await tx.assessmentVersion.create({
+      data: {
+        assessmentId,
+        versionNumber: latest.versionNumber + 1,
+        status: ASSESSMENT_VERSION_STATUS.DRAFT,
+        name: latest.name,
+        description: latest.description,
+        instructions: latest.instructions,
+        difficulty: latest.difficulty,
+        language: latest.language,
+        timeLimitMinutes: latest.timeLimitMinutes,
+        passingPercentage: latest.passingPercentage,
+        gradingScaleId: latest.gradingScaleId,
+        showResultsImmediately: latest.showResultsImmediately,
+        showCorrectAnswers: latest.showCorrectAnswers,
+        showFeedback: latest.showFeedback,
+        shuffleQuestions: latest.shuffleQuestions,
+        shuffleOptions: latest.shuffleOptions,
+      },
+    });
+
+    if (questions.length > 0) {
+      await tx.question.createMany({
+        data: questions.map((question) => ({
+          assessmentVersionId: version.id,
+          type: question.type,
+          statement: question.statement,
+          instructions: question.instructions,
+          points: question.points,
+          position: question.position,
+          difficulty: question.difficulty,
+          kmkCompetencyId: question.kmkCompetencyId,
+          kmkSubcompetencyId: question.kmkSubcompetencyId,
+          feedbackCorrect: question.feedbackCorrect,
+          feedbackIncorrect: question.feedbackIncorrect,
+          explanation: question.explanation,
+          payload: question.payload as object,
+          mediaUrl: question.mediaUrl,
+        })),
+      });
+    }
+
+    return version;
+  });
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.UPDATE_ASSESSMENT,
+    entityType: 'assessment_version',
+    entityId: created.id,
+    metadata: { newVersion: created.versionNumber, copiedQuestions: questions.length },
+  });
+
+  return created;
+}
+
+export async function archiveVersion(actor: Actor, versionId: string) {
+  const version = await prisma.assessmentVersion.findUnique({
+    where: { id: versionId },
+    include: { assessment: { select: { createdById: true } } },
+  });
+  if (!version) throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { versionId });
+
+  assertOwnership(actor, version.assessment.createdById);
+
+  const openAssignments = await prisma.assignment.count({
+    where: { assessmentVersionId: versionId, status: { in: ['SCHEDULED', 'OPEN'] } },
+  });
+  if (openAssignments > 0) {
+    throw AppError.conflict(ERROR_CODE.ASSESSMENT_IN_USE, 'The version has open assignments', {
+      openAssignments,
+    });
+  }
+
+  const archived = await prisma.assessmentVersion.update({
+    where: { id: versionId },
+    data: { status: ASSESSMENT_VERSION_STATUS.ARCHIVED, archivedAt: new Date() },
+  });
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.ARCHIVE_ASSESSMENT,
+    entityType: 'assessment_version',
+    entityId: versionId,
+  });
+
+  return archived;
+}
+
+export async function deleteAssessment(actor: Actor, id: string): Promise<void> {
+  const assessment = await getAssessmentForEditing(actor, id);
+
+  const attempts = await prisma.assessmentAttempt.count({
+    where: { version: { assessmentId: id } },
+  });
+  if (attempts > 0) {
+    // Con intentos realizados, borrar significaría destruir historial
+    // académico. Se archiva en su lugar.
+    throw AppError.conflict(ERROR_CODE.ASSESSMENT_IN_USE, 'The assessment has recorded attempts', {
+      attempts,
+    });
+  }
+
+  await prisma.assessment.update({
+    where: { id: assessment.id },
+    data: { deletedAt: new Date() },
+  });
+}

@@ -1,5 +1,6 @@
 import { afterAll, beforeEach } from 'vitest';
 import { prisma } from '../../src/infrastructure/database/prisma.js';
+import { cache } from '../../src/shared/cache/cache.service.js';
 
 /**
  * Aislamiento entre pruebas.
@@ -25,6 +26,12 @@ async function resolveTableNames(): Promise<string[]> {
 }
 
 beforeEach(async () => {
+  // La caché vive en el proceso, no en la base: sin vaciarla, una prueba
+  // heredaría escalas o configuraciones de la anterior, que el TRUNCATE
+  // acaba de borrar. Es exactamente el tipo de fallo que solo aparece al
+  // ejecutar la suite completa y no al ejecutar una prueba suelta.
+  await cache.clear();
+
   const tables = await resolveTableNames();
   if (tables.length === 0) return;
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
