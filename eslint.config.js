@@ -70,11 +70,22 @@ export default tseslint.config(
     },
     rules: {
       'vue/multi-word-component-names': 'off',
+      // Con props declaradas por tipo, una prop opcional ya es       // por definición; exigirle un valor por defecto es una regla heredada
+      // de la época de las props declaradas como objeto.
+      'vue/require-default-prop': 'off',
       'vue/component-api-style': ['error', ['script-setup']],
       'vue/define-macros-order': ['error', { order: ['defineProps', 'defineEmits'] }],
       // Componentes gigantes: la especificación los prohíbe explícitamente.
       'vue/max-lines-per-block': ['warn', { template: 220, script: 200, style: 120 }],
     },
+  },
+
+  // Un almacén de Pinia es una única función que reúne el estado y las
+  // acciones de un dominio; medir su longitud como si fuera un procedimiento
+  // no dice nada útil.
+  {
+    files: ['**/stores/*.ts', '**/*.store.ts', '**/composables/*.ts'],
+    rules: { 'max-lines-per-function': 'off' },
   },
 
   // Las semillas son carga de datos lineal: partirlas en funciones diminutas

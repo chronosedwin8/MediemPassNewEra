@@ -76,6 +76,18 @@ npm run db:seed        # roles, permisos, competencias KMK, escalas y datos de d
 npm run dev            # backend (http://localhost:3000) y frontend (http://localhost:5173)
 ```
 
+### Cuentas de demostración
+
+Tras `npm run db:seed`, la contraseña de todas ellas es `Medienpass2026!`:
+
+| Usuario | Rol |
+|---|---|
+| `admin` | Administrador |
+| `stefan.brandt`, `laura.medina`, `carolina.pardo` | Docentes |
+| `sofia.restrepo0` … `santiago.cabrera29` | Estudiantes |
+
+Los estudiantes que llegan por sincronización con Phidias **no** tienen contraseña: nacen pendientes de activación, tal como se describe en [`docs/PHIDIAS.md`](docs/PHIDIAS.md).
+
 ## Comandos
 
 | Comando | Qué hace |

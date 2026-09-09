@@ -1,0 +1,157 @@
+@import 'tailwindcss';
+
+/**
+ * Sistema de diseño.
+ *
+ * Todos los colores, radios y sombras de la aplicación salen de aquí. Ningún
+ * componente define un color suelto: la especificación lo prohíbe
+ * explícitamente y, en la práctica, es lo que evita que en seis meses convivan
+ * cuatro azules distintos que nadie sabe cuál es el bueno.
+ *
+ * Los tokens se declaran como variables de tema de Tailwind 4, de modo que
+ * `bg-surface` o `text-muted` funcionan directamente en las plantillas.
+ */
+
+@theme {
+  /* --- Marca ------------------------------------------------------------ */
+  --color-brand-50: oklch(0.97 0.02 255);
+  --color-brand-100: oklch(0.93 0.04 255);
+  --color-brand-200: oklch(0.87 0.07 255);
+  --color-brand-300: oklch(0.78 0.11 255);
+  --color-brand-400: oklch(0.68 0.15 255);
+  --color-brand-500: oklch(0.58 0.18 255);
+  --color-brand-600: oklch(0.5 0.19 255);
+  --color-brand-700: oklch(0.42 0.17 255);
+  --color-brand-800: oklch(0.35 0.13 255);
+  --color-brand-900: oklch(0.28 0.09 255);
+
+  /* --- Superficies ------------------------------------------------------ */
+  --color-canvas: oklch(0.98 0.003 255);
+  --color-surface: oklch(1 0 0);
+  --color-surface-muted: oklch(0.965 0.004 255);
+  --color-border: oklch(0.9 0.006 255);
+  --color-border-strong: oklch(0.82 0.01 255);
+
+  /* --- Texto ------------------------------------------------------------ */
+  --color-ink: oklch(0.25 0.015 255);
+  --color-ink-muted: oklch(0.5 0.015 255);
+  --color-ink-subtle: oklch(0.62 0.012 255);
+  --color-ink-inverse: oklch(0.99 0 0);
+
+  /* --- Estados ---------------------------------------------------------- */
+  --color-success: oklch(0.6 0.15 150);
+  --color-success-soft: oklch(0.95 0.04 150);
+  --color-warning: oklch(0.72 0.15 75);
+  --color-warning-soft: oklch(0.96 0.05 75);
+  --color-danger: oklch(0.58 0.19 25);
+  --color-danger-soft: oklch(0.95 0.05 25);
+  --color-info: oklch(0.62 0.13 230);
+  --color-info-soft: oklch(0.95 0.04 230);
+
+  /* --- Tipografía ------------------------------------------------------- */
+  --font-sans:
+    'Inter var', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* --- Radios ----------------------------------------------------------- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* --- Sombras ---------------------------------------------------------- */
+  --shadow-card: 0 1px 2px oklch(0.25 0.015 255 / 0.06), 0 1px 3px oklch(0.25 0.015 255 / 0.05);
+  --shadow-raised: 0 4px 12px oklch(0.25 0.015 255 / 0.08);
+  --shadow-overlay: 0 16px 48px oklch(0.25 0.015 255 / 0.18);
+}
+
+/* --- Modo oscuro ---------------------------------------------------------
+ * Se redefinen solo los tokens, nunca los componentes: por eso el modo oscuro
+ * no exige tocar ni una plantilla.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-canvas: oklch(0.17 0.012 255);
+    --color-surface: oklch(0.21 0.014 255);
+    --color-surface-muted: oklch(0.25 0.014 255);
+    --color-border: oklch(0.32 0.016 255);
+    --color-border-strong: oklch(0.42 0.018 255);
+
+    --color-ink: oklch(0.95 0.005 255);
+    --color-ink-muted: oklch(0.75 0.012 255);
+    --color-ink-subtle: oklch(0.62 0.014 255);
+    --color-ink-inverse: oklch(0.17 0.012 255);
+
+    --color-success-soft: oklch(0.3 0.06 150);
+    --color-warning-soft: oklch(0.32 0.07 75);
+    --color-danger-soft: oklch(0.3 0.08 25);
+    --color-info-soft: oklch(0.3 0.06 230);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-canvas: oklch(0.17 0.012 255);
+  --color-surface: oklch(0.21 0.014 255);
+  --color-surface-muted: oklch(0.25 0.014 255);
+  --color-border: oklch(0.32 0.016 255);
+  --color-border-strong: oklch(0.42 0.018 255);
+  --color-ink: oklch(0.95 0.005 255);
+  --color-ink-muted: oklch(0.75 0.012 255);
+  --color-ink-subtle: oklch(0.62 0.014 255);
+  --color-ink-inverse: oklch(0.17 0.012 255);
+}
+
+/* --- Base ---------------------------------------------------------------- */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    margin: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Foco visible en todo elemento interactivo. Es lo primero que se pierde
+   * cuando alguien "limpia" los estilos por defecto, y sin ello la plataforma
+   * es inutilizable con teclado.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Se respeta a quien pide menos movimiento. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Salto al contenido: visible solo al enfocarlo con el teclado. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    z-index: 100;
+  }
+  .skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+  }
+}
