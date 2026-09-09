@@ -88,7 +88,7 @@ async function buildFixture(): Promise<Fixture> {
   const adminToken = await tokenFor('admin.capacitacion');
 
   const module = await request(app)
-    .post('/api/training/modules')
+    .post('/api/training/admin/modules')
     .set('Authorization', `Bearer ${adminToken}`)
     .send({
       code: 'KMK-M4',
@@ -100,10 +100,21 @@ async function buildFixture(): Promise<Fixture> {
 
   for (const index of [1, 2]) {
     await request(app)
-      .post(`/api/training/modules/${module.body.data.id}/contents`)
+      .post(`/api/training/admin/modules/${module.body.data.id}/contents`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ type: 'TEXT', title: trilingual(`Contenido ${index}`), body: trilingual('Texto') });
   }
+
+  /*
+   * El módulo nace en borrador y el profesorado solo ve lo publicado, así que
+   * la fixture lo publica. No es un rodeo para que pasen las pruebas: es el
+   * flujo real, y publicar aquí deja además comprobado que un módulo con
+   * material se puede publicar.
+   */
+  await request(app)
+    .post(`/api/training/admin/modules/${module.body.data.id}/publish`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .expect(200);
 
   return {
     teacherToken: await tokenFor('docente.capacitacion'),
@@ -151,7 +162,7 @@ async function createModuleAssessment(fixture: Fixture): Promise<string> {
     .set('Authorization', `Bearer ${fixture.teacherToken}`);
 
   await request(app)
-    .put(`/api/training/modules/${fixture.moduleId}/assessment`)
+    .put(`/api/training/admin/modules/${fixture.moduleId}/assessment`)
     .set('Authorization', `Bearer ${fixture.adminToken}`)
     .send({ assessmentId: assessment.body.data.assessmentId });
 
@@ -219,7 +230,7 @@ describe('módulos de capacitación', () => {
 
   it('un docente no puede crear módulos', async () => {
     const response = await request(app)
-      .post('/api/training/modules')
+      .post('/api/training/admin/modules')
       .set('Authorization', `Bearer ${fixture.teacherToken}`)
       .send({
         code: 'KMK-M9',
@@ -242,7 +253,7 @@ describe('evaluación del módulo con el motor común', () => {
       .send({ title: 'Evaluación de estudiantes' });
 
     const response = await request(app)
-      .put(`/api/training/modules/${fixture.moduleId}/assessment`)
+      .put(`/api/training/admin/modules/${fixture.moduleId}/assessment`)
       .set('Authorization', `Bearer ${fixture.adminToken}`)
       .send({ assessmentId: studentAssessment.body.data.assessmentId });
 

@@ -77,7 +77,8 @@
     "closeMenu": "Cerrar menú",
     "skipToContent": "Saltar al contenido",
     "aiGenerate": "Generar con IA",
-    "admin": "Administración"
+    "admin": "Administración",
+    "trainingAdmin": "Contenido formativo"
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -455,6 +456,60 @@
       "attempted": "Intentado",
       "inProgress": "En curso",
       "notStarted": "Sin empezar"
+    },
+    "admin": {
+      "title": "Contenido de capacitación",
+      "intro": "Escribe el material que verá el profesorado: texto con formato, imágenes, vídeos, enlaces y adjuntos. Nada se ve hasta que lo publiques.",
+      "summary": "{published} de {total} módulos publicados",
+      "newModule": "Nuevo módulo",
+      "empty": "Todavía no hay módulos.",
+      "code": "Código",
+      "codeHint": "Corto y estable. Se usa para identificar el módulo y no debería cambiar.",
+      "moduleData": "Datos del módulo",
+      "moduleTitle": "Título",
+      "moduleDescription": "Descripción",
+      "moduleDescriptionHint": "Lo que se lee en el listado, antes de entrar. Una o dos frases.",
+      "estimatedMinutes": "Duración estimada (minutos)",
+      "estimatedHint": "0 para no indicarla.",
+      "addBlock": "Añadir bloque",
+      "newBlock": "Bloque nuevo",
+      "noBlocks": "El módulo todavía no tiene material. Añade el primer bloque.",
+      "untitledBlock": "Sin título",
+      "blockType": "Tipo de bloque",
+      "blockTitle": "Título del bloque",
+      "blockBody": "Contenido",
+      "blockBodyHint": "Texto con formato. Las imágenes se insertan desde la barra de herramientas.",
+      "url": "Enlace",
+      "urlHint": "Obligatorio en vídeo y enlace. En los demás bloques es opcional.",
+      "attachments": "Adjuntos",
+      "addAttachment": "Adjuntar archivo",
+      "attachmentCount": "{count} adjuntos",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "publish": "Publicar",
+      "published": "Módulo publicado.",
+      "publishedAt": "Publicado el",
+      "unpublish": "Despublicar",
+      "unpublished": "Módulo retirado.",
+      "archive": "Archivar",
+      "deleted": "Módulo eliminado.",
+      "draftNotice": "Está en borrador: el profesorado no lo ve. Publícalo cuando esté listo.",
+      "needsContent": "Añade al menos un bloque de material antes de publicar.",
+      "needsOneLanguage": "Escríbelo al menos en un idioma.",
+      "withoutAssessment": "Sin evaluación",
+      "noAssessment": "Este módulo no tiene evaluación vinculada, así que no se puede certificar.",
+      "status": {
+        "DRAFT": "Borrador",
+        "PUBLISHED": "Publicado",
+        "ARCHIVED": "Archivado"
+      },
+      "type": {
+        "TEXT": "Texto",
+        "VIDEO": "Vídeo",
+        "DOCUMENT": "Documento",
+        "LINK": "Enlace",
+        "ACTIVITY": "Actividad"
+      }
     }
   },
   "ai": {
@@ -587,7 +642,8 @@
       "countChanged": "El número de archivos cambió mientras revisabas ({count} ahora). No se borró nada; vuelve a simular.",
       "kind": {
         "EVIDENCE": "Evidencias",
-        "QUESTION_MEDIA": "Imágenes de enunciados"
+        "QUESTION_MEDIA": "Imágenes de enunciados",
+        "TRAINING_MEDIA": "Material de capacitación"
       }
     }
   },

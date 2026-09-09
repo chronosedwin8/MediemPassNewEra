@@ -164,11 +164,13 @@ model StoredFile {
 
   /// Dimensiones por las que se puede borrar en bloque. Todas opcionales
   /// porque un archivo de enunciado no cuelga de ningún intento.
-  academicYearId String? @map("academic_year_id")
-  assessmentId   String? @map("assessment_id")
-  questionId     String? @map("question_id")
-  attemptId      String? @map("attempt_id")
-  answerId       String? @map("answer_id")
+  academicYearId    String? @map("academic_year_id")
+  assessmentId      String? @map("assessment_id")
+  questionId        String? @map("question_id")
+  attemptId         String? @map("attempt_id")
+  answerId          String? @map("answer_id")
+  /// Contenido de capacitación al que pertenece, si es material formativo.
+  trainingContentId String? @map("training_content_id")
 
   uploadedById String   @map("uploaded_by_id")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -184,12 +186,21 @@ model StoredFile {
   /// el bucket para siempre, sin nada que los mencione.
   assessment Assessment? @relation(fields: [assessmentId], references: [id])
 
+  /// Con cascada, al contrario que la evaluación: un bloque de material y sus
+  /// imágenes son una sola cosa, y borrar el bloque dejando las imágenes en el
+  /// bucket solo generaría basura que nadie volvería a mirar. El servicio las
+  /// elimina de S3 antes de borrar la fila.
+  trainingContent    TrainingContent?  @relation(fields: [trainingContentId], references: [id], onDelete: Cascade)
+  trainingProgress   TrainingProgress? @relation(fields: [trainingProgressId], references: [id])
+  trainingProgressId String?
+
   @@index([kind])
   @@index([assessmentId])
   @@index([academicYearId])
   @@index([attemptId])
   @@index([answerId])
   @@index([questionId])
+  @@index([trainingContentId])
   @@index([uploadedById])
   @@map("stored_files")
 }
@@ -199,6 +210,15 @@ enum StoredFileKind {
   QUESTION_MEDIA
   /// Evidencia subida por quien responde.
   EVIDENCE
+  /// Imagen, vídeo o documento del material de capacitación.
+  TRAINING_MEDIA
+}
+
+enum TrainingModuleStatus {
+  DRAFT
+  PUBLISHED
+  /// Retirado, pero conservado con el avance de quienes ya lo cursaron.
+  ARCHIVED
 }
 
 enum TrainingContentType {
@@ -1147,17 +1167,27 @@ model EvaluationPlanItem {
 // =============================================================================
 
 model TrainingModule {
-  id               String   @id @default(uuid(7))
-  kmkCompetencyId  String   @map("kmk_competency_id")
-  assessmentId     String?  @unique @map("assessment_id")
-  code             String   @unique
+  id               String  @id @default(uuid(7))
+  kmkCompetencyId  String  @map("kmk_competency_id")
+  assessmentId     String? @unique @map("assessment_id")
+  code             String  @unique
   title            Json
   description      Json
   position         Int
-  estimatedMinutes Int?     @map("estimated_minutes")
-  active           Boolean  @default(true)
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  estimatedMinutes Int?    @map("estimated_minutes")
+
+  /// Visible para el profesorado solo cuando está publicado.
+  ///
+  /// Se distingue de `active` porque son cosas distintas: un módulo puede estar
+  /// a medio escribir —y entonces nadie debe verlo— o estar terminado y
+  /// retirado de circulación sin borrarlo, conservando el avance de quienes ya
+  /// lo hicieron.
+  status      TrainingModuleStatus @default(DRAFT)
+  publishedAt DateTime?            @map("published_at")
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   kmkCompetency KmkCompetency      @relation(fields: [kmkCompetencyId], references: [id])
   assessment    Assessment?        @relation(fields: [assessmentId], references: [id])
@@ -1165,6 +1195,7 @@ model TrainingModule {
   progress      TrainingProgress[]
 
   @@index([kmkCompetencyId, position])
+  @@index([status])
   @@map("training_modules")
 }
 
@@ -1180,6 +1211,7 @@ model TrainingContent {
   updatedAt DateTime            @updatedAt @map("updated_at")
 
   module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  files  StoredFile[]
 
   @@unique([moduleId, position])
   @@map("training_contents")
@@ -1198,6 +1230,7 @@ model TrainingProgress {
   updatedAt    DateTime               @updatedAt @map("updated_at")
 
   module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  files  StoredFile[]
   user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([moduleId, userId])

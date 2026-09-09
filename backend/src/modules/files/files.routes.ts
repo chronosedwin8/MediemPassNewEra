@@ -8,6 +8,7 @@ import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
 import {
   confirmEvidenceUpload,
   confirmQuestionMediaUpload,
+  confirmTrainingMediaUpload,
   createDownloadUrl,
   deleteFile,
   getStorageUsage,
@@ -18,6 +19,8 @@ import {
   requestEvidenceUploadSchema,
   requestQuestionMediaUpload,
   requestQuestionMediaUploadSchema,
+  requestTrainingMediaUpload,
+  requestTrainingMediaUploadSchema,
 } from './files.service.js';
 
 export const filesRouter: Router = Router();
@@ -86,6 +89,32 @@ filesRouter.post(
   }),
 );
 
+// --- Material de capacitación ------------------------------------------------
+
+/**
+ * Imágenes, vídeos y adjuntos del material formativo.
+ *
+ * Mismo procedimiento en tres pasos que el resto: el archivo no pasa por el
+ * servidor y se comprueba contra el almacenamiento antes de registrarlo.
+ */
+filesRouter.post(
+  '/training-media/upload-url',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ body: requestTrainingMediaUploadSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await requestTrainingMediaUpload(req.body));
+  }),
+);
+
+filesRouter.post(
+  '/training-media/confirm',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ body: requestTrainingMediaUploadSchema.merge(withKey) }),
+  asyncHandler(async (req, res) => {
+    created(res, await confirmTrainingMediaUpload(requireAuth(req), req.body));
+  }),
+);
+
 // --- Acceso y borrado individual ---------------------------------------------
 
 /**
@@ -126,7 +155,7 @@ filesRouter.get(
 const purgeScopeSchema = z.object({
   assessmentId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  kind: z.enum(['EVIDENCE', 'QUESTION_MEDIA']).optional(),
+  kind: z.enum(['EVIDENCE', 'QUESTION_MEDIA', 'TRAINING_MEDIA']).optional(),
   before: z.coerce.date().optional(),
 });
 

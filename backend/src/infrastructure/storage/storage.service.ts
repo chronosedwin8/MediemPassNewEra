@@ -54,8 +54,14 @@ export interface Storage {
   createUploadTarget(key: string, contentType: string): Promise<UploadTarget>;
   /** Comprueba qué se subió realmente. */
   head(key: string): Promise<StoredObjectInfo | null>;
-  /** URL de descarga temporal. */
-  createDownloadUrl(key: string, filename: string): Promise<string>;
+  /**
+   * URL temporal de lectura.
+   *
+   * `inline` decide si el navegador lo muestra o lo descarga. Solo se usa con
+   * imágenes: un PDF o un HTML servidos en línea se abren en el dominio del
+   * bucket, y aunque no sea nuestro origen, no hay motivo para permitirlo.
+   */
+  createDownloadUrl(key: string, filename: string, inline?: boolean): Promise<string>;
   /** Borra en bloque. Devuelve cuántas claves se eliminaron. */
   remove(keys: string[]): Promise<number>;
 }
@@ -115,6 +121,15 @@ export function buildEvidenceKey(input: {
 }): string {
   const extension = extensionFor(input.contentType);
   return `evidence/${input.academicYearCode}/${input.assessmentId}/${input.attemptId}/${randomUUID()}.${extension}`;
+}
+
+export function buildTrainingMediaKey(input: {
+  moduleCode: string;
+  contentId: string;
+  contentType: string;
+}): string {
+  const extension = extensionFor(input.contentType);
+  return `training/${input.moduleCode}/${input.contentId}/${randomUUID()}.${extension}`;
 }
 
 export function buildQuestionMediaKey(input: {
@@ -197,13 +212,24 @@ class S3Storage implements Storage {
     }
   }
 
-  async createDownloadUrl(key: string, filename: string): Promise<string> {
+  async createDownloadUrl(key: string, filename: string, inline = false): Promise<string> {
+    const safeName = filename.replace(/["\\]/g, '');
+
     const command = new GetObjectCommand({
       Bucket: env.S3_BUCKET!,
       Key: key,
-      // Fuerza la descarga con su nombre original en lugar de abrirlo en la
-      // pestaña, que con un PDF o un HTML sería ejecutarlo en nuestro origen.
-      ResponseContentDisposition: `attachment; filename="${filename.replace(/["\\]/g, '')}"`,
+      /*
+       * Por defecto fuerza la descarga en lugar de abrirlo en la pestaña.
+       *
+       * `inline` existe para las imágenes incrustadas en un enunciado o en el
+       * material de capacitación: con `attachment`, el navegador se niega a
+       * pintarlas y quien redactó ve un hueco roto donde puso una foto. Se
+       * limita a imágenes; un PDF o un HTML servidos en línea se abrirían en
+       * el dominio del bucket, y no hay motivo para permitirlo.
+       */
+      ResponseContentDisposition: inline
+        ? `inline; filename="${safeName}"`
+        : `attachment; filename="${safeName}"`,
     });
 
     return getSignedUrl(this.s3, command, { expiresIn: env.S3_DOWNLOAD_URL_TTL_SECONDS });
@@ -270,8 +296,8 @@ export class MemoryStorage implements Storage {
     return Promise.resolve(this.objects.get(key) ?? null);
   }
 
-  createDownloadUrl(key: string): Promise<string> {
-    return Promise.resolve(`memory://download/${encodeURIComponent(key)}`);
+  createDownloadUrl(key: string, _filename: string, inline = false): Promise<string> {
+    return Promise.resolve(`memory://${inline ? 'inline' : 'download'}/${encodeURIComponent(key)}`);
   }
 
   remove(keys: string[]): Promise<number> {

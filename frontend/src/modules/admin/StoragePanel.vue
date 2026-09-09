@@ -38,7 +38,10 @@ const loading = ref(true);
 const busy = ref(false);
 const preview = ref<PurgePreview | null>(null);
 
-const scope = reactive({ academicYearId: '', kind: '' as '' | 'EVIDENCE' | 'QUESTION_MEDIA' });
+const scope = reactive({
+  academicYearId: '',
+  kind: '' as '' | 'EVIDENCE' | 'QUESTION_MEDIA' | 'TRAINING_MEDIA',
+});
 const reason = ref('');
 
 const canApply = computed(
@@ -198,6 +201,7 @@ const inputClass =
             <option value="">{{ t('admin.storage.allKinds') }}</option>
             <option value="EVIDENCE">{{ t('admin.storage.kind.EVIDENCE') }}</option>
             <option value="QUESTION_MEDIA">{{ t('admin.storage.kind.QUESTION_MEDIA') }}</option>
+            <option value="TRAINING_MEDIA">{{ t('admin.storage.kind.TRAINING_MEDIA') }}</option>
           </select>
         </label>
       </div>

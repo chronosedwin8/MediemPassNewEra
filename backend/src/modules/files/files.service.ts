@@ -11,6 +11,7 @@ import {
   ALLOWED_CONTENT_TYPES,
   buildEvidenceKey,
   buildQuestionMediaKey,
+  buildTrainingMediaKey,
   getStorage,
 } from '../../infrastructure/storage/storage.service.js';
 
@@ -48,6 +49,12 @@ export const requestEvidenceUploadSchema = uploadRequestSchema.extend({
 export const requestQuestionMediaUploadSchema = uploadRequestSchema.extend({
   versionId: z.string().uuid(),
 });
+
+export const requestTrainingMediaUploadSchema = uploadRequestSchema.extend({
+  contentId: z.string().uuid(),
+});
+
+export type RequestTrainingMediaUploadInput = z.infer<typeof requestTrainingMediaUploadSchema>;
 
 export const confirmUploadSchema = z.object({ storageKey: z.string().min(1).max(1024) });
 
@@ -302,7 +309,94 @@ export async function confirmQuestionMediaUpload(
 
   return {
     ...toView(file),
-    downloadUrl: await getStorage().createDownloadUrl(file.storageKey, file.originalName),
+    downloadUrl: await getStorage().createDownloadUrl(
+      file.storageKey,
+      file.originalName,
+      isInlineViewable(file.contentType),
+    ),
+  };
+}
+
+/** Las imágenes se sirven en línea; el resto, como descarga. */
+function isInlineViewable(contentType: string): boolean {
+  return contentType.startsWith('image/');
+}
+
+// --- Material de capacitación ------------------------------------------------
+
+/**
+ * El material de capacitación lo sube quien lo redacta.
+ *
+ * A diferencia de las evidencias, no cuelga de un intento ni de un año lectivo:
+ * es contenido de la plataforma y vive mientras viva su bloque. Por eso la fila
+ * solo lleva `trainingContentId`, y por eso esa relación sí borra en cascada.
+ */
+async function assertCanManageTraining(contentId: string) {
+  const content = await prisma.trainingContent.findUnique({
+    where: { id: contentId },
+    select: { id: true, module: { select: { code: true } } },
+  });
+  if (!content) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { contentId });
+  return content;
+}
+
+export async function requestTrainingMediaUpload(
+  input: RequestTrainingMediaUploadInput,
+): Promise<UploadTicket> {
+  assertWithinSizeLimit(input.sizeBytes);
+  const content = await assertCanManageTraining(input.contentId);
+
+  const storageKey = buildTrainingMediaKey({
+    moduleCode: content.module.code,
+    contentId: content.id,
+    contentType: input.contentType,
+  });
+
+  const target = await getStorage().createUploadTarget(storageKey, input.contentType);
+
+  return {
+    storageKey: target.key,
+    uploadUrl: target.uploadUrl,
+    expiresInSeconds: target.expiresInSeconds,
+    maxBytes: env.S3_MAX_UPLOAD_BYTES,
+  };
+}
+
+export async function confirmTrainingMediaUpload(
+  actor: Actor,
+  input: RequestTrainingMediaUploadInput & { storageKey: string },
+): Promise<StoredFileView & { downloadUrl: string }> {
+  await assertCanManageTraining(input.contentId);
+
+  const actual = await getStorage().head(input.storageKey);
+  if (!actual) {
+    throw AppError.conflict(ERROR_CODE.CONFLICT, 'The file was not uploaded', {
+      storageKey: input.storageKey,
+    });
+  }
+  assertWithinSizeLimit(actual.sizeBytes);
+
+  const file = await prisma.storedFile.create({
+    data: {
+      kind: 'TRAINING_MEDIA',
+      storageKey: input.storageKey,
+      bucket: env.S3_BUCKET ?? 'memory',
+      contentType: actual.contentType,
+      sizeBytes: actual.sizeBytes,
+      originalName: input.originalName,
+      trainingContentId: input.contentId,
+      uploadedById: actor.userId,
+    },
+    include: { uploadedBy: { select: { id: true, firstName: true, lastName: true } } },
+  });
+
+  return {
+    ...toView(file),
+    downloadUrl: await getStorage().createDownloadUrl(
+      file.storageKey,
+      file.originalName,
+      isInlineViewable(file.contentType),
+    ),
   };
 }
 
@@ -339,7 +433,16 @@ function toView(file: {
 function visibilityClause(actor: Actor): Prisma.StoredFileWhereInput {
   if (isAdmin(actor)) return {};
 
-  const clauses: Prisma.StoredFileWhereInput[] = [{ uploadedById: actor.userId }];
+  const clauses: Prisma.StoredFileWhereInput[] = [
+    { uploadedById: actor.userId },
+    /*
+     * El material de capacitación lo ve cualquiera que esté autenticado: es
+     * contenido de la plataforma, no de una persona. La alternativa sería
+     * comprobar el permiso de formación en cada descarga, lo que impediría que
+     * un administrador revisara el material que él mismo publicó.
+     */
+    { kind: 'TRAINING_MEDIA' },
+  ];
 
   if (actor.roles.includes(ROLE.TEACHER)) {
     clauses.push({ assessment: { createdById: actor.userId } });
@@ -370,11 +473,15 @@ export async function listEvidenceForAttempt(
 export async function createDownloadUrl(actor: Actor, fileId: string): Promise<string> {
   const file = await prisma.storedFile.findFirst({
     where: { id: fileId, ...visibilityClause(actor) },
-    select: { storageKey: true, originalName: true },
+    select: { storageKey: true, originalName: true, contentType: true },
   });
   if (!file) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { fileId });
 
-  return getStorage().createDownloadUrl(file.storageKey, file.originalName);
+  return getStorage().createDownloadUrl(
+    file.storageKey,
+    file.originalName,
+    isInlineViewable(file.contentType),
+  );
 }
 
 /** Un estudiante puede retirar su evidencia mientras el intento siga abierto. */
@@ -431,6 +538,7 @@ export interface PurgeScope {
   assessmentId?: string;
   academicYearId?: string;
   attemptId?: string;
+  trainingContentId?: string;
   kind?: 'EVIDENCE' | 'QUESTION_MEDIA';
   /** Borra todo lo anterior a esta fecha. */
   before?: Date;
@@ -447,6 +555,7 @@ function purgeWhere(scope: PurgeScope): Prisma.StoredFileWhereInput {
     ...(scope.assessmentId ? { assessmentId: scope.assessmentId } : {}),
     ...(scope.academicYearId ? { academicYearId: scope.academicYearId } : {}),
     ...(scope.attemptId ? { attemptId: scope.attemptId } : {}),
+    ...(scope.trainingContentId ? { trainingContentId: scope.trainingContentId } : {}),
     ...(scope.kind ? { kind: scope.kind } : {}),
     ...(scope.before ? { createdAt: { lt: scope.before } } : {}),
   };

@@ -169,6 +169,20 @@ const routes: RouteRecordRaw[] = [
         meta: { permissions: [PERMISSION.AI_GENERATE], titleKey: 'nav.aiGenerate' },
       },
 
+      // --- Redacción de capacitaciones --------------------------------------
+      {
+        path: 'admin/training',
+        name: 'training-admin',
+        component: () => import('@/modules/training/admin/TrainingAdminView.vue'),
+        meta: { permissions: [PERMISSION.TRAINING_MANAGE], titleKey: 'training.admin.title' },
+      },
+      {
+        path: 'admin/training/:id',
+        name: 'training-admin-module',
+        component: () => import('@/modules/training/admin/TrainingModuleEditor.vue'),
+        meta: { permissions: [PERMISSION.TRAINING_MANAGE], titleKey: 'training.admin.title' },
+      },
+
       // --- Administración --------------------------------------------------
       {
         path: 'admin',

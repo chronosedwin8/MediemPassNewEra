@@ -1,11 +1,9 @@
-import { z } from 'zod';
 import {
   ASSESSMENT_AUDIENCE,
   ASSESSMENT_PURPOSE,
   ASSESSMENT_VERSION_STATUS,
   ASSIGNMENT_TARGET_TYPE,
   ERROR_CODE,
-  localizedTextSchema,
   toPercentage,
   type LocalizedText,
   type Role,
@@ -25,26 +23,6 @@ import { isAdmin } from '../../middleware/authorize.js';
  * Construir aquí un segundo motor habría duplicado la corrección de trece
  * tipos de pregunta y dejado la estadística de docentes fuera del informe KMK.
  */
-
-export const createModuleSchema = z.object({
-  code: z.string().trim().min(2).max(30),
-  kmkCompetencyId: z.string().uuid(),
-  title: localizedTextSchema,
-  description: localizedTextSchema,
-  estimatedMinutes: z.number().int().min(1).max(600).nullable().optional(),
-  position: z.number().int().min(0).optional(),
-});
-
-export const createContentSchema = z.object({
-  type: z.enum(['TEXT', 'VIDEO', 'DOCUMENT', 'LINK', 'ACTIVITY']),
-  title: localizedTextSchema,
-  body: localizedTextSchema.optional(),
-  url: z.string().trim().max(1000).optional(),
-  position: z.number().int().min(0).optional(),
-});
-
-export type CreateModuleInput = z.infer<typeof createModuleSchema>;
-export type CreateContentInput = z.infer<typeof createContentSchema>;
 
 interface Actor {
   userId: string;
@@ -107,7 +85,9 @@ async function resolveAssessmentOutcome(
 export async function listModules(actor: Actor): Promise<TrainingModuleView[]> {
   const [modules, progress] = await Promise.all([
     prisma.trainingModule.findMany({
-      where: { active: true },
+      // Solo lo publicado: un borrador en la pantalla de quien se está
+      // formando es peor que no tener módulo.
+      where: { status: 'PUBLISHED' },
       orderBy: { position: 'asc' },
       include: moduleInclude,
     }),
@@ -150,7 +130,7 @@ export async function listModules(actor: Actor): Promise<TrainingModuleView[]> {
 
 export async function getModule(actor: Actor, id: string) {
   const module = await prisma.trainingModule.findFirst({
-    where: { id, active: true },
+    where: { id, status: 'PUBLISHED' },
     include: {
       ...moduleInclude,
       contents: { orderBy: { position: 'asc' } },
@@ -194,7 +174,7 @@ export async function recordProgress(
   contentsSeen: number,
 ): Promise<void> {
   const module = await prisma.trainingModule.findFirst({
-    where: { id: moduleId, active: true },
+    where: { id: moduleId, status: 'PUBLISHED' },
     include: { _count: { select: { contents: true } } },
   });
   if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
@@ -236,7 +216,7 @@ export async function recordProgress(
  */
 export async function startModuleAssessment(actor: Actor, moduleId: string): Promise<string> {
   const module = await prisma.trainingModule.findFirst({
-    where: { id: moduleId, active: true },
+    where: { id: moduleId, status: 'PUBLISHED' },
     select: { id: true, assessmentId: true },
   });
   if (!module?.assessmentId) {
@@ -331,56 +311,6 @@ export async function getTrainingSummary(
 }
 
 // --- Administración del contenido -------------------------------------------
-
-export async function createModule(input: CreateModuleInput) {
-  const competency = await prisma.kmkCompetency.findUnique({
-    where: { id: input.kmkCompetencyId },
-    select: { id: true },
-  });
-  if (!competency) throw AppError.notFound(ERROR_CODE.COMPETENCY_NOT_FOUND);
-
-  const existing = await prisma.trainingModule.findUnique({ where: { code: input.code } });
-  if (existing)
-    throw AppError.conflict(ERROR_CODE.DUPLICATE_RESOURCE, 'Module code already exists');
-
-  const maxPosition = await prisma.trainingModule.aggregate({ _max: { position: true } });
-
-  return prisma.trainingModule.create({
-    data: {
-      code: input.code,
-      kmkCompetencyId: input.kmkCompetencyId,
-      title: input.title,
-      description: input.description,
-      estimatedMinutes: input.estimatedMinutes ?? null,
-      position: input.position ?? (maxPosition._max.position ?? -1) + 1,
-    },
-    include: moduleInclude,
-  });
-}
-
-export async function addContent(moduleId: string, input: CreateContentInput) {
-  const module = await prisma.trainingModule.findUnique({
-    where: { id: moduleId },
-    select: { id: true },
-  });
-  if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
-
-  const maxPosition = await prisma.trainingContent.aggregate({
-    where: { moduleId },
-    _max: { position: true },
-  });
-
-  return prisma.trainingContent.create({
-    data: {
-      moduleId,
-      type: input.type,
-      title: input.title,
-      body: input.body ?? undefined,
-      url: input.url ?? null,
-      position: input.position ?? (maxPosition._max.position ?? -1) + 1,
-    },
-  });
-}
 
 /**
  * Vincula una evaluación al módulo.

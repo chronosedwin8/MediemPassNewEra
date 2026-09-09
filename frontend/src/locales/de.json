@@ -77,7 +77,8 @@
     "closeMenu": "Menü schließen",
     "skipToContent": "Zum Inhalt springen",
     "aiGenerate": "Mit KI erzeugen",
-    "admin": "Verwaltung"
+    "admin": "Verwaltung",
+    "trainingAdmin": "Fortbildungsinhalte"
   },
   "roles": {
     "ADMIN": "Administrator",
@@ -455,6 +456,60 @@
       "attempted": "Versucht",
       "inProgress": "Laufend",
       "notStarted": "Nicht begonnen"
+    },
+    "admin": {
+      "title": "Fortbildungsinhalte",
+      "intro": "Schreibe das Material für die Lehrkräfte: formatierter Text, Bilder, Videos, Links und Anhänge. Nichts ist sichtbar, bis du es veröffentlichst.",
+      "summary": "{published} von {total} Modulen veröffentlicht",
+      "newModule": "Neues Modul",
+      "empty": "Es gibt noch keine Module.",
+      "code": "Code",
+      "codeHint": "Kurz und stabil. Er identifiziert das Modul und sollte sich nicht ändern.",
+      "moduleData": "Moduldaten",
+      "moduleTitle": "Titel",
+      "moduleDescription": "Beschreibung",
+      "moduleDescriptionHint": "Was in der Übersicht steht, bevor man das Modul öffnet. Ein bis zwei Sätze.",
+      "estimatedMinutes": "Geschätzte Dauer (Minuten)",
+      "estimatedHint": "0, um sie nicht anzugeben.",
+      "addBlock": "Block hinzufügen",
+      "newBlock": "Neuer Block",
+      "noBlocks": "Das Modul hat noch kein Material. Füge den ersten Block hinzu.",
+      "untitledBlock": "Ohne Titel",
+      "blockType": "Blocktyp",
+      "blockTitle": "Titel des Blocks",
+      "blockBody": "Inhalt",
+      "blockBodyHint": "Formatierter Text. Bilder werden über die Symbolleiste eingefügt.",
+      "url": "Link",
+      "urlHint": "Bei Video und Link erforderlich. In anderen Blöcken optional.",
+      "attachments": "Anhänge",
+      "addAttachment": "Datei anhängen",
+      "attachmentCount": "{count} Anhänge",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "publish": "Veröffentlichen",
+      "published": "Modul veröffentlicht.",
+      "publishedAt": "Veröffentlicht am",
+      "unpublish": "Zurückziehen",
+      "unpublished": "Modul zurückgezogen.",
+      "archive": "Archivieren",
+      "deleted": "Modul gelöscht.",
+      "draftNotice": "Es ist ein Entwurf: Lehrkräfte sehen es nicht. Veröffentliche es, wenn es fertig ist.",
+      "needsContent": "Füge mindestens einen Materialblock hinzu, bevor du veröffentlichst.",
+      "needsOneLanguage": "Schreibe es in mindestens einer Sprache.",
+      "withoutAssessment": "Ohne Prüfung",
+      "noAssessment": "Diesem Modul ist keine Prüfung zugeordnet, es kann also nicht zertifiziert werden.",
+      "status": {
+        "DRAFT": "Entwurf",
+        "PUBLISHED": "Veröffentlicht",
+        "ARCHIVED": "Archiviert"
+      },
+      "type": {
+        "TEXT": "Text",
+        "VIDEO": "Video",
+        "DOCUMENT": "Dokument",
+        "LINK": "Link",
+        "ACTIVITY": "Aktivität"
+      }
     }
   },
   "ai": {
@@ -587,7 +642,8 @@
       "countChanged": "Die Anzahl hat sich während der Prüfung geändert (jetzt {count}). Es wurde nichts gelöscht; bitte erneut simulieren.",
       "kind": {
         "EVIDENCE": "Nachweise",
-        "QUESTION_MEDIA": "Aufgabenbilder"
+        "QUESTION_MEDIA": "Aufgabenbilder",
+        "TRAINING_MEDIA": "Fortbildungsmaterial"
       }
     }
   },

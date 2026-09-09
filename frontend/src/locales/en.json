@@ -77,7 +77,8 @@
     "closeMenu": "Close menu",
     "skipToContent": "Skip to content",
     "aiGenerate": "Generate with AI",
-    "admin": "Administration"
+    "admin": "Administration",
+    "trainingAdmin": "Training content"
   },
   "roles": {
     "ADMIN": "Administrator",
@@ -455,6 +456,60 @@
       "attempted": "Attempted",
       "inProgress": "In progress",
       "notStarted": "Not started"
+    },
+    "admin": {
+      "title": "Training content",
+      "intro": "Write the material teachers will see: formatted text, images, videos, links and attachments. Nothing is visible until you publish it.",
+      "summary": "{published} of {total} modules published",
+      "newModule": "New module",
+      "empty": "There are no modules yet.",
+      "code": "Code",
+      "codeHint": "Short and stable. It identifies the module and should not change.",
+      "moduleData": "Module details",
+      "moduleTitle": "Title",
+      "moduleDescription": "Description",
+      "moduleDescriptionHint": "What is read in the listing, before opening it. One or two sentences.",
+      "estimatedMinutes": "Estimated duration (minutes)",
+      "estimatedHint": "0 to leave it unset.",
+      "addBlock": "Add block",
+      "newBlock": "New block",
+      "noBlocks": "The module has no material yet. Add the first block.",
+      "untitledBlock": "Untitled",
+      "blockType": "Block type",
+      "blockTitle": "Block title",
+      "blockBody": "Content",
+      "blockBodyHint": "Formatted text. Images are inserted from the toolbar.",
+      "url": "Link",
+      "urlHint": "Required for video and link. Optional in other blocks.",
+      "attachments": "Attachments",
+      "addAttachment": "Attach file",
+      "attachmentCount": "{count} attachments",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "publish": "Publish",
+      "published": "Module published.",
+      "publishedAt": "Published on",
+      "unpublish": "Unpublish",
+      "unpublished": "Module withdrawn.",
+      "archive": "Archive",
+      "deleted": "Module deleted.",
+      "draftNotice": "It is a draft: teachers cannot see it. Publish it when it is ready.",
+      "needsContent": "Add at least one material block before publishing.",
+      "needsOneLanguage": "Write it in at least one language.",
+      "withoutAssessment": "No assessment",
+      "noAssessment": "This module has no linked assessment, so it cannot be certified.",
+      "status": {
+        "DRAFT": "Draft",
+        "PUBLISHED": "Published",
+        "ARCHIVED": "Archived"
+      },
+      "type": {
+        "TEXT": "Text",
+        "VIDEO": "Video",
+        "DOCUMENT": "Document",
+        "LINK": "Link",
+        "ACTIVITY": "Activity"
+      }
     }
   },
   "ai": {
@@ -587,7 +642,8 @@
       "countChanged": "The file count changed while you were reviewing ({count} now). Nothing was deleted; simulate again.",
       "kind": {
         "EVIDENCE": "Evidence",
-        "QUESTION_MEDIA": "Question images"
+        "QUESTION_MEDIA": "Question images",
+        "TRAINING_MEDIA": "Training material"
       }
     }
   },

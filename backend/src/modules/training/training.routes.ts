@@ -7,9 +7,22 @@ import { requirePermission } from '../../middleware/authorize.js';
 import { uuidParam, validate } from '../../middleware/validate.js';
 import {
   addContent,
-  createContentSchema,
+  contentSchema,
   createModule,
   createModuleSchema,
+  deleteContent,
+  deleteModule,
+  getModuleForEditing,
+  listAllModules,
+  publishModule,
+  reorderContents,
+  reorderSchema,
+  unpublishModule,
+  updateContent,
+  updateModule,
+  updateModuleSchema,
+} from './training-admin.service.js';
+import {
   getModule,
   getTrainingSummary,
   linkAssessment,
@@ -77,28 +90,127 @@ trainingRouter.get(
   }),
 );
 
-// --- Administración del contenido -------------------------------------------
+// --- Redacción del material --------------------------------------------------
 
-trainingRouter.post(
-  '/modules',
+/**
+ * Todos los módulos, incluidos los borradores.
+ *
+ * Va aparte de `/modules` porque responde a otra pregunta: aquel devuelve lo
+ * publicado y con el avance de quien pregunta; este devuelve lo que hay
+ * escrito, con su estado. Mezclarlos obligaría a que el listado del docente
+ * cargara datos que no le sirven y a filtrar en el cliente lo que no debe ver.
+ */
+trainingRouter.get(
+  '/admin/modules',
   requirePermission(PERMISSION.TRAINING_MANAGE),
-  validate({ body: createModuleSchema }),
+  asyncHandler(async (_req, res) => {
+    ok(res, await listAllModules());
+  }),
+);
+
+trainingRouter.get(
+  '/admin/modules/:id',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam() }),
   asyncHandler(async (req, res) => {
-    created(res, await createModule(req.body));
+    ok(res, await getModuleForEditing(req.params['id']!));
   }),
 );
 
 trainingRouter.post(
-  '/modules/:id/contents',
+  '/admin/modules',
   requirePermission(PERMISSION.TRAINING_MANAGE),
-  validate({ params: uuidParam(), body: createContentSchema }),
+  validate({ body: createModuleSchema }),
+  asyncHandler(async (req, res) => {
+    created(res, await createModule(requireAuth(req), req.body));
+  }),
+);
+
+trainingRouter.patch(
+  '/admin/modules/:id',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam(), body: updateModuleSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await updateModule(requireAuth(req), req.params['id']!, req.body));
+  }),
+);
+
+/** Publicar es un acto explícito: un módulo nunca se publica solo. */
+trainingRouter.post(
+  '/admin/modules/:id/publish',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam() }),
+  asyncHandler(async (req, res) => {
+    ok(res, await publishModule(requireAuth(req), req.params['id']!));
+  }),
+);
+
+trainingRouter.post(
+  '/admin/modules/:id/unpublish',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({
+    params: uuidParam(),
+    body: z.object({ archive: z.boolean().default(false) }),
+  }),
+  asyncHandler(async (req, res) => {
+    const { archive } = req.body as { archive: boolean };
+    ok(res, await unpublishModule(requireAuth(req), req.params['id']!, archive));
+  }),
+);
+
+trainingRouter.delete(
+  '/admin/modules/:id',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam() }),
+  asyncHandler(async (req, res) => {
+    await deleteModule(requireAuth(req), req.params['id']!);
+    noContent(res);
+  }),
+);
+
+// --- Bloques de contenido ----------------------------------------------------
+
+trainingRouter.post(
+  '/admin/modules/:id/contents',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam(), body: contentSchema }),
   asyncHandler(async (req, res) => {
     created(res, await addContent(req.params['id']!, req.body));
   }),
 );
 
 trainingRouter.put(
-  '/modules/:id/assessment',
+  '/admin/modules/:id/contents/order',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam(), body: reorderSchema }),
+  asyncHandler(async (req, res) => {
+    const { ids } = req.body as { ids: string[] };
+    await reorderContents(req.params['id']!, ids);
+    noContent(res);
+  }),
+);
+
+trainingRouter.patch(
+  '/admin/contents/:id',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam(), body: contentSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await updateContent(req.params['id']!, req.body));
+  }),
+);
+
+trainingRouter.delete(
+  '/admin/contents/:id',
+  requirePermission(PERMISSION.TRAINING_MANAGE),
+  validate({ params: uuidParam() }),
+  asyncHandler(async (req, res) => {
+    await deleteContent(requireAuth(req), req.params['id']!);
+    noContent(res);
+  }),
+);
+
+trainingRouter.put(
+  '/admin/modules/:id/assessment',
   requirePermission(PERMISSION.TRAINING_MANAGE),
   validate({
     params: uuidParam(),
