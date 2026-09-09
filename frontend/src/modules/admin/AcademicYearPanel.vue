@@ -24,12 +24,15 @@ interface Preview {
   sourceYear: { id: string; code: string; name: string } | null;
   groupsToCreate: number;
   inactiveGroupsSkipped: number;
+  evidenceFiles: number;
+  evidenceBytes: number;
 }
 
 interface RolloverResult {
   academicYearId: string;
   code: string;
   groupsCreated: number;
+  filesDeleted: number;
 }
 
 const { t } = useI18n();
@@ -46,6 +49,7 @@ const form = reactive({
   startDate: '',
   endDate: '',
   copyHomeroomTeachers: true,
+  purgeSourceYearEvidence: false,
 });
 
 /** El código del año es lo que se escribe para confirmar. */
@@ -89,6 +93,7 @@ async function run(): Promise<void> {
       startDate: form.startDate,
       endDate: form.endDate,
       copyHomeroomTeachers: form.copyHomeroomTeachers,
+      purgeSourceYearEvidence: form.purgeSourceYearEvidence,
       confirm: true,
     });
     toast.success(t('admin.year.done', { count: result.value.groupsCreated }));
@@ -111,6 +116,9 @@ const inputClass =
       <h2 class="text-lg font-semibold">{{ t('admin.year.doneTitle') }}</h2>
       <p class="mt-1 text-sm">
         {{ t('admin.year.doneDetail', { code: result.code, count: result.groupsCreated }) }}
+      </p>
+      <p v-if="result.filesDeleted > 0" class="mt-2 text-sm">
+        {{ t('admin.year.evidenceDeleted', { count: result.filesDeleted }) }}
       </p>
       <p class="mt-2 text-sm text-ink-muted">{{ t('admin.year.nextStep') }}</p>
     </BaseCard>
@@ -167,6 +175,31 @@ const inputClass =
             <span class="block text-sm font-medium">{{ t('admin.year.copyTeachers') }}</span>
             <span class="block text-xs text-ink-subtle">{{
               t('admin.year.copyTeachersHint')
+            }}</span>
+          </span>
+        </label>
+
+        <!--
+          Borrar las evidencias del año que se cierra está apagado por defecto,
+          y conviene entender por qué antes de encenderlo: el año anterior
+          conserva sus notas, y una nota puesta sobre una evidencia que ya no
+          existe es una nota que nadie puede volver a justificar.
+        -->
+        <label
+          v-if="(preview?.evidenceFiles ?? 0) > 0"
+          class="flex items-start gap-3 rounded-md border border-danger/40 bg-danger/5 p-3"
+        >
+          <input
+            v-model="form.purgeSourceYearEvidence"
+            type="checkbox"
+            class="mt-1 size-4 accent-danger"
+          />
+          <span>
+            <span class="block text-sm font-medium">
+              {{ t('admin.year.purgeEvidence', { count: preview?.evidenceFiles ?? 0 }) }}
+            </span>
+            <span class="block text-xs text-ink-subtle">{{
+              t('admin.year.purgeEvidenceHint')
             }}</span>
           </span>
         </label>

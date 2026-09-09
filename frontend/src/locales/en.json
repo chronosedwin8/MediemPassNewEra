@@ -155,7 +155,8 @@
     "deleteAssignments": "{count} assignments",
     "deleteAttempts": "{count} attempts and their grades, from {students} students",
     "deleteConfirmHint": "Type \"{title}\" to confirm.",
-    "deleteAction": "Delete permanently"
+    "deleteAction": "Delete permanently",
+    "deleteFiles": "{count} attached files ({size})"
   },
   "question": {
     "add": "Add question",
@@ -206,7 +207,19 @@
     "items": "Items",
     "textWithBlanks": "Text with blanks",
     "blankHint": "Each blank is written as a placeholder in double curly braces.",
-    "answerVariants": "answer, variant"
+    "answerVariants": "answer, variant",
+    "toolbar": "Text formatting",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "bulletList": "Bullet list",
+    "orderedList": "Numbered list",
+    "quote": "Quote",
+    "code": "Code",
+    "link": "Link",
+    "linkPrompt": "Link address",
+    "insertImage": "Image",
+    "remaining": "{count} characters left"
   },
   "attempt": {
     "questionOf": "Question {current} of {total}",
@@ -471,7 +484,8 @@
       "roles": "Roles and permissions",
       "settings": "Settings",
       "year": "Academic year",
-      "data": "Data"
+      "data": "Data",
+      "storage": "Files"
     },
     "roles": {
       "locked": "Locked",
@@ -510,7 +524,10 @@
       "done": "Year started with {count} groups.",
       "doneTitle": "Academic year started",
       "doneDetail": "{code} was created with {count} empty groups.",
-      "nextStep": "Next step: sync with Phidias to bring in enrolment."
+      "nextStep": "Next step: sync with Phidias to bring in enrolment.",
+      "purgeEvidence": "Also delete the {count} evidence files from the closing year",
+      "purgeEvidenceHint": "The previous year keeps its grades. A grade given on evidence that no longer exists is a grade nobody can justify later.",
+      "evidenceDeleted": "{count} evidence files from the previous year were deleted."
     },
     "data": {
       "backfillTitle": "Institutional emails",
@@ -543,6 +560,47 @@
       "scale": "Scales",
       "audit": "Audit",
       "phidias": "Phidias"
+    },
+    "storage": {
+      "title": "Stored files",
+      "intro": "Student evidence and question images. They live outside the database and are always served through temporary links.",
+      "totalFiles": "Files",
+      "totalSize": "Space used",
+      "files": "Files",
+      "size": "Size",
+      "byYear": "By academic year",
+      "purgeTitle": "Delete files",
+      "purgeIntro": "Choose the scope, simulate and review before deleting. There is no copy: what is deleted cannot be recovered.",
+      "scopeYear": "Academic year",
+      "scopeKind": "File type",
+      "allYears": "All years",
+      "allKinds": "All types",
+      "willDelete": "{count} files will be deleted ({size}).",
+      "irreversible": "The storage has no versioning: deletion is permanent.",
+      "reason": "Reason",
+      "reasonPlaceholder": "Recorded in the audit log. E.g.: data retention for 2025-2026.",
+      "deleteAction": "Delete {count} files",
+      "deleted": "{count} files deleted.",
+      "countChanged": "The file count changed while you were reviewing ({count} now). Nothing was deleted; simulate again.",
+      "kind": {
+        "EVIDENCE": "Evidence",
+        "QUESTION_MEDIA": "Question images"
+      }
     }
+  },
+  "evidence": {
+    "title": "Evidence",
+    "settings": "Evidence",
+    "allow": "Allow attaching evidence",
+    "allowHint": "Students can upload photos, documents or audio with their answer.",
+    "require": "Require it to finish",
+    "maxFiles": "Maximum files",
+    "required": "Required",
+    "add": "Attach file",
+    "hint": "Images, PDF, audio, video or Office documents. Up to 25 MB per file.",
+    "uploading": "Uploading {name}…",
+    "uploaded": "{name} uploaded.",
+    "uploadFailed": "The file could not be uploaded. Please try again.",
+    "limitReached": "You have reached the maximum of {count} files."
   }
 }

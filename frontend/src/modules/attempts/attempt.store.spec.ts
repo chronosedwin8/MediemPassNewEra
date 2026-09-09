@@ -46,6 +46,9 @@ function question(id: string, type: QuestionType = QUESTION_TYPE.SINGLE_CHOICE) 
         { id: 'o2', text: 'B' },
       ],
     },
+    allowsEvidence: false,
+    requiresEvidence: false,
+    maxEvidenceFiles: 3,
     competency: { id: 'k1', code: '1.1', name: { es: 'Buscar' }, color: '#000' },
   };
 }

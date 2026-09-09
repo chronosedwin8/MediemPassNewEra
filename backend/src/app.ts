@@ -23,6 +23,7 @@ import { attemptsRouter } from './modules/attempts/attempts.routes.js';
 import { statisticsRouter } from './modules/statistics/statistics.routes.js';
 import { plansRouter } from './modules/plans/plans.routes.js';
 import { trainingRouter } from './modules/training/training.routes.js';
+import { filesRouter } from './modules/files/files.routes.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
 
 /**
@@ -111,6 +112,7 @@ export function createApp(): Express {
   app.use('/api/evaluation-plans', plansRouter);
   app.use('/api/training', trainingRouter);
   app.use('/api/ai', aiRouter);
+  app.use('/api/files', filesRouter);
   app.use('/api/integrations/phidias', phidiasRouter);
 
   app.use(notFoundHandler);

@@ -138,6 +138,69 @@ enum ScaleKind {
   PERCENTAGE
 }
 
+/// Un archivo guardado en el almacenamiento externo.
+///
+/// Cada objeto de S3 tiene aquí su fila. No es duplicar información por gusto:
+/// es lo que permite responder «¿qué hay guardado de esta evaluación?» o
+/// «¿cuánto ocupa el año pasado?» sin recorrer el bucket, y sobre todo lo que
+/// hace posible **borrar de verdad**. Borrar por prefijo obligaría a que la
+/// ruta codificara todas las dimensiones por las que alguien puede querer
+/// limpiar; con una fila por archivo, cada dimensión es una columna indexada.
+///
+/// Si una fila desaparece sin que se borre el objeto, queda basura invisible.
+/// Por eso el borrado siempre va de S3 primero y de la fila después: un objeto
+/// sin fila se detecta comparando; una fila sin objeto no se detecta nunca.
+model StoredFile {
+  id   String         @id @default(uuid(7))
+  kind StoredFileKind
+
+  /// Clave completa dentro del bucket.
+  storageKey   String @unique @map("storage_key")
+  bucket       String
+  contentType  String @map("content_type")
+  sizeBytes    Int    @map("size_bytes")
+  /// Nombre con el que se subió, para mostrarlo al descargar.
+  originalName String @map("original_name")
+
+  /// Dimensiones por las que se puede borrar en bloque. Todas opcionales
+  /// porque un archivo de enunciado no cuelga de ningún intento.
+  academicYearId String? @map("academic_year_id")
+  assessmentId   String? @map("assessment_id")
+  questionId     String? @map("question_id")
+  attemptId      String? @map("attempt_id")
+  answerId       String? @map("answer_id")
+
+  uploadedById String   @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  uploadedBy   User          @relation("FileUploadedBy", fields: [uploadedById], references: [id], onDelete: Cascade)
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id])
+
+  /// Sin `onDelete: Cascade`, y es deliberado.
+  ///
+  /// La restricción impide borrar una evaluación mientras le queden archivos,
+  /// lo que obliga a que el borrado pase por el código que también los elimina
+  /// de S3. Con cascada, las filas desaparecerían y los objetos se quedarían en
+  /// el bucket para siempre, sin nada que los mencione.
+  assessment Assessment? @relation(fields: [assessmentId], references: [id])
+
+  @@index([kind])
+  @@index([assessmentId])
+  @@index([academicYearId])
+  @@index([attemptId])
+  @@index([answerId])
+  @@index([questionId])
+  @@index([uploadedById])
+  @@map("stored_files")
+}
+
+enum StoredFileKind {
+  /// Imagen o adjunto del enunciado de una pregunta.
+  QUESTION_MEDIA
+  /// Evidencia subida por quien responde.
+  EVIDENCE
+}
+
 enum TrainingContentType {
   TEXT
   VIDEO
@@ -212,18 +275,19 @@ model User {
   assignmentRecipients AssignmentRecipient[]
   trainingProgress     TrainingProgress[]
   notifications        Notification[]
+  uploadedFiles        StoredFile[]          @relation("FileUploadedBy")
   auditLogs            AuditLog[]
 
-  createdAssessments   Assessment[]        @relation("AssessmentCreatedBy")
-  publishedVersions    AssessmentVersion[] @relation("VersionPublishedBy")
-  createdAssignments   Assignment[]        @relation("AssignmentAssignedBy")
-  gradedAnswers        AttemptAnswer[]     @relation("AnswerGradedBy")
-  createdScales        GradingScale[]      @relation("ScaleCreatedBy")
-  updatedSettings      SystemSetting[]     @relation("SettingUpdatedBy")
-  aiRequests           AiGenerationRequest[]
-  triggeredSyncs       PhidiasSyncLog[]
-  createdPlans         EvaluationPlan[]    @relation("PlanCreatedBy")
-  homeroomGroups       Group[]             @relation("GroupHomeroomTeacher")
+  createdAssessments Assessment[]          @relation("AssessmentCreatedBy")
+  publishedVersions  AssessmentVersion[]   @relation("VersionPublishedBy")
+  createdAssignments Assignment[]          @relation("AssignmentAssignedBy")
+  gradedAnswers      AttemptAnswer[]       @relation("AnswerGradedBy")
+  createdScales      GradingScale[]        @relation("ScaleCreatedBy")
+  updatedSettings    SystemSetting[]       @relation("SettingUpdatedBy")
+  aiRequests         AiGenerationRequest[]
+  triggeredSyncs     PhidiasSyncLog[]
+  createdPlans       EvaluationPlan[]      @relation("PlanCreatedBy")
+  homeroomGroups     Group[]               @relation("GroupHomeroomTeacher")
 
   /// El borrado es lógico, pero los identificadores únicos se liberan al
   /// borrar: el servicio pone `email` a null y renombra `username` con un
@@ -352,6 +416,7 @@ model AcademicYear {
   periods AcademicPeriod[]
   groups  Group[]
   plans   EvaluationPlan[]
+  files   StoredFile[]
 
   @@unique([externalId])
   @@index([isCurrent])
@@ -413,7 +478,7 @@ model GradeLevel {
   active           Boolean  @default(true)
   createdAt        DateTime @default(now()) @map("created_at")
 
-  educationLevel EducationLevel @relation(fields: [educationLevelId], references: [id])
+  educationLevel EducationLevel   @relation(fields: [educationLevelId], references: [id])
   groups         Group[]
   students       Student[]
   assessments    Assessment[]
@@ -472,19 +537,19 @@ model Subject {
 /// identificador externo se clava junto al año: Phidias reasigna sus ids de
 /// sección en cada curso.
 model Group {
-  id                String         @id @default(uuid(7))
-  academicYearId    String         @map("academic_year_id")
-  gradeLevelId      String         @map("grade_level_id")
-  subjectId         String?        @map("subject_id")
-  homeroomTeacherId String?        @map("homeroom_teacher_id")
+  id                String          @id @default(uuid(7))
+  academicYearId    String          @map("academic_year_id")
+  gradeLevelId      String          @map("grade_level_id")
+  subjectId         String?         @map("subject_id")
+  homeroomTeacherId String?         @map("homeroom_teacher_id")
   code              String
   name              String
   externalSource    ExternalSource? @map("external_source")
   externalId        Int?            @map("external_id")
-  active            Boolean        @default(true)
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
-  deletedAt         DateTime?      @map("deleted_at")
+  active            Boolean         @default(true)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  deletedAt         DateTime?       @map("deleted_at")
 
   academicYear    AcademicYear      @relation(fields: [academicYearId], references: [id])
   gradeLevel      GradeLevel        @relation(fields: [gradeLevelId], references: [id])
@@ -526,19 +591,19 @@ model GroupMembership {
 /// Perfil de estudiante. `externalId` es el `person.id` de Phidias, que sí es
 /// estable entre cursos, a diferencia de los ids de sección.
 model Student {
-  id               String           @id @default(uuid(7))
-  userId           String           @unique @map("user_id")
-  externalSource   ExternalSource?  @map("external_source")
-  externalId       Int?             @map("external_id")
+  id                  String           @id @default(uuid(7))
+  userId              String           @unique @map("user_id")
+  externalSource      ExternalSource?  @map("external_source")
+  externalId          Int?             @map("external_id")
   /// Código institucional. Ausente en parte de la matrícula real.
-  code             String?
-  gradeLevelId     String?          @map("grade_level_id")
-  enrollmentStatus EnrollmentStatus @default(UNKNOWN) @map("enrollment_status")
+  code                String?
+  gradeLevelId        String?          @map("grade_level_id")
+  enrollmentStatus    EnrollmentStatus @default(UNKNOWN) @map("enrollment_status")
   /// Valor original de Phidias, conservado para diagnosticar mapeos nuevos.
-  rawEnrollmentStatus String?       @map("raw_enrollment_status")
-  lastSyncedAt     DateTime?        @map("last_synced_at")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
+  rawEnrollmentStatus String?          @map("raw_enrollment_status")
+  lastSyncedAt        DateTime?        @map("last_synced_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   gradeLevel  GradeLevel?       @relation(fields: [gradeLevelId], references: [id])
@@ -647,14 +712,14 @@ model KmkSubcompetency {
 }
 
 model KmkIndicator {
-  id                String   @id @default(uuid(7))
-  subcompetencyId   String   @map("subcompetency_id")
-  code              String   @unique
-  name              Json
-  description       Json?
-  position          Int
-  active            Boolean  @default(true)
-  createdAt         DateTime @default(now()) @map("created_at")
+  id              String   @id @default(uuid(7))
+  subcompetencyId String   @map("subcompetency_id")
+  code            String   @unique
+  name            Json
+  description     Json?
+  position        Int
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
 
   subcompetency KmkSubcompetency @relation(fields: [subcompetencyId], references: [id], onDelete: Cascade)
 
@@ -734,12 +799,13 @@ model Assessment {
   updatedAt    DateTime           @updatedAt @map("updated_at")
   deletedAt    DateTime?          @map("deleted_at")
 
-  createdBy      User                @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
-  subject        Subject?            @relation(fields: [subjectId], references: [id])
-  area           AcademicArea?       @relation(fields: [areaId], references: [id])
-  gradeLevel     GradeLevel?         @relation(fields: [gradeLevelId], references: [id])
+  createdBy      User                 @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
+  subject        Subject?             @relation(fields: [subjectId], references: [id])
+  area           AcademicArea?        @relation(fields: [areaId], references: [id])
+  gradeLevel     GradeLevel?          @relation(fields: [gradeLevelId], references: [id])
   versions       AssessmentVersion[]
   planItems      EvaluationPlanItem[]
+  storedFiles    StoredFile[]
   trainingModule TrainingModule?
 
   @@index([createdById, deletedAt])
@@ -762,11 +828,11 @@ model AssessmentVersion {
   difficulty   Difficulty @default(INTERMEDIATE)
   language     Language   @default(es)
 
-  timeLimitMinutes Int?    @map("time_limit_minutes")
+  timeLimitMinutes  Int?     @map("time_limit_minutes")
   /// Si es nulo se usa el de la escala. Permite endurecer una evaluación
   /// concreta sin tocar la configuración global.
   passingPercentage Decimal? @map("passing_percentage") @db.Decimal(5, 2)
-  gradingScaleId   String?  @map("grading_scale_id")
+  gradingScaleId    String?  @map("grading_scale_id")
 
   showResultsImmediately Boolean @default(true) @map("show_results_immediately")
   showCorrectAnswers     Boolean @default(true) @map("show_correct_answers")
@@ -784,9 +850,9 @@ model AssessmentVersion {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  assessment   Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  publishedBy  User?                @relation("VersionPublishedBy", fields: [publishedById], references: [id])
-  gradingScale GradingScale?        @relation(fields: [gradingScaleId], references: [id])
+  assessment   Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  publishedBy  User?                 @relation("VersionPublishedBy", fields: [publishedById], references: [id])
+  gradingScale GradingScale?         @relation(fields: [gradingScaleId], references: [id])
   questions    Question[]
   assignments  Assignment[]
   attempts     AssessmentAttempt[]
@@ -826,13 +892,23 @@ model Question {
   payload  Json
   mediaUrl String? @map("media_url")
 
+  /// El docente decide si esta pregunta admite adjuntar evidencia.
+  ///
+  /// Apagado por defecto: pedir un archivo cuando no hace falta es fricción
+  /// para el estudiante y almacenamiento que alguien tendrá que borrar.
+  allowsEvidence   Boolean @default(false) @map("allows_evidence")
+  /// Si además es obligatoria para poder finalizar.
+  requiresEvidence Boolean @default(false) @map("requires_evidence")
+  /// Cuántos archivos se admiten por respuesta.
+  maxEvidenceFiles Int     @default(3) @map("max_evidence_files")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  version         AssessmentVersion @relation(fields: [assessmentVersionId], references: [id], onDelete: Cascade)
-  kmkCompetency   KmkCompetency     @relation(fields: [kmkCompetencyId], references: [id])
+  version          AssessmentVersion @relation(fields: [assessmentVersionId], references: [id], onDelete: Cascade)
+  kmkCompetency    KmkCompetency     @relation(fields: [kmkCompetencyId], references: [id])
   kmkSubcompetency KmkSubcompetency? @relation(fields: [kmkSubcompetencyId], references: [id])
-  answers         AttemptAnswer[]
+  answers          AttemptAnswer[]
 
   @@unique([assessmentVersionId, position])
   @@index([assessmentVersionId])
@@ -917,13 +993,13 @@ model AssessmentAttempt {
   attemptNumber         Int           @map("attempt_number")
   status                AttemptStatus @default(IN_PROGRESS)
 
-  startedAt   DateTime  @default(now()) @map("started_at")
+  startedAt       DateTime  @default(now()) @map("started_at")
   /// Momento límite calculado por el servidor al iniciar. El cliente nunca
   /// es autoridad sobre el tiempo.
-  deadlineAt  DateTime? @map("deadline_at")
-  submittedAt DateTime? @map("submitted_at")
-  gradedAt    DateTime? @map("graded_at")
-  durationSeconds Int?  @map("duration_seconds")
+  deadlineAt      DateTime? @map("deadline_at")
+  submittedAt     DateTime? @map("submitted_at")
+  gradedAt        DateTime? @map("graded_at")
+  durationSeconds Int?      @map("duration_seconds")
 
   pointsEarned   Decimal @default(0) @map("points_earned") @db.Decimal(8, 2)
   pointsPossible Decimal @default(0) @map("points_possible") @db.Decimal(8, 2)
@@ -972,18 +1048,18 @@ model AttemptAnswer {
   /// Respuesta del estudiante, con forma propia de cada tipo de pregunta.
   response Json?
 
-  isCorrect      Boolean? @map("is_correct")
-  pointsEarned   Decimal  @default(0) @map("points_earned") @db.Decimal(6, 2)
-  pointsPossible Decimal  @default(0) @map("points_possible") @db.Decimal(6, 2)
-  autoGraded     Boolean  @default(false) @map("auto_graded")
-  requiresManualGrading Boolean @default(false) @map("requires_manual_grading")
+  isCorrect             Boolean? @map("is_correct")
+  pointsEarned          Decimal  @default(0) @map("points_earned") @db.Decimal(6, 2)
+  pointsPossible        Decimal  @default(0) @map("points_possible") @db.Decimal(6, 2)
+  autoGraded            Boolean  @default(false) @map("auto_graded")
+  requiresManualGrading Boolean  @default(false) @map("requires_manual_grading")
 
   teacherFeedback String?   @map("teacher_feedback")
   gradedById      String?   @map("graded_by_id")
   gradedAt        DateTime? @map("graded_at")
 
-  answeredAt DateTime  @default(now()) @map("answered_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  answeredAt DateTime @default(now()) @map("answered_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // --- Copias para analítica. Se fijan al calificar y no se recalculan. ---
   questionType       QuestionType @map("question_type")
@@ -1051,10 +1127,10 @@ model EvaluationPlanItem {
   required         Boolean   @default(true)
   createdAt        DateTime  @default(now()) @map("created_at")
 
-  plan           EvaluationPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
-  academicPeriod AcademicPeriod  @relation(fields: [academicPeriodId], references: [id])
-  assessment     Assessment?     @relation(fields: [assessmentId], references: [id])
-  kmkCompetency  KmkCompetency?  @relation(fields: [kmkCompetencyId], references: [id])
+  plan           EvaluationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  academicPeriod AcademicPeriod @relation(fields: [academicPeriodId], references: [id])
+  assessment     Assessment?    @relation(fields: [assessmentId], references: [id])
+  kmkCompetency  KmkCompetency? @relation(fields: [kmkCompetencyId], references: [id])
   assignments    Assignment[]
 
   @@unique([planId, position])
@@ -1110,16 +1186,16 @@ model TrainingContent {
 }
 
 model TrainingProgress {
-  id            String                 @id @default(uuid(7))
-  moduleId      String                 @map("module_id")
-  userId        String                 @map("user_id")
-  status        TrainingProgressStatus @default(NOT_STARTED)
-  contentsSeen  Int                    @default(0) @map("contents_seen")
-  startedAt     DateTime?              @map("started_at")
-  completedAt   DateTime?              @map("completed_at")
-  lastAccessAt  DateTime?              @map("last_access_at")
-  createdAt     DateTime               @default(now()) @map("created_at")
-  updatedAt     DateTime               @updatedAt @map("updated_at")
+  id           String                 @id @default(uuid(7))
+  moduleId     String                 @map("module_id")
+  userId       String                 @map("user_id")
+  status       TrainingProgressStatus @default(NOT_STARTED)
+  contentsSeen Int                    @default(0) @map("contents_seen")
+  startedAt    DateTime?              @map("started_at")
+  completedAt  DateTime?              @map("completed_at")
+  lastAccessAt DateTime?              @map("last_access_at")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
 
   module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1137,23 +1213,23 @@ model TrainingProgress {
 /// para poder auditar qué produjo el modelo, incluso cuando fue rechazada.
 /// Una generación nunca publica: siempre aterriza en una versión DRAFT.
 model AiGenerationRequest {
-  id          String             @id @default(uuid(7))
-  requestedById String           @map("requested_by_id")
-  status      AiGenerationStatus @default(PENDING)
-  provider    String
-  model       String
+  id                  String             @id @default(uuid(7))
+  requestedById       String             @map("requested_by_id")
+  status              AiGenerationStatus @default(PENDING)
+  provider            String
+  model               String
   /// Parámetros pedidos por el docente: materia, grado, competencia, tema…
-  params      Json
-  rawResponse Json?              @map("raw_response")
+  params              Json
+  rawResponse         Json?              @map("raw_response")
   /// Motivo del rechazo cuando la respuesta no superó validación.
-  validationErrors Json?         @map("validation_errors")
-  assessmentVersionId String?    @map("assessment_version_id")
-  promptTokens     Int?          @map("prompt_tokens")
-  completionTokens Int?          @map("completion_tokens")
-  durationMs       Int?          @map("duration_ms")
-  errorMessage     String?       @map("error_message")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  completedAt DateTime?          @map("completed_at")
+  validationErrors    Json?              @map("validation_errors")
+  assessmentVersionId String?            @map("assessment_version_id")
+  promptTokens        Int?               @map("prompt_tokens")
+  completionTokens    Int?               @map("completion_tokens")
+  durationMs          Int?               @map("duration_ms")
+  errorMessage        String?            @map("error_message")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  completedAt         DateTime?          @map("completed_at")
 
   requestedBy User               @relation(fields: [requestedById], references: [id])
   version     AssessmentVersion? @relation(fields: [assessmentVersionId], references: [id])

@@ -260,7 +260,14 @@ describe('POST /api/integrations/phidias/sync/students', () => {
     expect(row.rawEnrollmentStatus).toBe('suspendido');
   });
 
-  it('acepta estudiantes sin correo', async () => {
+  /**
+   * El correo institucional se deriva del código, no del campo de Phidias.
+   *
+   * Es la razón de ser de la regla: de 1.177 estudiantes matriculados, 20 no
+   * tienen correo registrado y 74 usan cuentas personales. Con el campo de
+   * Phidias, 94 se quedaban sin poder entrar.
+   */
+  it('deriva el correo del código aunque Phidias no traiga ninguno', async () => {
     await createAdmin({ username: 'admin.sincorreo' });
     stub.sections = [section('K8A', 'KLASSE 8', [student({ externalId: 3001, email: null })])];
 
@@ -271,16 +278,39 @@ describe('POST /api/integrations/phidias/sync/students', () => {
 
     expect(response.body.data.studentsCreated).toBe(1);
     const created = await prisma.student.findFirstOrThrow({ include: { user: true } });
-    expect(created.user.email).toBeNull();
+    expect(created.user.email).toBe('3001@colegioaleman.edu.co');
+    // Y el usuario es el mismo correo: pedirle recordar dos cosas distintas
+    // es soporte innecesario.
+    expect(created.user.username).toBe('3001@colegioaleman.edu.co');
+  });
+
+  /** El correo personal que traiga Phidias no manda sobre el institucional. */
+  it('ignora el correo personal de Phidias en favor del institucional', async () => {
+    await createAdmin({ username: 'admin.personal' });
+    stub.sections = [
+      section('K8A', 'KLASSE 8', [
+        student({ externalId: 3005, email: 'familia.perez@gmail.com' }),
+      ]),
+    ];
+
+    await request(app)
+      .post('/api/integrations/phidias/sync/students')
+      .set('Authorization', `Bearer ${await tokenFor('admin.personal')}`)
+      .send({});
+
+    const created = await prisma.student.findFirstOrThrow({ include: { user: true } });
+    expect(created.user.email).toBe('3005@colegioaleman.edu.co');
   });
 
   it('anota como incidencia un correo repetido y continúa', async () => {
     await createAdmin({ username: 'admin.duplicado' });
     // Caso real: en la matrícula hay un correo compartido por dos personas.
+    // Con el correo derivado del código, el choque lo provocan dos
+    // estudiantes distintos con el mismo código en la matrícula.
     stub.sections = [
       section('K8A', 'KLASSE 8', [
-        student({ externalId: 3001, email: 'repetido@colegioaleman.edu.co' }),
-        student({ externalId: 3002, email: 'repetido@colegioaleman.edu.co' }),
+        student({ externalId: 3001, code: '9999' }),
+        student({ externalId: 3002, code: '9999' }),
       ]),
     ];
 
@@ -298,14 +328,14 @@ describe('POST /api/integrations/phidias/sync/students', () => {
     ).toBe(true);
 
     const withEmail = await prisma.user.count({
-      where: { email: 'repetido@colegioaleman.edu.co' },
+      where: { email: '9999@colegioaleman.edu.co' },
     });
     expect(withEmail).toBe(1);
   });
 
   it('resuelve el choque de nombre de usuario sin perder al estudiante', async () => {
     await createAdmin({ username: 'admin.usuario' });
-    await createTeacher({ username: 'alumno3001' });
+    await createTeacher({ username: '3001@colegioaleman.edu.co' });
 
     stub.sections = [section('K8A', 'KLASSE 8', [student({ externalId: 3001 })])];
 
@@ -320,7 +350,7 @@ describe('POST /api/integrations/phidias/sync/students', () => {
     ).toBe(true);
 
     const created = await prisma.student.findFirstOrThrow({ include: { user: true } });
-    expect(created.user.username).toBe('alumno3001.3001');
+    expect(created.user.username).toBe('3001.3001@colegioaleman.edu.co');
   });
 
   it('anota el grado desconocido como incidencia sin abortar el resto', async () => {

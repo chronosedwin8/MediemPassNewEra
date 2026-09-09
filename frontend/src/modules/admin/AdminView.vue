@@ -9,6 +9,7 @@ import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import { useToast } from '@/composables/useToast';
 import RolePermissionsPanel from './RolePermissionsPanel.vue';
 import AcademicYearPanel from './AcademicYearPanel.vue';
+import StoragePanel from './StoragePanel.vue';
 
 /**
  * Administración de la plataforma.
@@ -23,7 +24,7 @@ import AcademicYearPanel from './AcademicYearPanel.vue';
  * hacerlas con conocimiento de causa.
  */
 
-type TabKey = 'roles' | 'settings' | 'year' | 'data';
+type TabKey = 'roles' | 'settings' | 'year' | 'storage' | 'data';
 
 interface SettingsPayload {
   [key: string]: unknown;
@@ -52,6 +53,7 @@ const TABS: Array<{ key: TabKey; labelKey: string }> = [
   { key: 'roles', labelKey: 'admin.tabs.roles' },
   { key: 'settings', labelKey: 'admin.tabs.settings' },
   { key: 'year', labelKey: 'admin.tabs.year' },
+  { key: 'storage', labelKey: 'admin.tabs.storage' },
   { key: 'data', labelKey: 'admin.tabs.data' },
 ];
 
@@ -200,6 +202,8 @@ const inputClass =
     </div>
 
     <AcademicYearPanel v-else-if="tab === 'year'" />
+
+    <StoragePanel v-else-if="tab === 'storage'" />
 
     <!-- Datos -->
     <div v-else class="flex flex-col gap-4">

@@ -234,5 +234,13 @@ export const AUDIT_ACTION = {
    */
   DELETE_ASSESSMENT: 'DELETE_ASSESSMENT',
   ROLLOVER_ACADEMIC_YEAR: 'ROLLOVER_ACADEMIC_YEAR',
+  /**
+   * Borrado de archivos del almacenamiento externo.
+   *
+   * Entrada propia porque son datos que salen del sistema: una vez eliminados
+   * de S3 no hay copia, y conviene poder decir después quién los borró, cuántos
+   * eran y con qué criterio.
+   */
+  DELETE_STORED_FILES: 'DELETE_STORED_FILES',
 } as const;
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

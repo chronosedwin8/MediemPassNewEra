@@ -27,6 +27,9 @@ export interface AttemptQuestion {
   position: number;
   mediaUrl: string | null;
   payload: Record<string, unknown>;
+  allowsEvidence: boolean;
+  requiresEvidence: boolean;
+  maxEvidenceFiles: number;
   competency: { id: string; code: string; name: Record<string, string>; color: string };
 }
 

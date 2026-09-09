@@ -17,6 +17,7 @@ import { buildPaginationMeta } from '../../shared/http/response.js';
 import { assertOwnership, isAdmin } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { getActiveScale } from '../settings/scales.service.js';
+import { previewPurge, purgeFiles } from '../files/files.service.js';
 import { createLogger } from '../../shared/logger.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 
@@ -582,6 +583,9 @@ export interface AssessmentImpact {
   answers: number;
   /** Estudiantes distintos con al menos un intento registrado. */
   students: number;
+  /** Archivos en el almacenamiento externo que se destruirían con ella. */
+  files: number;
+  fileBytes: number;
 }
 
 export async function getDeletionImpact(actor: Actor, id: string): Promise<AssessmentImpact> {
@@ -593,7 +597,7 @@ export async function getDeletionImpact(actor: Actor, id: string): Promise<Asses
 
   assertOwnership(actor, assessment.createdById, { assessmentId: id });
 
-  const [versions, questions, assignments, attempts, answers, students] = await Promise.all([
+  const [versions, questions, assignments, attempts, answers, students, files] = await Promise.all([
     prisma.assessmentVersion.count({ where: { assessmentId: id } }),
     prisma.question.count({ where: { version: { assessmentId: id } } }),
     prisma.assignment.count({ where: { version: { assessmentId: id } } }),
@@ -606,6 +610,7 @@ export async function getDeletionImpact(actor: Actor, id: string): Promise<Asses
         select: { userId: true },
       })
       .then((rows) => rows.length),
+    previewPurge({ assessmentId: id }),
   ]);
 
   return {
@@ -617,6 +622,8 @@ export async function getDeletionImpact(actor: Actor, id: string): Promise<Asses
     attempts,
     answers,
     students,
+    files: files.files,
+    fileBytes: files.bytes,
   };
 }
 
@@ -643,11 +650,17 @@ export async function getDeletionImpact(actor: Actor, id: string): Promise<Asses
  * estricta obliga a que destruir historial sea siempre un acto voluntario, y
  * este es el único sitio que lo hace.
  */
+export interface PurgeOutcome extends AssessmentImpact {
+  /** Archivos realmente eliminados del almacenamiento externo. */
+  filesDeleted: number;
+  bytesDeleted: number;
+}
+
 export async function purgeAssessment(
   actor: Actor,
   id: string,
   confirmation: string,
-): Promise<AssessmentImpact> {
+): Promise<PurgeOutcome> {
   const impact = await getDeletionImpact(actor, id);
 
   if (impact.attempts > 0 && !isAdmin(actor)) {
@@ -676,6 +689,17 @@ export async function purgeAssessment(
     entityId: id,
     metadata: { ...impact },
   });
+
+  /*
+   * Los archivos se borran ANTES de la transacción, y no dentro.
+   *
+   * Borrar en S3 es una llamada de red que puede fallar o tardar; meterla en
+   * una transacción de base la mantendría abierta mientras tanto. Y el orden
+   * importa: la clave foránea de `stored_files` impide borrar la evaluación
+   * mientras le queden archivos, así que si esto falla, la transacción no
+   * llega a ejecutarse y no queda nada a medias.
+   */
+  const purged = await purgeFiles(actor, { assessmentId: id }, 'assessment_purge');
 
   await prisma.$transaction(async (tx) => {
     const versionIds = (
@@ -722,9 +746,15 @@ export async function purgeAssessment(
   });
 
   log.warn(
-    { assessmentId: id, title: impact.title, attempts: impact.attempts, actorId: actor.userId },
+    {
+      assessmentId: id,
+      title: impact.title,
+      attempts: impact.attempts,
+      filesDeleted: purged.files,
+      actorId: actor.userId,
+    },
     'evaluación eliminada definitivamente con su historial',
   );
 
-  return impact;
+  return { ...impact, filesDeleted: purged.files, bytesDeleted: purged.bytes };
 }

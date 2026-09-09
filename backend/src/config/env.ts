@@ -70,6 +70,20 @@ const envSchema = z
     AI_MAX_QUESTIONS_PER_REQUEST: z.coerce.number().int().positive().default(30),
     AI_RATE_LIMIT_PER_USER_PER_DAY: z.coerce.number().int().positive().default(50),
 
+    STORAGE_DRIVER: z.enum(['s3', 'memory']).default('memory'),
+    S3_BUCKET: z.string().optional(),
+    S3_REGION: z.string().default('us-east-2'),
+    AWS_ACCESS_KEY_ID: z.string().optional(),
+    AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    S3_UPLOAD_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(300),
+    S3_DOWNLOAD_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(300),
+    S3_MAX_UPLOAD_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1024)
+      .max(500 * 1024 * 1024)
+      .default(25 * 1024 * 1024),
+
     CACHE_DRIVER: z.enum(['memory', 'redis']).default('memory'),
     REDIS_URL: z.string().optional(),
 

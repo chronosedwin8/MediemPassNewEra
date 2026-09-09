@@ -2,6 +2,13 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Question } from '../types';
+import { isRichTextEmpty } from '@medienpass/shared';
+import { ApiError } from '@/services/http';
+import RichTextEditor from '@/design-system/RichTextEditor.vue';
+import EvidenceSettings from './EvidenceSettings.vue';
+import { seedPayload } from './seed-payload';
+import { useSignedUpload } from '@/composables/useSignedUpload';
+import { useToast } from '@/composables/useToast';
 import {
   QUESTION_TYPE,
   localize,
@@ -45,6 +52,8 @@ interface Competency {
 const props = defineProps<{
   competencies: Competency[];
   question?: Question | null;
+  /** Necesaria para subir imágenes: la clave del archivo cuelga de la versión. */
+  versionId?: string;
   saving?: boolean;
 }>();
 
@@ -54,6 +63,7 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
+const toast = useToast();
 
 const type = ref<QuestionType>(QUESTION_TYPE.SINGLE_CHOICE);
 const statement = ref('');
@@ -63,6 +73,12 @@ const kmkSubcompetencyId = ref('');
 const feedbackCorrect = ref('');
 const feedbackIncorrect = ref('');
 const payload = ref<Record<string, unknown>>({ kind: QUESTION_TYPE.SINGLE_CHOICE, options: [] });
+
+const allowsEvidence = ref(false);
+const requiresEvidence = ref(false);
+const maxEvidenceFiles = ref(3);
+const editorRef = ref<InstanceType<typeof RichTextEditor> | null>(null);
+const imageInput = ref<HTMLInputElement | null>(null);
 
 // Prellenado al editar. Se hace aquí, en la creación del componente, porque el
 // padre lo remonta con una `key` distinta por pregunta.
@@ -75,6 +91,9 @@ if (props.question) {
   feedbackCorrect.value = props.question.feedbackCorrect ?? '';
   feedbackIncorrect.value = props.question.feedbackIncorrect ?? '';
   payload.value = { ...props.question.payload };
+  allowsEvidence.value = props.question.allowsEvidence ?? false;
+  requiresEvidence.value = props.question.requiresEvidence ?? false;
+  maxEvidenceFiles.value = props.question.maxEvidenceFiles ?? 3;
 }
 
 const CHOICE_FAMILY: QuestionType[] = [
@@ -94,48 +113,6 @@ const LIST_FAMILY: QuestionType[] = [
   QUESTION_TYPE.GROUPING,
   QUESTION_TYPE.FILL_BLANK,
 ];
-
-/**
- * Contenido inicial mínimo y válido para cada tipo.
- *
- * Switch exhaustivo a propósito: si mañana se añade un tipo de pregunta y
- * nadie lo contempla aquí, TypeScript lo señala antes de que un docente se
- * encuentre con un formulario vacío.
- */
-/* eslint-disable-next-line complexity */
-function seedPayload(questionType: QuestionType): Record<string, unknown> {
-  switch (questionType) {
-    case QUESTION_TYPE.SINGLE_CHOICE:
-    case QUESTION_TYPE.MULTIPLE_CHOICE:
-      return {
-        kind: questionType,
-        options: [
-          { id: 'a', text: '', correct: false },
-          { id: 'b', text: '', correct: false },
-        ],
-      };
-    case QUESTION_TYPE.TRUE_FALSE:
-      return { kind: questionType, correct: true };
-    case QUESTION_TYPE.IMAGE_CHOICE:
-      return { kind: questionType, multiple: false, options: [] };
-    case QUESTION_TYPE.SHORT_ANSWER:
-      return { kind: questionType, acceptedAnswers: [], caseSensitive: false, ignoreAccents: true };
-    case QUESTION_TYPE.OPEN_TEXT:
-    case QUESTION_TYPE.LONG_ANSWER:
-      return { kind: questionType };
-    case QUESTION_TYPE.ORDERING:
-    case QUESTION_TYPE.TIMELINE:
-      return { kind: questionType, partialCredit: true, items: [] };
-    case QUESTION_TYPE.MATCHING:
-      return { kind: questionType, partialCredit: true, left: [], right: [], pairs: [] };
-    case QUESTION_TYPE.GROUPING:
-      return { kind: questionType, partialCredit: true, groups: [], items: [] };
-    case QUESTION_TYPE.FILL_BLANK:
-      return { kind: questionType, template: '', blanks: [] };
-    case QUESTION_TYPE.HOTSPOT:
-      return { kind: questionType, imageUrl: '', alt: '', multiple: false, regions: [] };
-  }
-}
 
 // Cambiar de tipo reinicia el contenido: el de un tipo no sirve para otro.
 watch(type, (next) => {
@@ -164,16 +141,47 @@ const payloadError = computed<string | null>(() => {
 
 const canSave = computed(
   () =>
-    statement.value.trim().length >= 3 &&
+    !isRichTextEmpty(statement.value) &&
     kmkCompetencyId.value !== '' &&
     points.value > 0 &&
     payloadError.value === null,
 );
 
+/**
+ * Subida de imágenes del enunciado.
+ *
+ * Solo tiene sentido con la versión ya creada: la clave del archivo cuelga de
+ * ella, y hasta que existe no hay dónde guardarla.
+ */
+const imageUpload = useSignedUpload<{ downloadUrl: string }>({
+  request: '/files/question-media/upload-url',
+  confirm: '/files/question-media/confirm',
+  context: () => ({ versionId: props.versionId }),
+});
+
+async function uploadImage(event: Event): Promise<void> {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file || !props.versionId) return;
+
+  try {
+    const stored = await imageUpload.upload(file);
+    editorRef.value?.insertImage(stored.downloadUrl, file.name);
+  } catch (error) {
+    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
+  } finally {
+    if (imageInput.value) imageInput.value.value = '';
+  }
+}
+
 function save(): void {
   emit('save', {
     type: type.value,
     statement: statement.value.trim(),
+    allowsEvidence: allowsEvidence.value,
+    // Exigir sin admitir bloquearía al estudiante, así que se corrige aquí
+    // además de en el servidor: la interfaz no debe poder pedir lo imposible.
+    requiresEvidence: allowsEvidence.value && requiresEvidence.value,
+    maxEvidenceFiles: maxEvidenceFiles.value,
     points: points.value,
     kmkCompetencyId: kmkCompetencyId.value,
     kmkSubcompetencyId: kmkSubcompetencyId.value || null,
@@ -213,15 +221,35 @@ const inputClass =
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-sm font-medium" for="statement">{{ t('question.statement') }}</label>
-      <textarea
-        id="statement"
-        v-model="statement"
-        rows="2"
-        required
-        class="resize-y rounded-md border border-border bg-surface p-3 text-sm outline-none focus:border-brand-500"
-      />
+      <span class="text-sm font-medium">{{ t('question.statement') }}</span>
+      <RichTextEditor ref="editorRef" v-model="statement" :aria-label="t('question.statement')">
+        <template #toolbar-extra>
+          <span class="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+          <input
+            ref="imageInput"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            class="sr-only"
+            @change="uploadImage"
+          />
+          <button
+            type="button"
+            class="h-8 rounded px-2 text-xs text-ink-muted hover:bg-surface-muted"
+            :disabled="imageUpload.uploading.value || !versionId"
+            :title="t('editor.insertImage')"
+            @click="imageInput?.click()"
+          >
+            {{ imageUpload.uploading.value ? t('common.saving') : t('editor.insertImage') }}
+          </button>
+        </template>
+      </RichTextEditor>
     </div>
+
+    <EvidenceSettings
+      v-model:allows="allowsEvidence"
+      v-model:requires="requiresEvidence"
+      v-model:max-files="maxEvidenceFiles"
+    />
 
     <!-- La competencia es obligatoria: sin ella no hay analítica KMK. -->
     <div class="grid gap-4 sm:grid-cols-2">

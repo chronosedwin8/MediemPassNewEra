@@ -155,7 +155,8 @@
     "deleteAssignments": "{count} asignaciones",
     "deleteAttempts": "{count} intentos y sus notas, de {students} estudiantes",
     "deleteConfirmHint": "Escribe «{title}» para confirmar.",
-    "deleteAction": "Eliminar definitivamente"
+    "deleteAction": "Eliminar definitivamente",
+    "deleteFiles": "{count} archivos adjuntos ({size})"
   },
   "question": {
     "add": "Añadir pregunta",
@@ -206,7 +207,19 @@
     "items": "Elementos",
     "textWithBlanks": "Texto con huecos",
     "blankHint": "Cada hueco se escribe como una marca entre llaves dobles.",
-    "answerVariants": "respuesta, variante"
+    "answerVariants": "respuesta, variante",
+    "toolbar": "Formato del texto",
+    "bold": "Negrita",
+    "italic": "Cursiva",
+    "underline": "Subrayado",
+    "bulletList": "Lista con viñetas",
+    "orderedList": "Lista numerada",
+    "quote": "Cita",
+    "code": "Código",
+    "link": "Enlace",
+    "linkPrompt": "Dirección del enlace",
+    "insertImage": "Imagen",
+    "remaining": "{count} caracteres restantes"
   },
   "attempt": {
     "questionOf": "Pregunta {current} de {total}",
@@ -471,7 +484,8 @@
       "roles": "Roles y permisos",
       "settings": "Ajustes",
       "year": "Año lectivo",
-      "data": "Datos"
+      "data": "Datos",
+      "storage": "Archivos"
     },
     "roles": {
       "locked": "Bloqueado",
@@ -510,7 +524,10 @@
       "done": "Año iniciado con {count} grupos.",
       "doneTitle": "Año lectivo iniciado",
       "doneDetail": "Se creó {code} con {count} grupos vacíos.",
-      "nextStep": "Siguiente paso: sincronizar con Phidias para traer la matrícula."
+      "nextStep": "Siguiente paso: sincronizar con Phidias para traer la matrícula.",
+      "purgeEvidence": "Borrar también las {count} evidencias del año que se cierra",
+      "purgeEvidenceHint": "El año anterior conserva sus notas. Una nota puesta sobre una evidencia que ya no existe es una nota que nadie puede volver a justificar.",
+      "evidenceDeleted": "Se eliminaron {count} evidencias del año anterior."
     },
     "data": {
       "backfillTitle": "Correos institucionales",
@@ -543,6 +560,47 @@
       "scale": "Escalas",
       "audit": "Auditoría",
       "phidias": "Phidias"
+    },
+    "storage": {
+      "title": "Archivos guardados",
+      "intro": "Evidencias de los estudiantes e imágenes de los enunciados. Se guardan fuera de la base de datos y se sirven siempre con enlaces temporales.",
+      "totalFiles": "Archivos",
+      "totalSize": "Espacio ocupado",
+      "files": "Archivos",
+      "size": "Tamaño",
+      "byYear": "Por año lectivo",
+      "purgeTitle": "Borrar archivos",
+      "purgeIntro": "Elige el alcance, simula y revisa antes de borrar. No hay copia: lo que se elimina no se puede recuperar.",
+      "scopeYear": "Año lectivo",
+      "scopeKind": "Tipo de archivo",
+      "allYears": "Todos los años",
+      "allKinds": "Todos los tipos",
+      "willDelete": "Se borrarán {count} archivos ({size}).",
+      "irreversible": "El almacenamiento no tiene versionado: el borrado es definitivo.",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Queda en la auditoría. Ej.: retención de datos del curso 2025-2026.",
+      "deleteAction": "Borrar {count} archivos",
+      "deleted": "{count} archivos eliminados.",
+      "countChanged": "El número de archivos cambió mientras revisabas ({count} ahora). No se borró nada; vuelve a simular.",
+      "kind": {
+        "EVIDENCE": "Evidencias",
+        "QUESTION_MEDIA": "Imágenes de enunciados"
+      }
     }
+  },
+  "evidence": {
+    "title": "Evidencia",
+    "settings": "Evidencia",
+    "allow": "Permitir adjuntar evidencia",
+    "allowHint": "El estudiante podrá subir fotos, documentos o audio junto a su respuesta.",
+    "require": "Exigirla para poder finalizar",
+    "maxFiles": "Máximo de archivos",
+    "required": "Obligatoria",
+    "add": "Adjuntar archivo",
+    "hint": "Imágenes, PDF, audio, vídeo o documentos de Office. Máximo 25 MB por archivo.",
+    "uploading": "Subiendo {name}…",
+    "uploaded": "{name} subido.",
+    "uploadFailed": "No se pudo subir el archivo. Inténtalo otra vez.",
+    "limitReached": "Has alcanzado el máximo de {count} archivos."
   }
 }

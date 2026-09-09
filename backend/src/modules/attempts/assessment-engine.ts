@@ -9,6 +9,7 @@ import {
   gradeFromPoints,
   safeParseAnswer,
   toPercentage,
+  type Answer,
   type AssessmentAudience,
   type AttemptStatus,
   type LocalizedText,
@@ -22,6 +23,7 @@ import { getActiveScale, getScaleById } from '../settings/scales.service.js';
 import { getSetting } from '../settings/settings.service.js';
 import { resolvePeriodAt } from '../academic/calendar.service.js';
 import { gradeAnswer } from '../assessments/grading/registry.js';
+import { sanitizeRichText } from '../../shared/security/sanitize.js';
 
 const log = createLogger('engine');
 
@@ -74,6 +76,10 @@ export interface QuestionForStudent {
   position: number;
   mediaUrl: string | null;
   payload: unknown;
+  /** Si esta pregunta admite adjuntar evidencia, y si la exige. */
+  allowsEvidence: boolean;
+  requiresEvidence: boolean;
+  maxEvidenceFiles: number;
   competency: { id: string; code: string; name: LocalizedText; color: string };
 }
 
@@ -439,6 +445,9 @@ export async function getAttempt(userId: string, attemptId: string): Promise<Att
     points: Number(question.points),
     position: question.position,
     mediaUrl: question.mediaUrl,
+    allowsEvidence: question.allowsEvidence,
+    requiresEvidence: question.requiresEvidence,
+    maxEvidenceFiles: question.maxEvidenceFiles,
     // Aquí es donde se garantiza que las soluciones no viajan.
     payload: stripSolution(question.type as QuestionType, question.payload),
     competency: {
@@ -552,6 +561,16 @@ export async function saveAnswer(
     );
   }
 
+  /*
+   * Las respuestas abiertas admiten formato, así que se limpian aquí.
+   *
+   * El estudiante escribe HTML y lo va a leer su docente: si no se saneara,
+   * bastaría con que alguien pegara un `<script>` en una respuesta para
+   * ejecutarlo en la sesión de quien la corrige. Se hace en el motor y no en
+   * el cliente porque el cliente se puede saltar.
+   */
+  const stored = sanitizeAnswerText(parsed.data);
+
   const answeredAt = new Date();
 
   await prisma.attemptAnswer.upsert({
@@ -559,7 +578,7 @@ export async function saveAnswer(
     create: {
       attemptId,
       questionId,
-      response: parsed.data as object,
+      response: stored as object,
       answeredAt,
       questionType: question.type,
       // Las copias para analítica se rellenan al calificar, no ahora: guardar
@@ -571,7 +590,7 @@ export async function saveAnswer(
         })
       ).kmkCompetencyId,
     },
-    update: { response: parsed.data as object, answeredAt },
+    update: { response: stored as object, answeredAt },
   });
 
   await prisma.assignmentRecipient.updateMany({
@@ -580,6 +599,54 @@ export async function saveAnswer(
   });
 
   return { saved: true, answeredAt };
+}
+
+/**
+ * Impide finalizar mientras falte evidencia obligatoria.
+ *
+ * Se comprueba al enviar y no al responder porque el estudiante debe poder
+ * recorrer la evaluación en el orden que quiera y dejar los adjuntos para el
+ * final. Lo que no puede es dar por terminado algo incompleto y descubrir
+ * después que no cuenta.
+ *
+ * El error nombra las preguntas concretas: «falta evidencia» a secas obligaría
+ * a repasar veinte preguntas para encontrar cuál.
+ */
+async function assertEvidenceComplete(
+  attemptId: string,
+  questions: Array<{ id: string; position: number; requiresEvidence?: boolean }>,
+): Promise<void> {
+  const required = questions.filter((question) => question.requiresEvidence);
+  if (required.length === 0) return;
+
+  const uploaded = await prisma.storedFile.groupBy({
+    by: ['questionId'],
+    where: { attemptId, kind: 'EVIDENCE', questionId: { in: required.map((q) => q.id) } },
+    _count: true,
+  });
+
+  const withFiles = new Set(uploaded.map((row) => row.questionId));
+  const missing = required.filter((question) => !withFiles.has(question.id));
+
+  if (missing.length > 0) {
+    throw AppError.conflict(ERROR_CODE.CONFLICT, 'Some questions still require evidence', {
+      questions: missing.map((question) => ({ id: question.id, position: question.position + 1 })),
+    });
+  }
+}
+
+/**
+ * Limpia el HTML de las respuestas que admiten formato.
+ *
+ * Solo toca los tipos con texto libre. El resto —opciones, parejas, huecos— son
+ * identificadores validados contra el contenido de la pregunta y no llevan
+ * nada que un navegador pueda interpretar.
+ */
+function sanitizeAnswerText(answer: Answer): Answer {
+  if (answer.kind === QUESTION_TYPE.OPEN_TEXT || answer.kind === QUESTION_TYPE.LONG_ANSWER) {
+    return { ...answer, text: sanitizeRichText(answer.text, 'response') };
+  }
+  return answer;
 }
 
 // --- Calificación ------------------------------------------------------------
@@ -774,6 +841,8 @@ export async function submitAttempt(userId: string, attemptId: string): Promise<
               type: true,
               points: true,
               payload: true,
+              position: true,
+              requiresEvidence: true,
               kmkCompetencyId: true,
               kmkSubcompetencyId: true,
             },
@@ -790,6 +859,8 @@ export async function submitAttempt(userId: string, attemptId: string): Promise<
   if (CLOSED_ATTEMPT_STATUSES.includes(attempt.status as AttemptStatus)) {
     throw AppError.conflict(ERROR_CODE.ATTEMPT_ALREADY_SUBMITTED, 'The attempt is already closed');
   }
+
+  await assertEvidenceComplete(attemptId, attempt.version.questions);
 
   const submittedAt = new Date();
   const analytics = await resolveAnalyticsContext(attemptId);

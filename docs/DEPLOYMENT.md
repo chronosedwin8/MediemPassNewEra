@@ -186,3 +186,81 @@ Se listan explícitamente para que nadie las dé por hechas:
 | 502 desde nginx                     | El backend no pasa su `healthcheck`; ver sus registros              |
 | La sesión se pierde al recargar     | Falta `X-Forwarded-Proto` en el proxy, o `APP_URL` no coincide      |
 | «Cannot connect to database»        | `postgres` aún no está sano; el compose lo espera, pero comprobarlo |
+
+## Almacenamiento de archivos
+
+Las evidencias de los estudiantes y las imágenes de los enunciados no van a la
+base de datos: van a S3. La base guarda una fila por archivo en `stored_files`,
+que es lo que permite responder «¿cuánto ocupa el año pasado?» sin recorrer el
+bucket y, sobre todo, **borrar de verdad** por año, por evaluación o por tipo.
+
+### El bucket
+
+Configuración aplicada en la creación, toda comprobable desde la consola:
+
+| Ajuste | Valor | Por qué |
+| --- | --- | --- |
+| Acceso público | Bloqueado por completo | Son trabajos de menores de edad |
+| Cifrado en reposo | SSE-S3 (AES-256) | Por defecto en cada objeto |
+| Versionado | Desactivado | Un borrado con versionado deja el objeto ahí; el requisito es lo contrario |
+| CORS | Solo el origen de la aplicación | El navegador sube directamente |
+
+### Cómo viaja un archivo
+
+```
+Navegador ── 1. pide permiso ──▶ Backend
+          ◀── URL firmada (5 min) ──┘
+          ── 2. PUT directo ──▶ S3
+          ── 3. confirma ──▶ Backend ── HEAD ──▶ S3
+                                     └─ crea la fila
+```
+
+El archivo **nunca pasa por el servidor**. Y el tercer paso no es burocracia:
+el backend pregunta a S3 qué hay realmente en esa clave antes de dar el archivo
+por bueno, de modo que la fila siempre describe algo que existe y con el tamaño
+que dice. La credencial de AWS no sale del backend en ningún momento.
+
+### Rutas dentro del bucket
+
+```
+evidence/{año}/{evaluación}/{intento}/{uuid}.{ext}
+question-media/{evaluación}/{versión}/{uuid}.{ext}
+```
+
+Sirven para orientarse en la consola. El borrado selectivo **no** se hace por
+prefijo sino por las columnas de `stored_files`: por prefijo habría que
+adivinar de antemano todas las dimensiones por las que alguien querrá limpiar.
+
+### Borrar
+
+Tres caminos, y en los tres se borra primero de S3 y después la fila. Al revés,
+un fallo de red dejaría objetos que ninguna fila menciona: basura invisible.
+
+1. **Administración → Archivos.** Por año y por tipo, con simulación previa. La
+   confirmación viaja con el número exacto de archivos: si alguien sube algo
+   entre la simulación y el borrado, la operación se detiene.
+2. **Al eliminar una evaluación.** Automático. La clave foránea de
+   `stored_files` impide borrar la evaluación mientras le queden archivos, así
+   que el orden correcto lo obliga la base y no la buena memoria.
+3. **Al iniciar año lectivo.** Opcional y **apagado por defecto**. El año
+   anterior conserva sus notas, y una nota puesta sobre una evidencia que ya no
+   existe es una nota que nadie puede volver a justificar. Tiene sentido si la
+   política del colegio es no conservar trabajos más allá del curso; no lo tiene
+   «para hacer sitio».
+
+Todo borrado queda en auditoría como `DELETE_STORED_FILES`, con el alcance, el
+motivo escrito y el recuento.
+
+### Texto enriquecido
+
+Los enunciados y las respuestas abiertas se guardan como HTML, lo que abre una
+vía de ataque concreta: un enunciado con `<script>` se ejecutaría en la sesión
+de cada estudiante que abra la evaluación, y una respuesta abierta con lo mismo
+en la de quien la corrige.
+
+La defensa es una lista blanca —`packages/shared/src/rich-text.ts`— aplicada en
+dos sitios: el servidor limpia **al guardar**, que es la autoridad, y el cliente
+vuelve a limpiar al pintar como segunda barrera. El servidor manda porque
+cualquiera puede enviar un `PUT` saltándose el navegador entero.
+
+No se admite SVG aunque sea una imagen: puede llevar scripts dentro.

@@ -18,6 +18,9 @@ export interface Question {
   payload: Record<string, unknown>;
   feedbackCorrect: string | null;
   feedbackIncorrect: string | null;
+  allowsEvidence?: boolean;
+  requiresEvidence?: boolean;
+  maxEvidenceFiles?: number;
   kmkCompetency: { id: string; code: string; name: LocalizedText; color: string };
   kmkSubcompetency?: { id: string } | null;
 }

@@ -155,7 +155,8 @@
     "deleteAssignments": "{count} Zuweisungen",
     "deleteAttempts": "{count} Versuche und deren Noten von {students} Schülern",
     "deleteConfirmHint": "Gib «{title}» ein, um zu bestätigen.",
-    "deleteAction": "Endgültig löschen"
+    "deleteAction": "Endgültig löschen",
+    "deleteFiles": "{count} angehängte Dateien ({size})"
   },
   "question": {
     "add": "Aufgabe hinzufügen",
@@ -206,7 +207,19 @@
     "items": "Elemente",
     "textWithBlanks": "Lückentext",
     "blankHint": "Jede Lücke wird als Platzhalter in doppelten geschweiften Klammern geschrieben.",
-    "answerVariants": "Antwort, Variante"
+    "answerVariants": "Antwort, Variante",
+    "toolbar": "Textformatierung",
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "underline": "Unterstrichen",
+    "bulletList": "Aufzählung",
+    "orderedList": "Nummerierte Liste",
+    "quote": "Zitat",
+    "code": "Code",
+    "link": "Link",
+    "linkPrompt": "Adresse des Links",
+    "insertImage": "Bild",
+    "remaining": "Noch {count} Zeichen"
   },
   "attempt": {
     "questionOf": "Aufgabe {current} von {total}",
@@ -471,7 +484,8 @@
       "roles": "Rollen und Rechte",
       "settings": "Einstellungen",
       "year": "Schuljahr",
-      "data": "Daten"
+      "data": "Daten",
+      "storage": "Dateien"
     },
     "roles": {
       "locked": "Gesperrt",
@@ -510,7 +524,10 @@
       "done": "Jahr mit {count} Gruppen gestartet.",
       "doneTitle": "Schuljahr gestartet",
       "doneDetail": "{code} wurde mit {count} leeren Gruppen erstellt.",
-      "nextStep": "Nächster Schritt: mit Phidias synchronisieren, um die Einschreibung zu laden."
+      "nextStep": "Nächster Schritt: mit Phidias synchronisieren, um die Einschreibung zu laden.",
+      "purgeEvidence": "Auch die {count} Nachweise des endenden Jahres löschen",
+      "purgeEvidenceHint": "Das Vorjahr behält seine Noten. Eine Note zu einem Nachweis, den es nicht mehr gibt, lässt sich später von niemandem mehr begründen.",
+      "evidenceDeleted": "{count} Nachweise des Vorjahres wurden gelöscht."
     },
     "data": {
       "backfillTitle": "Institutionelle E-Mails",
@@ -543,6 +560,47 @@
       "scale": "Skalen",
       "audit": "Audit",
       "phidias": "Phidias"
+    },
+    "storage": {
+      "title": "Gespeicherte Dateien",
+      "intro": "Nachweise der Schüler und Bilder der Aufgabenstellungen. Sie liegen außerhalb der Datenbank und werden immer über temporäre Links ausgeliefert.",
+      "totalFiles": "Dateien",
+      "totalSize": "Belegter Speicher",
+      "files": "Dateien",
+      "size": "Größe",
+      "byYear": "Nach Schuljahr",
+      "purgeTitle": "Dateien löschen",
+      "purgeIntro": "Umfang wählen, simulieren und prüfen, bevor gelöscht wird. Es gibt keine Kopie: Gelöschtes ist nicht wiederherstellbar.",
+      "scopeYear": "Schuljahr",
+      "scopeKind": "Dateityp",
+      "allYears": "Alle Jahre",
+      "allKinds": "Alle Typen",
+      "willDelete": "{count} Dateien werden gelöscht ({size}).",
+      "irreversible": "Der Speicher hat keine Versionierung: das Löschen ist endgültig.",
+      "reason": "Grund",
+      "reasonPlaceholder": "Wird im Audit festgehalten. Z. B.: Datenaufbewahrung Schuljahr 2025-2026.",
+      "deleteAction": "{count} Dateien löschen",
+      "deleted": "{count} Dateien gelöscht.",
+      "countChanged": "Die Anzahl hat sich während der Prüfung geändert (jetzt {count}). Es wurde nichts gelöscht; bitte erneut simulieren.",
+      "kind": {
+        "EVIDENCE": "Nachweise",
+        "QUESTION_MEDIA": "Aufgabenbilder"
+      }
     }
+  },
+  "evidence": {
+    "title": "Nachweis",
+    "settings": "Nachweis",
+    "allow": "Nachweis erlauben",
+    "allowHint": "Schüler können Fotos, Dokumente oder Audio zur Antwort hochladen.",
+    "require": "Für den Abschluss verpflichtend",
+    "maxFiles": "Maximale Dateien",
+    "required": "Erforderlich",
+    "add": "Datei anhängen",
+    "hint": "Bilder, PDF, Audio, Video oder Office-Dokumente. Maximal 25 MB pro Datei.",
+    "uploading": "{name} wird hochgeladen…",
+    "uploaded": "{name} hochgeladen.",
+    "uploadFailed": "Die Datei konnte nicht hochgeladen werden. Bitte erneut versuchen.",
+    "limitReached": "Das Maximum von {count} Dateien ist erreicht."
   }
 }

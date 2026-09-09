@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { RICH_TEXT_MAX_LENGTH } from '@medienpass/shared';
+import {
+  sanitizeOptionalRichText,
+  sanitizeRequiredRichText,
+} from '../../shared/security/sanitize.js';
 import {
   DIFFICULTY,
   ERROR_CODE,
@@ -36,27 +41,48 @@ const questionTypeSchema = z.enum([
   QUESTION_TYPE.LONG_ANSWER,
 ]);
 
-export const createQuestionSchema = z.object({
-  type: questionTypeSchema,
-  statement: z.string().trim().min(3).max(5000),
-  instructions: z.string().trim().max(2000).nullable().optional(),
-  points: z.number().min(0.25).max(100).default(1),
-  position: z.number().int().min(0).optional(),
-  difficulty: z
-    .enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED])
-    .default(DIFFICULTY.INTERMEDIATE),
-  /** Obligatoria: es la base de toda la analítica por competencia. */
-  kmkCompetencyId: z.string().uuid(),
-  kmkSubcompetencyId: z.string().uuid().nullable().optional(),
-  feedbackCorrect: z.string().trim().max(2000).nullable().optional(),
-  feedbackIncorrect: z.string().trim().max(2000).nullable().optional(),
-  explanation: z.string().trim().max(3000).nullable().optional(),
-  mediaUrl: z.string().trim().max(1000).nullable().optional(),
-  /** Contenido específico del tipo; se valida contra su propio esquema. */
-  payload: z.unknown(),
-});
+export const createQuestionSchema = z
+  .object({
+    type: questionTypeSchema,
+    /**
+     * El enunciado admite formato. Llega como HTML y se limpia al guardar contra
+     * una lista blanca; el máximo se comprueba después de limpiar, porque lo que
+     * cuenta es lo que queda, no lo que se pegó.
+     */
+    statement: z.string().trim().min(3).max(RICH_TEXT_MAX_LENGTH),
+    instructions: z.string().trim().max(RICH_TEXT_MAX_LENGTH).nullable().optional(),
+    points: z.number().min(0.25).max(100).default(1),
+    position: z.number().int().min(0).optional(),
+    difficulty: z
+      .enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED])
+      .default(DIFFICULTY.INTERMEDIATE),
+    /** Obligatoria: es la base de toda la analítica por competencia. */
+    kmkCompetencyId: z.string().uuid(),
+    kmkSubcompetencyId: z.string().uuid().nullable().optional(),
+    feedbackCorrect: z.string().trim().max(2000).nullable().optional(),
+    feedbackIncorrect: z.string().trim().max(2000).nullable().optional(),
+    explanation: z.string().trim().max(3000).nullable().optional(),
+    mediaUrl: z.string().trim().max(1000).nullable().optional(),
+    /** El docente decide si esta pregunta admite adjuntar evidencia. */
+    allowsEvidence: z.boolean().default(false),
+    requiresEvidence: z.boolean().default(false),
+    maxEvidenceFiles: z.number().int().min(1).max(10).default(3),
+    /** Contenido específico del tipo; se valida contra su propio esquema. */
+    payload: z.unknown(),
+  })
+  .superRefine((input, ctx) => {
+    // Exigir evidencia sin admitirla es una configuración que bloquearía al
+    // estudiante: no podría adjuntar nada y no podría terminar.
+    if (input.requiresEvidence && !input.allowsEvidence) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['requiresEvidence'],
+        message: 'Para exigir evidencia hay que admitirla primero',
+      });
+    }
+  });
 
-export const updateQuestionSchema = createQuestionSchema.partial().omit({ type: true });
+export const updateQuestionSchema = createQuestionSchema.innerType().partial().omit({ type: true });
 
 export const reorderSchema = z.object({
   questionIds: z.array(z.string().uuid()).min(1).max(200),
@@ -135,17 +161,20 @@ export async function createQuestion(actor: Actor, versionId: string, input: Cre
     data: {
       assessmentVersionId: versionId,
       type: input.type,
-      statement: input.statement,
-      instructions: input.instructions ?? null,
+      statement: sanitizeRequiredRichText(input.statement, 'statement'),
+      instructions: sanitizeOptionalRichText(input.instructions, 'instructions'),
       points: input.points,
       position,
       difficulty: input.difficulty,
       kmkCompetencyId: input.kmkCompetencyId,
       kmkSubcompetencyId: input.kmkSubcompetencyId ?? null,
-      feedbackCorrect: input.feedbackCorrect ?? null,
-      feedbackIncorrect: input.feedbackIncorrect ?? null,
-      explanation: input.explanation ?? null,
+      feedbackCorrect: sanitizeOptionalRichText(input.feedbackCorrect, 'feedbackCorrect'),
+      feedbackIncorrect: sanitizeOptionalRichText(input.feedbackIncorrect, 'feedbackIncorrect'),
+      explanation: sanitizeOptionalRichText(input.explanation, 'explanation'),
       mediaUrl: input.mediaUrl ?? null,
+      allowsEvidence: input.allowsEvidence,
+      requiresEvidence: input.requiresEvidence,
+      maxEvidenceFiles: input.maxEvidenceFiles,
       payload,
     },
   });
@@ -164,20 +193,31 @@ function buildQuestionUpdate(
 ): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   const direct = [
-    'statement',
-    'instructions',
     'points',
     'difficulty',
     'kmkCompetencyId',
     'kmkSubcompetencyId',
-    'feedbackCorrect',
-    'feedbackIncorrect',
-    'explanation',
     'mediaUrl',
+    'allowsEvidence',
+    'requiresEvidence',
+    'maxEvidenceFiles',
   ] as const;
 
   for (const field of direct) {
     if (input[field] !== undefined) data[field] = input[field];
+  }
+
+  // Los campos con formato pasan por el saneado, nunca directos.
+  if (input.statement !== undefined) {
+    data['statement'] = sanitizeRequiredRichText(input.statement, 'statement');
+  }
+  for (const field of [
+    'instructions',
+    'feedbackCorrect',
+    'feedbackIncorrect',
+    'explanation',
+  ] as const) {
+    if (input[field] !== undefined) data[field] = sanitizeOptionalRichText(input[field], field);
   }
   if (payload) data['payload'] = payload;
 

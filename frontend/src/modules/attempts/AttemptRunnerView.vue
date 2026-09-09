@@ -5,6 +5,8 @@ import { useI18n } from 'vue-i18n';
 import { localize, type Answer, type LocalizedText } from '@medienpass/shared';
 import { useAttemptStore } from './attempt.store';
 import QuestionRenderer from './questions/QuestionRenderer.vue';
+import EvidenceUploader from './EvidenceUploader.vue';
+import RichTextView from '@/design-system/RichTextView.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import ProgressBar from '@/design-system/ProgressBar.vue';
@@ -205,12 +207,28 @@ watch(showFinishDialog, async (open) => {
               </span>
             </div>
 
+            <!--
+              El enunciado se pinta como HTML porque el docente puede haberle
+              dado formato. El contenido ya viene saneado del servidor y
+              `RichTextView` lo vuelve a limpiar antes de pintarlo.
+            -->
             <h2 class="text-lg font-medium leading-relaxed">
-              {{ store.currentQuestion.statement }}
+              <RichTextView :html="store.currentQuestion.statement" />
             </h2>
-            <p v-if="store.currentQuestion.instructions" class="text-sm text-ink-muted">
-              {{ store.currentQuestion.instructions }}
-            </p>
+
+            <RichTextView
+              v-if="store.currentQuestion.instructions"
+              :html="store.currentQuestion.instructions"
+              compact
+              class="text-sm text-ink-muted"
+            />
+
+            <img
+              v-if="store.currentQuestion.mediaUrl"
+              :src="store.currentQuestion.mediaUrl"
+              alt=""
+              class="max-h-96 rounded-lg border border-border object-contain"
+            />
           </header>
 
           <QuestionRenderer
@@ -220,6 +238,16 @@ watch(showFinishDialog, async (open) => {
             :payload="store.currentQuestion.payload"
             :model-value="store.answers.get(store.currentQuestion.id) ?? null"
             @update:model-value="onAnswer"
+          />
+
+          <EvidenceUploader
+            v-if="store.currentQuestion.allowsEvidence"
+            :key="`evidence-${store.currentQuestion.id}`"
+            :attempt-id="store.attempt!.id"
+            :question-id="store.currentQuestion.id"
+            :max-files="store.currentQuestion.maxEvidenceFiles"
+            :required="store.currentQuestion.requiresEvidence"
+            :disabled="store.expired"
           />
         </article>
       </main>

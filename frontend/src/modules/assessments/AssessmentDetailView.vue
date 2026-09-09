@@ -2,10 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-  ASSESSMENT_VERSION_STATUS,
-  type LocalizedText,
-} from '@medienpass/shared';
+import { ASSESSMENT_VERSION_STATUS, type LocalizedText } from '@medienpass/shared';
 import { http, ApiError } from '@/services/http';
 import QuestionEditor from './editors/QuestionEditor.vue';
 import DeleteAssessmentDialog from './DeleteAssessmentDialog.vue';
@@ -299,6 +296,7 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
           :key="editingQuestion?.id ?? 'new'"
           :competencies="competencies"
           :question="editingQuestion"
+          :version-id="currentVersion.id"
           :saving="savingQuestion"
           @save="saveQuestion"
           @cancel="

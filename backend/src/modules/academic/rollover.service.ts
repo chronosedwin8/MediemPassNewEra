@@ -4,6 +4,7 @@ import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { createLogger } from '../../shared/logger.js';
+import { previewPurge, purgeFiles } from '../files/files.service.js';
 
 const log = createLogger('rollover');
 
@@ -42,6 +43,16 @@ export const rolloverSchema = z
     /** Copiar los directores de curso del año anterior. */
     copyHomeroomTeachers: z.boolean().default(true),
     /**
+     * Borrar las evidencias del año que se cierra.
+     *
+     * Apagado por defecto, y conviene entender por qué antes de encenderlo: el
+     * año anterior conserva sus notas, y una nota puesta sobre una evidencia
+     * que ya no existe es una nota que nadie puede volver a justificar. Tiene
+     * sentido cuando la política del colegio es no conservar trabajos más allá
+     * del curso; no lo tiene «para hacer sitio».
+     */
+    purgeSourceYearEvidence: z.boolean().default(false),
+    /**
      * Sin esto no se ejecuta nada. Es una operación que cambia el año en el
      * que trabaja todo el colegio, y conviene que cueste un gesto explícito.
      */
@@ -70,6 +81,9 @@ export interface RolloverPreview {
   groupsAlreadyPresent: number;
   /** Grupos del año origen que no se copian por estar dados de baja. */
   inactiveGroupsSkipped: number;
+  /** Evidencias del año que se cierra, por si se pide borrarlas. */
+  evidenceFiles: number;
+  evidenceBytes: number;
 }
 
 export interface RolloverResult {
@@ -77,6 +91,9 @@ export interface RolloverResult {
   code: string;
   groupsCreated: number;
   groupsSkipped: number;
+  /** Evidencias eliminadas del año que se cierra, si se pidió. */
+  filesDeleted: number;
+  bytesDeleted: number;
 }
 
 async function resolveSourceYear(sourceYearId?: string) {
@@ -99,14 +116,17 @@ export async function previewRollover(sourceYearId?: string): Promise<RolloverPr
       groupsToCreate: 0,
       groupsAlreadyPresent: 0,
       inactiveGroupsSkipped: 0,
+      evidenceFiles: 0,
+      evidenceBytes: 0,
     };
   }
 
-  const [active, inactive] = await Promise.all([
+  const [active, inactive, evidence] = await Promise.all([
     prisma.group.count({ where: { academicYearId: source.id, active: true, deletedAt: null } }),
     prisma.group.count({
       where: { academicYearId: source.id, OR: [{ active: false }, { deletedAt: { not: null } }] },
     }),
+    previewPurge({ academicYearId: source.id, kind: 'EVIDENCE' }),
   ]);
 
   return {
@@ -114,6 +134,8 @@ export async function previewRollover(sourceYearId?: string): Promise<RolloverPr
     groupsToCreate: active,
     groupsAlreadyPresent: 0,
     inactiveGroupsSkipped: inactive,
+    evidenceFiles: evidence.files,
+    evidenceBytes: evidence.bytes,
   };
 }
 
@@ -184,6 +206,18 @@ export async function rolloverAcademicYear(
     return { year, created: count, skipped: groups.length - count };
   });
 
+  /*
+   * La limpieza va después de crear el año, no antes.
+   *
+   * Si se hiciera primero y el año fallara al crearse, se habrían destruido las
+   * evidencias sin haber conseguido nada a cambio. Con este orden, lo
+   * irreversible ocurre solo cuando lo reversible ya salió bien.
+   */
+  const purged =
+    input.purgeSourceYearEvidence && source
+      ? await purgeFiles(actor, { academicYearId: source.id, kind: 'EVIDENCE' }, 'year_rollover')
+      : { files: 0, bytes: 0, deletedObjects: 0 };
+
   await recordAudit({
     userId: actor.userId,
     action: AUDIT_ACTION.ROLLOVER_ACADEMIC_YEAR,
@@ -194,6 +228,7 @@ export async function rolloverAcademicYear(
       sourceYearCode: source?.code ?? null,
       groupsCreated: result.created,
       copyHomeroomTeachers: input.copyHomeroomTeachers,
+      evidenceFilesDeleted: purged.files,
     },
   });
 
@@ -207,5 +242,7 @@ export async function rolloverAcademicYear(
     code: result.year.code,
     groupsCreated: result.created,
     groupsSkipped: result.skipped,
+    filesDeleted: purged.files,
+    bytesDeleted: purged.bytes,
   };
 }

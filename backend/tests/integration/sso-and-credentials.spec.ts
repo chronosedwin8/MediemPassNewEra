@@ -355,7 +355,7 @@ describe('sincronización con contraseña inicial', () => {
             firstName: 'Nueva',
             lastName: 'Alumna',
             username: 'nueva.alumna',
-            email: 'nueva.alumna@colegioaleman.edu.co',
+            email: '7001@colegioaleman.edu.co',
             code: '7001',
             language: 'es',
             enrollmentStatus: 'ACTIVE',
@@ -374,7 +374,7 @@ describe('sincronización con contraseña inicial', () => {
 
     const studentLogin = await request(app)
       .post('/api/auth/login')
-      .send({ identifier: 'nueva.alumna@colegioaleman.edu.co', password: 'ClaveDeCurso2026' });
+      .send({ identifier: '7001@colegioaleman.edu.co', password: 'ClaveDeCurso2026' });
 
     expect(studentLogin.status).toBe(200);
     expect(studentLogin.body.data.user.mustChangePassword).toBe(true);
