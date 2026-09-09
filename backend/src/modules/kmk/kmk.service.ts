@@ -202,7 +202,9 @@ export async function updateCompetency(
   return getCompetency(id);
 }
 
-export async function createSubcompetency(input: UpsertSubcompetencyInput): Promise<CompetencyNode> {
+export async function createSubcompetency(
+  input: UpsertSubcompetencyInput,
+): Promise<CompetencyNode> {
   const competency = await prisma.kmkCompetency.findUnique({ where: { id: input.competencyId } });
   if (!competency) {
     throw AppError.notFound(ERROR_CODE.COMPETENCY_NOT_FOUND, { id: input.competencyId });

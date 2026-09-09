@@ -40,7 +40,9 @@ const envSchema = z
 
     JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
     JWT_EXPIRES_IN: z.string().default('15m'),
-    REFRESH_TOKEN_SECRET: z.string().min(32, 'REFRESH_TOKEN_SECRET debe tener al menos 32 caracteres'),
+    REFRESH_TOKEN_SECRET: z
+      .string()
+      .min(32, 'REFRESH_TOKEN_SECRET debe tener al menos 32 caracteres'),
     REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
     COOKIE_SECRET: z.string().min(32, 'COOKIE_SECRET debe tener al menos 32 caracteres'),
 
@@ -114,8 +116,21 @@ const envSchema = z
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * Una variable definida como cadena vacía es una variable no definida.
+ *
+ * Docker Compose escribe `VARIABLE=` cuando el `.env` no la trae, y para Zod
+ * eso no es lo mismo que ausente: `PHIDIAS_ACADEMIC_YEAR_ID=''` se convierte
+ * en 0 y hace fallar el arranque por «debe ser positivo», que es un mensaje
+ * incomprensible para quien simplemente no usa Phidias todavía. Se normaliza
+ * aquí, en un solo sitio, en lugar de envolver cada campo opcional.
+ */
+function withoutEmpty(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+}
+
 function loadEnv(): Env {
-  const parsed = envSchema.safeParse(process.env);
+  const parsed = envSchema.safeParse(withoutEmpty(process.env));
 
   if (!parsed.success) {
     const details = parsed.error.issues

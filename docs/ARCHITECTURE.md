@@ -53,13 +53,13 @@ Es la pieza que impide la clase de fallo más común en aplicaciones cliente-ser
 
 El flujo de dependencias es unidireccional. Romperlo es el camino más corto a un sistema imposible de probar.
 
-| Capa | Puede depender de | Nunca depende de |
-|---|---|---|
-| Rutas | Middleware, controladores | Servicios, Prisma |
-| Middleware | Servicios, `shared` | Controladores |
-| Controladores | Servicios, DTOs | Prisma, otros controladores |
-| Servicios | Repositorios, otros servicios, `shared` | Express (`req`, `res`) |
-| Repositorios | Prisma | Servicios, Express |
+| Capa          | Puede depender de                       | Nunca depende de            |
+| ------------- | --------------------------------------- | --------------------------- |
+| Rutas         | Middleware, controladores               | Servicios, Prisma           |
+| Middleware    | Servicios, `shared`                     | Controladores               |
+| Controladores | Servicios, DTOs                         | Prisma, otros controladores |
+| Servicios     | Repositorios, otros servicios, `shared` | Express (`req`, `res`)      |
+| Repositorios  | Prisma                                  | Servicios, Express          |
 
 Consecuencias prácticas:
 
@@ -140,12 +140,12 @@ Editar una evaluación publicada no modifica la versión: crea la siguiente en e
 
 `AssessmentEngine` opera sobre `userId`, no sobre `studentId`. Los cuatro escenarios que la especificación describe son el mismo motor con parámetros distintos:
 
-| Escenario | `audience` | `purpose` | Escala |
-|---|---|---|---|
-| Evaluación de estudiantes | `STUDENT` | `EVALUATION` | 1.0–6.0, aprueba con 70 % |
-| Evaluación de docentes | `TEACHER` | `EVALUATION` | 0–100 %, aprueba con 80 % |
-| Capacitación KMK | `TEACHER` | `TRAINING` | 0–100 % |
-| Generada por IA | cualquiera | cualquiera | la de su audiencia |
+| Escenario                 | `audience` | `purpose`    | Escala                    |
+| ------------------------- | ---------- | ------------ | ------------------------- |
+| Evaluación de estudiantes | `STUDENT`  | `EVALUATION` | 1.0–6.0, aprueba con 70 % |
+| Evaluación de docentes    | `TEACHER`  | `EVALUATION` | 0–100 %, aprueba con 80 % |
+| Capacitación KMK          | `TEACHER`  | `TRAINING`   | 0–100 %                   |
+| Generada por IA           | cualquiera | cualquiera   | la de su audiencia        |
 
 No hay cuatro sistemas ni cuatro cálculos de estadística: hay uno.
 
@@ -168,7 +168,10 @@ interface Grader<T extends QuestionType> {
 El backend nunca produce el texto que lee el usuario. Emite:
 
 ```json
-{ "success": false, "error": { "code": "ATTEMPT_LIMIT_REACHED", "message": "…", "details": { "allowed": 2 } } }
+{
+  "success": false,
+  "error": { "code": "ATTEMPT_LIMIT_REACHED", "message": "…", "details": { "allowed": 2 } }
+}
 ```
 
 El frontend traduce `errors.ATTEMPT_LIMIT_REACHED` al idioma del usuario, interpolando `details`. Es la única forma de cumplir el requisito de que errores y validaciones estén en los tres idiomas sin duplicar catálogos de traducción en el servidor.
@@ -203,12 +206,12 @@ La misma forma se aplica al proveedor de IA (`AiProvider` con adaptadores). En a
 
 ## 6. Pruebas
 
-| Nivel | Herramienta | Qué cubre |
-|---|---|---|
-| Unitarias | Vitest | Lógica pura: escalas, calificadores, mappers, validadores |
-| Integración | Vitest + Supertest + PostgreSQL de pruebas | Rutas completas contra base real, incluidas transacciones y permisos |
-| Componentes | Vitest + Vue Test Utils | Componentes críticos: runner de evaluación, editor de preguntas |
-| Extremo a extremo | Playwright | El recorrido completo del criterio de aceptación |
+| Nivel             | Herramienta                                | Qué cubre                                                            |
+| ----------------- | ------------------------------------------ | -------------------------------------------------------------------- |
+| Unitarias         | Vitest                                     | Lógica pura: escalas, calificadores, mappers, validadores            |
+| Integración       | Vitest + Supertest + PostgreSQL de pruebas | Rutas completas contra base real, incluidas transacciones y permisos |
+| Componentes       | Vitest + Vue Test Utils                    | Componentes críticos: runner de evaluación, editor de preguntas      |
+| Extremo a extremo | Playwright                                 | El recorrido completo del criterio de aceptación                     |
 
 Los servicios externos (Phidias, IA) se simulan siempre: la suite no depende de la red ni consume cuota.
 

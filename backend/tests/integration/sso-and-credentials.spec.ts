@@ -213,7 +213,9 @@ describe('emisión de credenciales a estudiantes', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.issued).toHaveLength(3);
 
-    const passwords = response.body.data.issued.map((entry: { password: string }) => entry.password);
+    const passwords = response.body.data.issued.map(
+      (entry: { password: string }) => entry.password,
+    );
     expect(new Set(passwords).size).toBe(3);
 
     // Y la contraseña emitida funciona de verdad.
@@ -227,15 +229,12 @@ describe('emisión de credenciales a estudiantes', () => {
   it('permite una contraseña compartida para toda una entrega', async () => {
     const token = await adminToken();
 
-    await request(app)
-      .post('/api/students')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        username: 'alumno.compartida',
-        email: 'alumno.compartida@colegioaleman.edu.co',
-        firstName: 'Alumno',
-        lastName: 'Compartida',
-      });
+    await request(app).post('/api/students').set('Authorization', `Bearer ${token}`).send({
+      username: 'alumno.compartida',
+      email: 'alumno.compartida@colegioaleman.edu.co',
+      firstName: 'Alumno',
+      lastName: 'Compartida',
+    });
 
     const response = await request(app)
       .post('/api/students/credentials')
@@ -294,15 +293,12 @@ describe('emisión de credenciales a estudiantes', () => {
   it('la contraseña emitida nunca aparece en la auditoría', async () => {
     const token = await adminToken();
 
-    await request(app)
-      .post('/api/students')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        username: 'alumno.auditoria',
-        email: 'alumno.auditoria@colegioaleman.edu.co',
-        firstName: 'Alumno',
-        lastName: 'Auditoría',
-      });
+    await request(app).post('/api/students').set('Authorization', `Bearer ${token}`).send({
+      username: 'alumno.auditoria',
+      email: 'alumno.auditoria@colegioaleman.edu.co',
+      firstName: 'Alumno',
+      lastName: 'Auditoría',
+    });
 
     await request(app)
       .post('/api/students/credentials')

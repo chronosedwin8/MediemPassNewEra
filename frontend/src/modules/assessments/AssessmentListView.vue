@@ -103,10 +103,14 @@ const statusLabel = (status: string): string =>
                   {{ t('assessment.version', { number: assessment.latestVersion.versionNumber }) }}
                 </span>
                 <span v-if="assessment.latestVersion">
-                  {{ t('assessment.questionCount', { count: assessment.latestVersion.questionCount }) }}
+                  {{
+                    t('assessment.questionCount', { count: assessment.latestVersion.questionCount })
+                  }}
                 </span>
                 <span v-if="assessment.latestVersion">
-                  {{ t('assessment.totalPoints', { points: assessment.latestVersion.totalPoints }) }}
+                  {{
+                    t('assessment.totalPoints', { points: assessment.latestVersion.totalPoints })
+                  }}
                 </span>
               </p>
             </div>

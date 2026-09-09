@@ -98,7 +98,12 @@ const localizedLabel = (text: LocalizedText | null): string =>
             <div>
               <dt class="text-ink-muted">{{ t('result.score') }}</dt>
               <dd class="font-medium tabular-nums">
-                {{ t('result.pointsOf', { earned: result.pointsEarned, possible: result.pointsPossible }) }}
+                {{
+                  t('result.pointsOf', {
+                    earned: result.pointsEarned,
+                    possible: result.pointsPossible,
+                  })
+                }}
               </dd>
             </div>
             <div>
@@ -129,7 +134,9 @@ const localizedLabel = (text: LocalizedText | null): string =>
 
         <!-- Escala porcentual (docentes): sin estrellas, el porcentaje es la nota. -->
         <div v-else class="sm:text-right">
-          <p class="text-4xl font-semibold tabular-nums">{{ n(result.percentage / 100, 'percent') }}</p>
+          <p class="text-4xl font-semibold tabular-nums">
+            {{ n(result.percentage / 100, 'percent') }}
+          </p>
           <p class="mt-1 text-xs text-ink-subtle">
             {{ t('result.passed') }} ≥ {{ n(result.passingPercentage / 100, 'percent') }}
           </p>
@@ -147,7 +154,11 @@ const localizedLabel = (text: LocalizedText | null): string =>
     <!-- Desglose por competencia KMK -->
     <BaseCard :title="t('result.byCompetency')">
       <ul class="flex flex-col gap-4">
-        <li v-for="entry in result.competencyBreakdown" :key="entry.competencyId" class="flex flex-col gap-1.5">
+        <li
+          v-for="entry in result.competencyBreakdown"
+          :key="entry.competencyId"
+          class="flex flex-col gap-1.5"
+        >
           <div class="flex items-baseline justify-between gap-4">
             <p class="text-sm font-medium">
               <span class="text-ink-muted">KMK {{ entry.code }}</span>
@@ -188,7 +199,13 @@ const localizedLabel = (text: LocalizedText | null): string =>
             <p class="text-sm font-medium">{{ index + 1 }}. {{ item.statement }}</p>
             <BaseBadge
               class="shrink-0"
-              :tone="item.isCorrect === true ? 'success' : item.isCorrect === false ? 'danger' : 'neutral'"
+              :tone="
+                item.isCorrect === true
+                  ? 'success'
+                  : item.isCorrect === false
+                    ? 'danger'
+                    : 'neutral'
+              "
             >
               {{ item.pointsEarned }}/{{ item.pointsPossible }}
             </BaseBadge>
@@ -197,10 +214,7 @@ const localizedLabel = (text: LocalizedText | null): string =>
           <p v-if="item.feedback" class="text-sm text-ink-muted">{{ item.feedback }}</p>
           <p v-if="item.explanation" class="text-sm text-ink-subtle">{{ item.explanation }}</p>
 
-          <p
-            v-if="item.teacherFeedback"
-            class="rounded-md bg-surface-muted px-3 py-2 text-sm"
-          >
+          <p v-if="item.teacherFeedback" class="rounded-md bg-surface-muted px-3 py-2 text-sm">
             <span class="font-medium">{{ t('result.teacherFeedback') }}:</span>
             {{ item.teacherFeedback }}
           </p>

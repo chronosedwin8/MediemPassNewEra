@@ -139,7 +139,10 @@ function ssoCookieOptions(): CookieOptions {
 
 function redirectUriFor(req: Request): string {
   const provider = getSsoProvider();
-  return env.ENTRA_REDIRECT_URI ?? `${req.protocol}://${req.get('host')}/api/auth/sso/${provider.id.toLowerCase()}/callback`;
+  return (
+    env.ENTRA_REDIRECT_URI ??
+    `${req.protocol}://${req.get('host')}/api/auth/sso/${provider.id.toLowerCase()}/callback`
+  );
 }
 
 /** Indica si el SSO está disponible. Público: la pantalla de acceso lo necesita. */
@@ -220,8 +223,7 @@ export async function ssoCallbackController(req: Request, res: Response): Promis
     res.cookie(CSRF_COOKIE, csrfToken, csrfCookieOptions(result.refreshExpiresAt));
     res.redirect(`${env.APP_URL}${handshake.redirect}`);
   } catch (error) {
-    const failureCode =
-      error instanceof AppError ? error.code : ERROR_CODE.INTERNAL_ERROR;
+    const failureCode = error instanceof AppError ? error.code : ERROR_CODE.INTERNAL_ERROR;
     res.redirect(failureUrl(failureCode));
   }
 }

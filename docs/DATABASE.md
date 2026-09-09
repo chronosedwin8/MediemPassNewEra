@@ -8,16 +8,16 @@ Fuente de verdad: [`../backend/prisma/schema.prisma`](../backend/prisma/schema.p
 
 ## 1. Convenciones
 
-| Aspecto | Decisión |
-|---|---|
-| Claves primarias | UUID v7 (`uuid(7)`). Ordenables por tiempo, lo que da localidad en los índices B-tree sin exponer un contador secuencial. |
-| Nombres | Tablas y columnas en `snake_case`; el cliente Prisma expone `camelCase`. |
-| Marcas de tiempo | `created_at` y `updated_at` en toda entidad mutable. |
-| Borrado | Lógico (`deleted_at`) en lo que se referencia históricamente; físico solo en tablas efímeras. |
-| Textos de catálogo | `JSONB` con forma `{ es, de, en }`. Aplica a competencias, áreas, materias, etiquetas de escala y títulos de módulos. |
-| Contenido pedagógico | Texto plano en el idioma de la evaluación. No se traduce: hacerlo automáticamente sería académicamente incorrecto. |
-| Dinero y notas | `DECIMAL`, nunca coma flotante. Puntos `DECIMAL(6,2)`, porcentajes `DECIMAL(5,2)`, notas `DECIMAL(4,2)`. |
-| Locale | Bases creadas con proveedor ICU (`und`), para que el orden alfabético sea correcto también en alemán. |
+| Aspecto              | Decisión                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Claves primarias     | UUID v7 (`uuid(7)`). Ordenables por tiempo, lo que da localidad en los índices B-tree sin exponer un contador secuencial. |
+| Nombres              | Tablas y columnas en `snake_case`; el cliente Prisma expone `camelCase`.                                                  |
+| Marcas de tiempo     | `created_at` y `updated_at` en toda entidad mutable.                                                                      |
+| Borrado              | Lógico (`deleted_at`) en lo que se referencia históricamente; físico solo en tablas efímeras.                             |
+| Textos de catálogo   | `JSONB` con forma `{ es, de, en }`. Aplica a competencias, áreas, materias, etiquetas de escala y títulos de módulos.     |
+| Contenido pedagógico | Texto plano en el idioma de la evaluación. No se traduce: hacerlo automáticamente sería académicamente incorrecto.        |
+| Dinero y notas       | `DECIMAL`, nunca coma flotante. Puntos `DECIMAL(6,2)`, porcentajes `DECIMAL(5,2)`, notas `DECIMAL(4,2)`.                  |
+| Locale               | Bases creadas con proveedor ICU (`und`), para que el orden alfabético sea correcto también en alemán.                     |
 
 ### Sobre el borrado lógico y la unicidad
 
@@ -119,12 +119,12 @@ Como los valores se fijan una vez y no se recalculan, además son históricament
 
 Se normaliza lo que se consulta; se guarda en `JSONB` lo que solo se lee al renderizar y calificar.
 
-| En columnas | En `payload` (JSONB) |
-|---|---|
-| `type`, `points`, `position`, `difficulty` | opciones y cuál es correcta |
-| `kmk_competency_id`, `kmk_subcompetency_id` | pares de relación, grupos, huecos |
+| En columnas                                           | En `payload` (JSONB)                    |
+| ----------------------------------------------------- | --------------------------------------- |
+| `type`, `points`, `position`, `difficulty`            | opciones y cuál es correcta             |
+| `kmk_competency_id`, `kmk_subcompetency_id`           | pares de relación, grupos, huecos       |
 | `statement`, `feedback_correct`, `feedback_incorrect` | posiciones correctas de un ordenamiento |
-| `assessment_version_id` | zonas de una imagen, coordenadas |
+| `assessment_version_id`                               | zonas de una imagen, coordenadas        |
 
 Se descartó una tabla `question_options` normalizada: ninguna estadística agrega a nivel de opción individual, y mantenerla obligaría a dos caminos distintos para leer una pregunta —uno para los tipos de opción y otro para el resto—, con la lógica duplicada que eso arrastra.
 
@@ -146,13 +146,13 @@ Las estrellas se derivan del número de niveles (`N` niveles → `N-1` estrellas
 
 ### Qué se importa de Phidias y qué no
 
-| Entidad | Origen | Motivo |
-|---|---|---|
-| `academic_years`, `academic_periods` | Phidias (`external_id`) | Calendario oficial de la institución. |
-| `groups` | Phidias (`external_id` + año) | Las secciones son la matrícula real. |
-| `students` | Phidias (`external_id`) | Fuente oficial de estudiantes. |
-| `academic_areas`, `subjects` | **Curadas por el administrador** | Phidias devuelve 262 "áreas" que incluyen propósitos pedagógicos de preescolar y rúbricas de comportamiento. No son áreas de conocimiento sobre las que agregar estadísticas. |
-| `education_levels`, `grade_levels` | Propias, estables | Los identificadores de nivel y grado de Phidias **cambian cada curso** (los niveles pasaron de 14/15/16 a 17/18/19 entre 2025-26 y 2026-27). Anclar a ellos rompería la comparación interanual. |
+| Entidad                              | Origen                           | Motivo                                                                                                                                                                                          |
+| ------------------------------------ | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `academic_years`, `academic_periods` | Phidias (`external_id`)          | Calendario oficial de la institución.                                                                                                                                                           |
+| `groups`                             | Phidias (`external_id` + año)    | Las secciones son la matrícula real.                                                                                                                                                            |
+| `students`                           | Phidias (`external_id`)          | Fuente oficial de estudiantes.                                                                                                                                                                  |
+| `academic_areas`, `subjects`         | **Curadas por el administrador** | Phidias devuelve 262 "áreas" que incluyen propósitos pedagógicos de preescolar y rúbricas de comportamiento. No son áreas de conocimiento sobre las que agregar estadísticas.                   |
+| `education_levels`, `grade_levels`   | Propias, estables                | Los identificadores de nivel y grado de Phidias **cambian cada curso** (los niveles pasaron de 14/15/16 a 17/18/19 entre 2025-26 y 2026-27). Anclar a ellos rompería la comparación interanual. |
 
 `groups` lleva la unicidad `(external_source, external_id, academic_year_id)` precisamente porque los identificadores de sección se reasignan cada año; `students.external_id`, en cambio, sí es estable y su unicidad es `(external_source, external_id)`.
 
@@ -164,26 +164,26 @@ Las estrellas se derivan del número de niveles (`N` niveles → `N-1` estrellas
 
 Los índices se diseñaron a partir de las consultas que exigen los cuadros de mando de las secciones 26–27 de la especificación, no por costumbre.
 
-| Consulta que sirve | Índice |
-|---|---|
-| Evaluaciones pendientes de un estudiante | `assignment_recipients (user_id, status)` |
-| Seguimiento de una asignación | `assignment_recipients (assignment_id, status)` |
-| Intentos vencidos a cerrar por barrido | `assessment_attempts (status, deadline_at)` |
-| Desempeño por competencia y fecha | `attempt_answers (kmk_competency_id, answered_at)` |
-| Competencia filtrada por materia / grupo / periodo | tres índices compuestos sobre `attempt_answers` |
-| Bandeja de calificación manual pendiente | `attempt_answers (requires_manual_grading, graded_at)` |
-| Evaluaciones de un docente | `assessments (created_by_id, deleted_at)` |
-| Auditoría por usuario o por acción | `audit_logs (user_id, created_at)`, `(action, created_at)` |
+| Consulta que sirve                                 | Índice                                                     |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| Evaluaciones pendientes de un estudiante           | `assignment_recipients (user_id, status)`                  |
+| Seguimiento de una asignación                      | `assignment_recipients (assignment_id, status)`            |
+| Intentos vencidos a cerrar por barrido             | `assessment_attempts (status, deadline_at)`                |
+| Desempeño por competencia y fecha                  | `attempt_answers (kmk_competency_id, answered_at)`         |
+| Competencia filtrada por materia / grupo / periodo | tres índices compuestos sobre `attempt_answers`            |
+| Bandeja de calificación manual pendiente           | `attempt_answers (requires_manual_grading, graded_at)`     |
+| Evaluaciones de un docente                         | `assessments (created_by_id, deleted_at)`                  |
+| Auditoría por usuario o por acción                 | `audit_logs (user_id, created_at)`, `(action, created_at)` |
 
 ## 8. Entidades que se descartaron
 
-| Propuesta original | Decisión | Motivo |
-|---|---|---|
-| `assessment_questions` | Eliminada | Implicaría preguntas compartidas entre evaluaciones, incompatible con la inmutabilidad de versiones. |
-| `question_options` | Eliminada | Duplicaría el camino de lectura de una pregunta sin aportar capacidad de consulta. |
-| `assessment_results` | Fusionada en `assessment_attempts` | Relación 1:1 real; separarla solo añade un JOIN a la consulta más frecuente. |
-| `assessment_feedback` | Fusionada | La automática vive en la pregunta; la manual, en `attempt_answers`. |
-| `student_groups` como tabla distinta de `groups` | Unificada en `group_memberships` | Eran la misma relación descrita dos veces. |
+| Propuesta original                               | Decisión                           | Motivo                                                                                               |
+| ------------------------------------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `assessment_questions`                           | Eliminada                          | Implicaría preguntas compartidas entre evaluaciones, incompatible con la inmutabilidad de versiones. |
+| `question_options`                               | Eliminada                          | Duplicaría el camino de lectura de una pregunta sin aportar capacidad de consulta.                   |
+| `assessment_results`                             | Fusionada en `assessment_attempts` | Relación 1:1 real; separarla solo añade un JOIN a la consulta más frecuente.                         |
+| `assessment_feedback`                            | Fusionada                          | La automática vive en la pregunta; la manual, en `attempt_answers`.                                  |
+| `student_groups` como tabla distinta de `groups` | Unificada en `group_memberships`   | Eran la misma relación descrita dos veces.                                                           |
 
 ## 9. Migraciones
 

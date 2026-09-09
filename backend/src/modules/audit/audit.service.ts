@@ -38,7 +38,9 @@ const FORBIDDEN_METADATA_KEYS = new Set([
   'birthdate',
 ]);
 
-function sanitize(metadata: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+function sanitize(
+  metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
   if (!metadata) return undefined;
   const clean: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(metadata)) {

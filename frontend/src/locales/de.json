@@ -175,6 +175,25 @@
       "LONG_ANSWER": "Lange Antwort"
     }
   },
+  "editor": {
+    "imageUrl": "Bild-URL",
+    "altText": "Alternativtext",
+    "allowMultiple": "Mehrere Bereiche auswählbar",
+    "hotspotHint": "Klicke auf das Bild, um einen Bereich hinzuzufügen.",
+    "hotspotLabel": "Bezeichnung des Bereichs",
+    "ignoreAccents": "Akzente ignorieren",
+    "caseSensitive": "Groß-/Kleinschreibung beachten",
+    "minWords": "Mindestanzahl an Wörtern",
+    "rubric": "Bewertungskriterien",
+    "orderingHint": "Schreibe die Elemente in der richtigen Reihenfolge.",
+    "leftColumn": "Linke Spalte",
+    "rightColumn": "Rechte Spalte",
+    "groups": "Gruppen",
+    "items": "Elemente",
+    "textWithBlanks": "Lückentext",
+    "blankHint": "Jede Lücke wird als Platzhalter in doppelten geschweiften Klammern geschrieben.",
+    "answerVariants": "Antwort, Variante"
+  },
   "attempt": {
     "questionOf": "Aufgabe {current} von {total}",
     "progress": "Fortschritt",
@@ -323,7 +342,10 @@
     "PHIDIAS_UNAUTHORIZED": "Phidias hat die Anfrage abgelehnt. Prüfe das Integrations-Token.",
     "PHIDIAS_SYNC_FAILED": "Die Synchronisierung mit Phidias ist fehlgeschlagen.",
     "AI_PROVIDER_ERROR": "Der KI-Anbieter ist fehlgeschlagen.",
-    "AI_RESPONSE_INVALID": "Die KI lieferte eine Antwort, die nicht validiert werden konnte."
+    "AI_RESPONSE_INVALID": "Die KI lieferte eine Antwort, die nicht validiert werden konnte.",
+    "UNSUPPORTED_LANGUAGE": "Diese Sprache ist nicht verfügbar.",
+    "SSO_STATE_MISMATCH": "Die Anmeldung konnte nicht überprüft werden. Bitte starte sie erneut auf der Anmeldeseite.",
+    "ATTEMPT_ALREADY_IN_PROGRESS": "Du hast bereits einen Versuch begonnen. Setze diesen fort."
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich",

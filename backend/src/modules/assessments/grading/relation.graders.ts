@@ -33,7 +33,11 @@ export const matchingGrader: Grader<typeof QUESTION_TYPE.MATCHING> = {
     const isCorrect = hits === expected.size && given.size === expected.size;
 
     return payload.partialCredit
-      ? { pointsEarned: partialPoints(hits, expected.size, points), isCorrect, requiresManualGrading: false }
+      ? {
+          pointsEarned: partialPoints(hits, expected.size, points),
+          isCorrect,
+          requiresManualGrading: false,
+        }
       : allOrNothing(isCorrect, points);
   },
 };
@@ -46,7 +50,9 @@ export const groupingGrader: Grader<typeof QUESTION_TYPE.GROUPING> = {
     if (answer.assignments.length === 0) return EMPTY_OUTCOME;
 
     const expected = new Map(payload.items.map((item) => [item.id, item.groupId]));
-    const given = new Map(answer.assignments.map((assignment) => [assignment.itemId, assignment.groupId]));
+    const given = new Map(
+      answer.assignments.map((assignment) => [assignment.itemId, assignment.groupId]),
+    );
 
     let hits = 0;
     for (const [itemId, groupId] of expected) {
@@ -56,7 +62,11 @@ export const groupingGrader: Grader<typeof QUESTION_TYPE.GROUPING> = {
     const isCorrect = hits === expected.size;
 
     return payload.partialCredit
-      ? { pointsEarned: partialPoints(hits, expected.size, points), isCorrect, requiresManualGrading: false }
+      ? {
+          pointsEarned: partialPoints(hits, expected.size, points),
+          isCorrect,
+          requiresManualGrading: false,
+        }
       : allOrNothing(isCorrect, points);
   },
 };
@@ -87,7 +97,11 @@ function gradeSequence(
   const isCorrect = hits === items.length && order.length === items.length;
 
   return partialCredit
-    ? { pointsEarned: partialPoints(hits, items.length, points), isCorrect, requiresManualGrading: false }
+    ? {
+        pointsEarned: partialPoints(hits, items.length, points),
+        isCorrect,
+        requiresManualGrading: false,
+      }
     : allOrNothing(isCorrect, points);
 }
 

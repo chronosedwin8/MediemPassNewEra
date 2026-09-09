@@ -34,7 +34,9 @@ export const createGroupSchema = z.object({
   homeroomTeacherId: z.string().uuid().nullable().optional(),
 });
 
-export const updateGroupSchema = createGroupSchema.partial().omit({ code: true, academicYearId: true });
+export const updateGroupSchema = createGroupSchema
+  .partial()
+  .omit({ code: true, academicYearId: true });
 
 export const membershipSchema = z.object({
   studentIds: z.array(z.string().uuid()).min(1).max(200),
@@ -172,8 +174,10 @@ export async function createGroup(actor: Actor, input: CreateGroupInput): Promis
     prisma.academicYear.findUnique({ where: { id: input.academicYearId }, select: { id: true } }),
     prisma.gradeLevel.findUnique({ where: { id: input.gradeLevelId }, select: { id: true } }),
   ]);
-  if (!year) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { academicYearId: input.academicYearId });
-  if (!gradeLevel) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { gradeLevelId: input.gradeLevelId });
+  if (!year)
+    throw AppError.notFound(ERROR_CODE.NOT_FOUND, { academicYearId: input.academicYearId });
+  if (!gradeLevel)
+    throw AppError.notFound(ERROR_CODE.NOT_FOUND, { gradeLevelId: input.gradeLevelId });
 
   const clash = await prisma.group.findFirst({
     where: { academicYearId: input.academicYearId, code: input.code, deletedAt: null },
@@ -257,7 +261,9 @@ export async function listMembers(actor: Actor, groupId: string): Promise<GroupM
     include: {
       student: {
         include: {
-          user: { select: { id: true, firstName: true, lastName: true, username: true, email: true } },
+          user: {
+            select: { id: true, firstName: true, lastName: true, username: true, email: true },
+          },
         },
       },
     },
@@ -336,7 +342,11 @@ export async function addMembers(
  * respuestas ya calificadas conservan el `group_id` que tenían, de modo que
  * el histórico sigue atribuido al grupo en el que realmente estaba.
  */
-export async function removeMember(actor: Actor, groupId: string, studentId: string): Promise<void> {
+export async function removeMember(
+  actor: Actor,
+  groupId: string,
+  studentId: string,
+): Promise<void> {
   await assertGroupAccess(actor, groupId);
 
   const membership = await prisma.groupMembership.findUnique({
@@ -353,7 +363,10 @@ export async function removeMember(actor: Actor, groupId: string, studentId: str
 export async function deleteGroup(actor: Actor, id: string): Promise<void> {
   await assertGroupAccess(actor, id);
 
-  const group = await prisma.group.findFirst({ where: { id, deletedAt: null }, select: { code: true } });
+  const group = await prisma.group.findFirst({
+    where: { id, deletedAt: null },
+    select: { code: true },
+  });
   if (!group) throw AppError.notFound(ERROR_CODE.GROUP_NOT_FOUND, { id });
 
   const openAssignments = await prisma.assignment.count({

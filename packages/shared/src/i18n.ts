@@ -62,7 +62,10 @@ export function isSupportedLanguage(value: unknown): value is Language {
  * Normaliza un código de idioma externo.
  * Phidias devuelve tanto `es` como `es_ES`; Entra ID puede devolver `de-DE`.
  */
-export function normalizeLanguage(value: string | null | undefined, fallback: Language = LANGUAGE.ES): Language {
+export function normalizeLanguage(
+  value: string | null | undefined,
+  fallback: Language = LANGUAGE.ES,
+): Language {
   if (!value) return fallback;
   const base = value.toLowerCase().replace('_', '-').split('-')[0];
   return isSupportedLanguage(base) ? base : fallback;

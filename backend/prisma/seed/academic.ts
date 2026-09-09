@@ -69,7 +69,9 @@ const AREAS: AreaSeed[] = [
     code: 'EFIS',
     name: { es: 'Educación Física', de: 'Sport', en: 'Physical Education' },
     color: '#0891b2',
-    subjects: [{ code: 'EFI', name: { es: 'Educación Física', de: 'Sport', en: 'Physical Education' } }],
+    subjects: [
+      { code: 'EFI', name: { es: 'Educación Física', de: 'Sport', en: 'Physical Education' } },
+    ],
   },
 ];
 

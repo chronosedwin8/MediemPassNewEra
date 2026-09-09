@@ -55,7 +55,9 @@ const average = computed(() => {
 <template>
   <div class="flex flex-col gap-6">
     <div>
-      <h2 class="text-xl font-semibold">{{ t('auth.welcomeBack', { name: auth.user?.firstName }) }}</h2>
+      <h2 class="text-xl font-semibold">
+        {{ t('auth.welcomeBack', { name: auth.user?.firstName }) }}
+      </h2>
       <p class="mt-1 text-sm text-ink-muted">
         {{ auth.user?.roles.map((role) => t(`roles.${role}`)).join(' · ') }}
       </p>

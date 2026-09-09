@@ -33,11 +33,11 @@ Principios que el código respeta de forma innegociable:
 
 ## Requisitos
 
-| Software | Versión |
-|---|---|
-| Node.js | ≥ 20.11 (probado con 24.14) |
-| npm | ≥ 10 (probado con 11.9) |
-| PostgreSQL | 17 |
+| Software   | Versión                     |
+| ---------- | --------------------------- |
+| Node.js    | ≥ 20.11 (probado con 24.14) |
+| npm        | ≥ 10 (probado con 11.9)     |
+| PostgreSQL | 17                          |
 
 Alternativamente, `docker compose` levanta PostgreSQL sin instalarlo.
 
@@ -80,29 +80,29 @@ npm run dev            # backend (http://localhost:3000) y frontend (http://loca
 
 Tras `npm run db:seed`, la contraseña de todas ellas es `Medienpass2026!`:
 
-| Usuario | Rol |
-|---|---|
-| `admin` | Administrador |
-| `stefan.brandt`, `laura.medina`, `carolina.pardo` | Docentes |
-| `sofia.restrepo0` … `santiago.cabrera29` | Estudiantes |
+| Usuario                                           | Rol           |
+| ------------------------------------------------- | ------------- |
+| `admin`                                           | Administrador |
+| `stefan.brandt`, `laura.medina`, `carolina.pardo` | Docentes      |
+| `sofia.restrepo0` … `santiago.cabrera29`          | Estudiantes   |
 
 Los estudiantes que llegan por sincronización con Phidias **no** tienen contraseña: nacen pendientes de activación, tal como se describe en [`docs/PHIDIAS.md`](docs/PHIDIAS.md).
 
 ## Comandos
 
-| Comando | Qué hace |
-|---|---|
-| `npm run dev` | Levanta backend y frontend con recarga en caliente |
-| `npm run build` | Compila todos los paquetes para producción |
-| `npm run typecheck` | Comprueba tipos en todos los paquetes (modo estricto) |
-| `npm run lint` | ESLint sobre el monorepo |
-| `npm run format` | Formatea con Prettier |
-| `npm test` | Pruebas unitarias y de integración |
-| `npm run test:e2e` | Pruebas de extremo a extremo (Playwright) |
-| `npm run db:migrate` | Aplica migraciones pendientes |
-| `npm run db:reset` | Recrea la base desde cero y siembra |
-| `npm run db:studio` | Explorador visual de datos (Prisma Studio) |
-| `npm run phidias:probe` | Contrasta los contratos reales de la API de Phidias |
+| Comando                 | Qué hace                                              |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run dev`           | Levanta backend y frontend con recarga en caliente    |
+| `npm run build`         | Compila todos los paquetes para producción            |
+| `npm run typecheck`     | Comprueba tipos en todos los paquetes (modo estricto) |
+| `npm run lint`          | ESLint sobre el monorepo                              |
+| `npm run format`        | Formatea con Prettier                                 |
+| `npm test`              | Pruebas unitarias y de integración                    |
+| `npm run test:e2e`      | Pruebas de extremo a extremo (Playwright)             |
+| `npm run db:migrate`    | Aplica migraciones pendientes                         |
+| `npm run db:reset`      | Recrea la base desde cero y siembra                   |
+| `npm run db:studio`     | Explorador visual de datos (Prisma Studio)            |
+| `npm run phidias:probe` | Contrasta los contratos reales de la API de Phidias   |
 
 ## Integración con Phidias
 
@@ -118,17 +118,17 @@ Detalles operativos, contratos verificados y peculiaridades de la API (entre ell
 
 ## Documentación
 
-| Documento | Contenido |
-|---|---|
-| [`ROADMAP.md`](ROADMAP.md) | Plan de implementación por etapas |
-| [`PROJECT_ANALYSIS.md`](PROJECT_ANALYSIS.md) | Análisis del entorno, riesgos y decisiones |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Capas, módulos y convenciones |
-| [`docs/DATABASE.md`](docs/DATABASE.md) | Modelo de datos, índices y versionado |
-| [`docs/API.md`](docs/API.md) | Contrato REST y códigos de error |
-| [`docs/SECURITY.md`](docs/SECURITY.md) | Autenticación, RBAC y tratamiento de datos personales |
-| [`docs/PHIDIAS.md`](docs/PHIDIAS.md) | Integración y sincronización |
-| [`docs/AI.md`](docs/AI.md) | Generación asistida de evaluaciones |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Despliegue |
+| Documento                                      | Contenido                                             |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| [`ROADMAP.md`](ROADMAP.md)                     | Plan de implementación por etapas                     |
+| [`PROJECT_ANALYSIS.md`](PROJECT_ANALYSIS.md)   | Análisis del entorno, riesgos y decisiones            |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Capas, módulos y convenciones                         |
+| [`docs/DATABASE.md`](docs/DATABASE.md)         | Modelo de datos, índices y versionado                 |
+| [`docs/API.md`](docs/API.md)                   | Contrato REST y códigos de error                      |
+| [`docs/SECURITY.md`](docs/SECURITY.md)         | Autenticación, RBAC y tratamiento de datos personales |
+| [`docs/PHIDIAS.md`](docs/PHIDIAS.md)           | Integración y sincronización                          |
+| [`docs/AI.md`](docs/AI.md)                     | Generación asistida de evaluaciones                   |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)     | Despliegue                                            |
 
 ## Licencia
 

@@ -113,7 +113,10 @@ export async function listUsers(query: ListUsersQuery): Promise<Paginated<UserSu
 }
 
 export async function getUser(id: string): Promise<UserSummary> {
-  const row = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: userSelection });
+  const row = await prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    select: userSelection,
+  });
   if (!row) throw AppError.notFound(ERROR_CODE.USER_NOT_FOUND, { id });
   return toSummary(row as UserRow);
 }
@@ -237,8 +240,15 @@ export async function updateUser(
   return toSummary(updated as UserRow);
 }
 
-export async function setUserRoles(id: string, roles: Role[], actorId: string): Promise<UserSummary> {
-  const user = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
+export async function setUserRoles(
+  id: string,
+  roles: Role[],
+  actorId: string,
+): Promise<UserSummary> {
+  const user = await prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true },
+  });
   if (!user) throw AppError.notFound(ERROR_CODE.USER_NOT_FOUND, { id });
 
   const roleRows = await prisma.role.findMany({ where: { code: { in: roles } } });
@@ -274,7 +284,10 @@ export async function resetUserPassword(
   password: string | undefined,
   actorId: string,
 ): Promise<{ temporaryPassword: string }> {
-  const user = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
+  const user = await prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true },
+  });
   if (!user) throw AppError.notFound(ERROR_CODE.USER_NOT_FOUND, { id });
 
   const temporaryPassword = password ?? `${randomBytes(6).toString('base64url')}Aa1`;

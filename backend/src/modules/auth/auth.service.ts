@@ -72,7 +72,9 @@ async function loadUserWithAccess(userId: string): Promise<AuthenticatedUser | n
   const roles = user.roles.map((link) => link.role.code as Role);
   const permissions = [
     ...new Set(
-      user.roles.flatMap((link) => link.role.permissions.map((rp) => rp.permission.code as Permission)),
+      user.roles.flatMap((link) =>
+        link.role.permissions.map((rp) => rp.permission.code as Permission),
+      ),
     ),
   ];
 
@@ -361,7 +363,10 @@ export async function refreshSession(
       where: { family: stored.family, revokedAt: null },
       data: { revokedAt: new Date() },
     });
-    log.warn({ userId: stored.userId, family: stored.family }, 'refresco reutilizado: familia revocada');
+    log.warn(
+      { userId: stored.userId, family: stored.family },
+      'refresco reutilizado: familia revocada',
+    );
     throw AppError.unauthorized(ERROR_CODE.REFRESH_TOKEN_REUSED, 'Refresh token reuse detected');
   }
 
@@ -380,7 +385,10 @@ export async function refreshSession(
   return issueSession(user, metadata, stored.family);
 }
 
-export async function logout(token: string | undefined, metadata: RequestMetadata = {}): Promise<void> {
+export async function logout(
+  token: string | undefined,
+  metadata: RequestMetadata = {},
+): Promise<void> {
   if (!token) return;
   const stored = await prisma.refreshToken.findUnique({
     where: { tokenHash: refreshTokenHash(token) },

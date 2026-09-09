@@ -30,11 +30,24 @@ interface Probe {
 function buildProbes(yearId: number): Probe[] {
   return [
     { label: 'areas', path: '/1/academic/areas', schema: phidiasAreasResponseSchema },
-    { label: 'subjects', path: `/1/academic/subjects?year=${yearId}`, schema: phidiasSubjectsResponseSchema },
+    {
+      label: 'subjects',
+      path: `/1/academic/subjects?year=${yearId}`,
+      schema: phidiasSubjectsResponseSchema,
+    },
     { label: 'periods', path: '/1/academic/periods', schema: phidiasPeriodsResponseSchema },
-    { label: 'consolidate', path: '/1/course/consolidate', schema: phidiasConsolidateResponseSchema },
+    {
+      label: 'consolidate',
+      path: '/1/course/consolidate',
+      schema: phidiasConsolidateResponseSchema,
+    },
     { label: 'course_group', path: '/1/academic/course_group', schema: null, expectedBroken: true },
-    { label: 'period_categories', path: '/1/academic/period_categories', schema: null, expectedBroken: true },
+    {
+      label: 'period_categories',
+      path: '/1/academic/period_categories',
+      schema: null,
+      expectedBroken: true,
+    },
     { label: 'ranking', path: '/1/academic/grading2/ranking', schema: null, expectedBroken: true },
     { label: 'grading/areas', path: '/1/academic/grading/areas', schema: null },
     { label: 'grading/courses', path: '/1/academic/grading/courses', schema: null },
@@ -77,7 +90,9 @@ async function probe(item: Probe): Promise<void> {
     try {
       parsed = JSON.parse(text);
     } catch {
-      console.warn(`  200  ${item.label.padEnd(20)} ${elapsed.padStart(9)} ⚠️  la respuesta no es JSON`);
+      console.warn(
+        `  200  ${item.label.padEnd(20)} ${elapsed.padStart(9)} ⚠️  la respuesta no es JSON`,
+      );
       return;
     }
 

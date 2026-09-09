@@ -92,7 +92,9 @@ async function submit(): Promise<void> {
   <div class="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
     <div class="w-full max-w-sm">
       <div class="mb-8 text-center">
-        <div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-brand-600 text-ink-inverse">
+        <div
+          class="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-brand-600 text-ink-inverse"
+        >
           <span class="text-xl font-bold">M</span>
         </div>
         <h1 class="text-2xl font-semibold">{{ t('app.name') }}</h1>

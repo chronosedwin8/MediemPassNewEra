@@ -42,7 +42,10 @@ export class AppError extends Error {
 
   // --- Atajos para los casos más frecuentes -------------------------------
 
-  static notFound(code: ErrorCode = ERROR_CODE.NOT_FOUND, details?: Record<string, unknown>): AppError {
+  static notFound(
+    code: ErrorCode = ERROR_CODE.NOT_FOUND,
+    details?: Record<string, unknown>,
+  ): AppError {
     return new AppError(code, 'Resource not found', { details });
   }
 
@@ -50,7 +53,10 @@ export class AppError extends Error {
     return new AppError(code, message ?? 'Authentication required');
   }
 
-  static forbidden(code: ErrorCode = ERROR_CODE.FORBIDDEN, details?: Record<string, unknown>): AppError {
+  static forbidden(
+    code: ErrorCode = ERROR_CODE.FORBIDDEN,
+    details?: Record<string, unknown>,
+  ): AppError {
     return new AppError(code, 'Access denied', { details });
   }
 

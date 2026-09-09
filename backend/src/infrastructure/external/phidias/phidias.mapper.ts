@@ -1,4 +1,9 @@
-import { ENROLLMENT_STATUS, normalizeLanguage, type EnrollmentStatus, type Language } from '@medienpass/shared';
+import {
+  ENROLLMENT_STATUS,
+  normalizeLanguage,
+  type EnrollmentStatus,
+  type Language,
+} from '@medienpass/shared';
 import { createLogger } from '../../../shared/logger.js';
 import type { PhidiasLevel, PhidiasStudent } from './phidias.schemas.js';
 
@@ -68,11 +73,7 @@ const unknownStatuses = new Set<string>();
 export function mapEnrollmentStatus(raw: string | null | undefined): EnrollmentStatus {
   if (!raw) return ENROLLMENT_STATUS.UNKNOWN;
 
-  const normalized = raw
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
+  const normalized = raw.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
   const mapped = ENROLLMENT_STATUS_MAP[normalized];
   if (mapped) return mapped;

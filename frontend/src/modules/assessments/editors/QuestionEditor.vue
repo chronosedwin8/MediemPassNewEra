@@ -218,7 +218,9 @@ const inputClass =
       </div>
 
       <div v-if="selectedCompetency?.subcompetencies.length" class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium" for="subcompetency">{{ t('question.subcompetency') }}</label>
+        <label class="text-sm font-medium" for="subcompetency">{{
+          t('question.subcompetency')
+        }}</label>
         <select id="subcompetency" v-model="kmkSubcompetencyId" :class="inputClass">
           <option value="">{{ t('common.none') }}</option>
           <option v-for="sub in selectedCompetency.subcompetencies" :key="sub.id" :value="sub.id">
@@ -249,11 +251,15 @@ const inputClass =
 
     <div class="grid gap-4 sm:grid-cols-2">
       <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium" for="fb-correct">{{ t('question.feedbackCorrect') }}</label>
+        <label class="text-sm font-medium" for="fb-correct">{{
+          t('question.feedbackCorrect')
+        }}</label>
         <input id="fb-correct" v-model="feedbackCorrect" type="text" :class="inputClass" />
       </div>
       <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium" for="fb-incorrect">{{ t('question.feedbackIncorrect') }}</label>
+        <label class="text-sm font-medium" for="fb-incorrect">{{
+          t('question.feedbackIncorrect')
+        }}</label>
         <input id="fb-incorrect" v-model="feedbackIncorrect" type="text" :class="inputClass" />
       </div>
     </div>

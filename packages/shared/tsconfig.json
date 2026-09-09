@@ -4,8 +4,5 @@
     "noEmit": true,
     "composite": false
   },
-  "include": [
-    "src/**/*.ts",
-    "*.config.ts"
-  ]
+  "include": ["src/**/*.ts", "*.config.ts"]
 }

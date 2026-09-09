@@ -52,15 +52,49 @@ const TEACHERS = [
 ];
 
 const FIRST_NAMES = [
-  'Sofía', 'Mateo', 'Valentina', 'Samuel', 'Isabella', 'Lukas', 'Emilia', 'Tomás',
-  'Mariana', 'Jonas', 'Camila', 'Daniel', 'Antonia', 'Felipe', 'Greta', 'Nicolás',
-  'Luciana', 'Sebastián', 'Helena', 'Andrés', 'Paulina', 'Martín', 'Elena', 'Diego',
-  'Clara', 'Julián', 'Renata', 'Emilio', 'Alina', 'Santiago',
+  'Sofía',
+  'Mateo',
+  'Valentina',
+  'Samuel',
+  'Isabella',
+  'Lukas',
+  'Emilia',
+  'Tomás',
+  'Mariana',
+  'Jonas',
+  'Camila',
+  'Daniel',
+  'Antonia',
+  'Felipe',
+  'Greta',
+  'Nicolás',
+  'Luciana',
+  'Sebastián',
+  'Helena',
+  'Andrés',
+  'Paulina',
+  'Martín',
+  'Elena',
+  'Diego',
+  'Clara',
+  'Julián',
+  'Renata',
+  'Emilio',
+  'Alina',
+  'Santiago',
 ];
 
 const LAST_NAMES = [
-  'Restrepo Gómez', 'Vargas Lindo', 'Schmidt Ríos', 'Ospina Daza', 'Weber Cortés',
-  'Molina Barros', 'Klein Ardila', 'Navarro Ruiz', 'Fischer Osorio', 'Cabrera León',
+  'Restrepo Gómez',
+  'Vargas Lindo',
+  'Schmidt Ríos',
+  'Ospina Daza',
+  'Weber Cortés',
+  'Molina Barros',
+  'Klein Ardila',
+  'Navarro Ruiz',
+  'Fischer Osorio',
+  'Cabrera León',
 ];
 
 interface QuestionSeed {
@@ -126,11 +160,13 @@ const ASSESSMENTS: AssessmentSeed[] = [
       },
       {
         type: QUESTION_TYPE.MULTIPLE_CHOICE,
-        statement: 'Selecciona todas las estrategias que hacen más precisa una búsqueda en internet.',
+        statement:
+          'Selecciona todas las estrategias que hacen más precisa una búsqueda en internet.',
         points: 3,
         competencyCode: '1',
         subcompetencyCode: '1.1',
-        feedbackCorrect: 'Muy bien: has identificado los operadores de búsqueda que acotan resultados.',
+        feedbackCorrect:
+          'Muy bien: has identificado los operadores de búsqueda que acotan resultados.',
         feedbackIncorrect:
           'Repasa los operadores de búsqueda: las comillas, el filtro por sitio y la exclusión con guion.',
         payload: {
@@ -265,7 +301,12 @@ const ASSESSMENTS: AssessmentSeed[] = [
               caseSensitive: false,
               ignoreAccents: true,
             },
-            { id: 'b', acceptedAnswers: ['7', '(0,7)', '(0, 7)'], caseSensitive: false, ignoreAccents: true },
+            {
+              id: 'b',
+              acceptedAnswers: ['7', '(0,7)', '(0, 7)'],
+              caseSensitive: false,
+              ignoreAccents: true,
+            },
           ],
         },
       },
@@ -325,7 +366,8 @@ const ASSESSMENTS: AssessmentSeed[] = [
       },
       {
         type: QUESTION_TYPE.TRUE_FALSE,
-        statement: 'Dos rectas con la misma pendiente nunca se cortan, salvo que sean la misma recta.',
+        statement:
+          'Dos rectas con la misma pendiente nunca se cortan, salvo que sean la misma recta.',
         points: 1,
         competencyCode: '5',
         subcompetencyCode: '5.5',
@@ -364,7 +406,11 @@ const ASSESSMENTS: AssessmentSeed[] = [
             { id: 'a', text: 'Cambiar la contraseña cada semana', correct: false },
             { id: 'b', text: 'Activar la verificación en dos pasos', correct: true },
             { id: 'c', text: 'Usar una contraseña muy larga y reutilizarla', correct: false },
-            { id: 'd', text: 'Anotar la contraseña en un lugar seguro del escritorio', correct: false },
+            {
+              id: 'd',
+              text: 'Anotar la contraseña en un lugar seguro del escritorio',
+              correct: false,
+            },
           ],
         },
       },
@@ -384,10 +430,18 @@ const ASSESSMENTS: AssessmentSeed[] = [
           penalizeIncorrect: true,
           options: [
             { id: 'a', text: 'Compartir solo con las personas que deben verlo', correct: true },
-            { id: 'b', text: 'Incluir el documento de identidad para evitar confusiones', correct: false },
+            {
+              id: 'b',
+              text: 'Incluir el documento de identidad para evitar confusiones',
+              correct: false,
+            },
             { id: 'c', text: 'Usar los canales institucionales, no personales', correct: true },
             { id: 'd', text: 'Limitar la información a la estrictamente necesaria', correct: true },
-            { id: 'e', text: 'Publicar el listado completo en un grupo de mensajería', correct: false },
+            {
+              id: 'e',
+              text: 'Publicar el listado completo en un grupo de mensajería',
+              correct: false,
+            },
           ],
         },
       },
@@ -399,7 +453,8 @@ const ASSESSMENTS: AssessmentSeed[] = [
         competencyCode: '4',
         subcompetencyCode: '4.1',
         feedbackCorrect: 'Exacto: la urgencia es una de las señales más habituales de phishing.',
-        feedbackIncorrect: 'La urgencia y la petición de credenciales son señales clásicas de phishing.',
+        feedbackIncorrect:
+          'La urgencia y la petición de credenciales son señales clásicas de phishing.',
         payload: { kind: QUESTION_TYPE.TRUE_FALSE, correct: true },
       },
       {
@@ -487,11 +542,16 @@ export async function seedDemo(prisma: PrismaClient): Promise<void> {
 
     const teacher = await prisma.teacher.upsert({
       where: { userId: user.id },
-      create: { userId: user.id, employeeCode: `DOC-${teacherSeed.username.slice(0, 6).toUpperCase()}` },
+      create: {
+        userId: user.id,
+        employeeCode: `DOC-${teacherSeed.username.slice(0, 6).toUpperCase()}`,
+      },
       update: {},
     });
 
-    const area = await prisma.academicArea.findUniqueOrThrow({ where: { code: teacherSeed.areaCode } });
+    const area = await prisma.academicArea.findUniqueOrThrow({
+      where: { code: teacherSeed.areaCode },
+    });
     await prisma.teacherArea.upsert({
       where: { teacherId_areaId: { teacherId: teacher.id, areaId: area.id } },
       create: { teacherId: teacher.id, areaId: area.id, isPrimary: true },
@@ -526,7 +586,9 @@ export async function seedDemo(prisma: PrismaClient): Promise<void> {
     const gradeLevel = await prisma.gradeLevel.findUniqueOrThrow({
       where: { code: definition.gradeCode },
     });
-    const subject = await prisma.subject.findUniqueOrThrow({ where: { code: definition.subjectCode } });
+    const subject = await prisma.subject.findUniqueOrThrow({
+      where: { code: definition.subjectCode },
+    });
     const group = await prisma.group.upsert({
       where: { academicYearId_code: { academicYearId: year.id, code: definition.code } },
       create: {

@@ -57,7 +57,8 @@ function statusTone(status: string): 'success' | 'warning' | 'info' | 'neutral' 
 }
 
 const canStart = (item: AssignedAssessment): boolean =>
-  item.status === 'OPEN' && (item.resumableAttemptId !== null || item.attemptsUsed < item.attemptsAllowed);
+  item.status === 'OPEN' &&
+  (item.resumableAttemptId !== null || item.attemptsUsed < item.attemptsAllowed);
 
 async function start(item: AssignedAssessment): Promise<void> {
   startingId.value = item.recipientId;

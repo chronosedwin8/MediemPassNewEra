@@ -72,7 +72,10 @@ teachersRouter.put(
   requirePermission(PERMISSION.TEACHER_UPDATE),
   validate({ params: uuidParam(), body: setAreasSchema }),
   asyncHandler(async (req, res) => {
-    const { areaIds, primaryAreaId } = req.body as { areaIds: string[]; primaryAreaId?: string | null };
+    const { areaIds, primaryAreaId } = req.body as {
+      areaIds: string[];
+      primaryAreaId?: string | null;
+    };
     ok(res, await setTeacherAreas(req.params['id']!, areaIds, primaryAreaId));
   }),
 );

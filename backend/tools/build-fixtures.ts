@@ -24,21 +24,60 @@ import {
  *   npm run phidias:fixtures     (requiere PHIDIAS_TOKEN y PHIDIAS_MODE=live)
  */
 
-const OUTPUT_DIR = resolve(
-  import.meta.dirname,
-  '../src/infrastructure/external/phidias/fixtures',
-);
+const OUTPUT_DIR = resolve(import.meta.dirname, '../src/infrastructure/external/phidias/fixtures');
 
 const FIRST_NAMES = [
-  'Sofía', 'Mateo', 'Valentina', 'Samuel', 'Isabella', 'Lukas', 'Emilia', 'Tomás',
-  'Mariana', 'Jonas', 'Camila', 'Daniel', 'Antonia', 'Felipe', 'Greta', 'Nicolás',
-  'Luciana', 'Sebastián', 'Helena', 'Andrés', 'Paulina', 'Martín', 'Elena', 'Diego',
-  'Clara', 'Julián', 'Renata', 'Emilio', 'Alina', 'Santiago', 'Ana', 'Pablo',
+  'Sofía',
+  'Mateo',
+  'Valentina',
+  'Samuel',
+  'Isabella',
+  'Lukas',
+  'Emilia',
+  'Tomás',
+  'Mariana',
+  'Jonas',
+  'Camila',
+  'Daniel',
+  'Antonia',
+  'Felipe',
+  'Greta',
+  'Nicolás',
+  'Luciana',
+  'Sebastián',
+  'Helena',
+  'Andrés',
+  'Paulina',
+  'Martín',
+  'Elena',
+  'Diego',
+  'Clara',
+  'Julián',
+  'Renata',
+  'Emilio',
+  'Alina',
+  'Santiago',
+  'Ana',
+  'Pablo',
 ];
 
 const LAST_NAMES = [
-  'Restrepo', 'Vargas', 'Schmidt', 'Ospina', 'Weber', 'Molina', 'Klein', 'Navarro',
-  'Fischer', 'Cabrera', 'Herrera', 'Becker', 'Salazar', 'Wagner', 'Pardo', 'Hoffmann',
+  'Restrepo',
+  'Vargas',
+  'Schmidt',
+  'Ospina',
+  'Weber',
+  'Molina',
+  'Klein',
+  'Navarro',
+  'Fischer',
+  'Cabrera',
+  'Herrera',
+  'Becker',
+  'Salazar',
+  'Wagner',
+  'Pardo',
+  'Hoffmann',
 ];
 
 function slug(value: string): string {
@@ -79,12 +118,17 @@ async function main(): Promise<void> {
     await fetchJson(`/1/academic/subjects?year=${currentYear}`),
   );
 
-  write('areas.json', areas.filter((area) => area.year === currentYear));
+  write(
+    'areas.json',
+    areas.filter((area) => area.year === currentYear),
+  );
   write('periods.json', periods);
   write('subjects.json', subjects);
 
   // --- Matrícula: se conserva la forma, se sustituye a las personas ---------
-  const consolidate = phidiasConsolidateResponseSchema.parse(await fetchJson('/1/course/consolidate'));
+  const consolidate = phidiasConsolidateResponseSchema.parse(
+    await fetchJson('/1/course/consolidate'),
+  );
 
   let counter = 0;
   const anonymized = consolidate.map((level) => ({

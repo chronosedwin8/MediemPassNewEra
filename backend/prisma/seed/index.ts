@@ -8,6 +8,7 @@ import {
   seedSystemSettings,
 } from './core.js';
 import { seedDemo } from './demo.js';
+import { seedTrainingModules } from './training.js';
 
 /**
  * Punto de entrada de la semilla.
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
   await seedEducationStructure(prisma);
   await seedAreasAndSubjects(prisma);
   await seedAcademicYear(prisma);
+  await seedTrainingModules(prisma);
 
   if (shouldSeedDemo()) {
     console.warn('\nSembrando datos de demostración…');

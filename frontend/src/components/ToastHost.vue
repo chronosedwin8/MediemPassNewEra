@@ -17,7 +17,9 @@ const toneClasses: Record<string, string> = {
     `aria-live` para que un lector de pantalla anuncie los avisos sin que el
     usuario tenga que buscarlos. Los errores interrumpen; el resto, no.
   -->
-  <div class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4">
+  <div
+    class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4"
+  >
     <TransitionGroup name="toast">
       <div
         v-for="toast in toasts"
@@ -34,7 +36,14 @@ const toneClasses: Record<string, string> = {
           :aria-label="t('common.close')"
           @click="dismiss(toast.id)"
         >
-          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
             <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>

@@ -81,13 +81,17 @@ function validatePayload(type: QuestionType, payload: unknown): object {
   const parsed = safeParseQuestionPayload(type, payload);
 
   if (!parsed.success) {
-    throw new AppError(ERROR_CODE.QUESTION_PAYLOAD_INVALID, `Invalid content for a ${type} question`, {
-      issues: parsed.error.issues.map((issue) => ({
-        path: ['payload', ...issue.path.map(String)].join('.'),
-        rule: issue.code,
-        message: issue.message,
-      })),
-    });
+    throw new AppError(
+      ERROR_CODE.QUESTION_PAYLOAD_INVALID,
+      `Invalid content for a ${type} question`,
+      {
+        issues: parsed.error.issues.map((issue) => ({
+          path: ['payload', ...issue.path.map(String)].join('.'),
+          rule: issue.code,
+          message: issue.message,
+        })),
+      },
+    );
   }
 
   return parsed.data as object;
@@ -154,7 +158,10 @@ export async function createQuestion(actor: Actor, versionId: string, input: Cre
  * borra): sin esa distinción, omitir la retroalimentación en una edición
  * parcial la borraría sin que nadie lo hubiera pedido.
  */
-function buildQuestionUpdate(input: UpdateQuestionInput, payload?: object): Record<string, unknown> {
+function buildQuestionUpdate(
+  input: UpdateQuestionInput,
+  payload?: object,
+): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   const direct = [
     'statement',
@@ -190,7 +197,8 @@ export async function updateQuestion(actor: Actor, questionId: string, input: Up
   // El contenido se revalida contra el tipo **ya guardado**: el tipo de una
   // pregunta no se puede cambiar, porque hacerlo dejaría el contenido y el
   // calificador desalineados.
-  const payload = input.payload !== undefined ? validatePayload(question.type, input.payload) : undefined;
+  const payload =
+    input.payload !== undefined ? validatePayload(question.type, input.payload) : undefined;
 
   return prisma.question.update({
     where: { id: questionId },

@@ -43,7 +43,8 @@ export function validate(schemas: ValidationSchemas): RequestHandler {
       const result = schemas.query.safeParse(req.query);
       // `req.query` es de solo lectura en Express 5 y un getter en 4:
       // se guarda aparte en lugar de reasignarlo.
-      if (result.success) Object.defineProperty(req, 'validatedQuery', { value: result.data, writable: true });
+      if (result.success)
+        Object.defineProperty(req, 'validatedQuery', { value: result.data, writable: true });
       else issues.push(...toIssues(result.error, 'query'));
     }
 

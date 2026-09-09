@@ -48,13 +48,25 @@ export const createAssignmentSchema = z
   })
   .superRefine((input, ctx) => {
     if (input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP && !input.groupId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['groupId'], message: 'Falta el grupo destino' });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['groupId'],
+        message: 'Falta el grupo destino',
+      });
     }
     if (input.targetType === ASSIGNMENT_TARGET_TYPE.USER && !input.userIds?.length) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['userIds'], message: 'Falta al menos un destinatario' });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['userIds'],
+        message: 'Falta al menos un destinatario',
+      });
     }
     if (input.endAt && input.endAt <= input.startAt) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['endAt'], message: 'El cierre debe ser posterior a la apertura' });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['endAt'],
+        message: 'El cierre debe ser posterior a la apertura',
+      });
     }
   });
 
@@ -85,7 +97,12 @@ export interface AssignmentSummary {
  * mira: guardarlo obligaría a un proceso que lo actualizara cada minuto y a
  * vivir con que a veces estuviera desactualizado.
  */
-function resolveStatus(startAt: Date, endAt: Date | null, cancelled: boolean, now = new Date()): string {
+function resolveStatus(
+  startAt: Date,
+  endAt: Date | null,
+  cancelled: boolean,
+  now = new Date(),
+): string {
   if (cancelled) return 'CANCELLED';
   if (now < startAt) return 'SCHEDULED';
   if (endAt && now > endAt) return 'CLOSED';
@@ -99,10 +116,7 @@ function resolveStatus(startAt: Date, endAt: Date | null, cancelled: boolean, no
  * está retirado o suspendido generaría pendientes que nadie va a completar y
  * ensuciaría todas las tasas de cumplimiento.
  */
-async function resolveRecipients(
-  actor: Actor,
-  input: CreateAssignmentInput,
-): Promise<string[]> {
+async function resolveRecipients(actor: Actor, input: CreateAssignmentInput): Promise<string[]> {
   if (input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP) {
     await assertGroupAccess(actor, input.groupId!);
 
@@ -116,7 +130,10 @@ async function resolveRecipients(
     });
 
     if (memberships.length === 0) {
-      throw AppError.conflict(ERROR_CODE.CONFLICT, 'The group has no students that can be evaluated');
+      throw AppError.conflict(
+        ERROR_CODE.CONFLICT,
+        'The group has no students that can be evaluated',
+      );
     }
 
     return memberships.map((membership) => membership.student.userId);
@@ -139,7 +156,9 @@ export async function createAssignment(actor: Actor, input: CreateAssignmentInpu
     include: { assessment: { select: { id: true, title: true, createdById: true } } },
   });
   if (!version) {
-    throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { id: input.assessmentVersionId });
+    throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, {
+      id: input.assessmentVersionId,
+    });
   }
 
   assertOwnership(actor, version.assessment.createdById, { versionId: version.id });

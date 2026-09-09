@@ -146,7 +146,9 @@ async function copyIssued(): Promise<void> {
       <div class="flex flex-col gap-4">
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium" for="target-group">{{ t('student.issueForGroup') }}</label>
+            <label class="text-sm font-medium" for="target-group">{{
+              t('student.issueForGroup')
+            }}</label>
             <select
               id="target-group"
               v-model="targetGroupId"
@@ -210,14 +212,18 @@ async function copyIssued(): Promise<void> {
         </BaseButton>
       </template>
 
-      <p class="mb-4 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm text-warning">
+      <p
+        class="mb-4 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm text-warning"
+      >
         {{ t('student.issuedWarning') }}
       </p>
 
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-border text-left text-xs uppercase tracking-wide text-ink-subtle">
+            <tr
+              class="border-b border-border text-left text-xs uppercase tracking-wide text-ink-subtle"
+            >
               <th class="pb-2 pr-4 font-medium">{{ t('student.title') }}</th>
               <th class="pb-2 pr-4 font-medium">{{ t('student.loginIdentifier') }}</th>
               <th class="pb-2 font-medium">{{ t('auth.password') }}</th>
@@ -241,7 +247,9 @@ async function copyIssued(): Promise<void> {
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-border text-left text-xs uppercase tracking-wide text-ink-subtle">
+            <tr
+              class="border-b border-border text-left text-xs uppercase tracking-wide text-ink-subtle"
+            >
               <th class="p-4 font-medium">{{ t('student.title') }}</th>
               <th class="p-4 font-medium">{{ t('student.loginIdentifier') }}</th>
               <th class="p-4 font-medium">{{ t('nav.groups') }}</th>

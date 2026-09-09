@@ -243,9 +243,7 @@ async function createStudentAccount(
           firstName: student.firstName,
           lastName: student.lastName,
           preferredLanguage: student.language,
-          status: context.initialPasswordHash
-            ? USER_STATUS.ACTIVE
-            : USER_STATUS.PENDING_ACTIVATION,
+          status: context.initialPasswordHash ? USER_STATUS.ACTIVE : USER_STATUS.PENDING_ACTIVATION,
           passwordHash: context.initialPasswordHash,
           passwordUpdatedAt: context.initialPasswordHash ? new Date() : null,
           mustChangePassword: Boolean(context.initialPasswordHash),
@@ -400,7 +398,9 @@ async function markVanishedStudents(seenExternalIds: Set<number>): Promise<numbe
 
 async function buildContext(
   initialPassword?: string,
-): Promise<Pick<SyncContext, 'studentRoleId' | 'academicYearId' | 'gradeByCode' | 'initialPasswordHash'>> {
+): Promise<
+  Pick<SyncContext, 'studentRoleId' | 'academicYearId' | 'gradeByCode' | 'initialPasswordHash'>
+> {
   const academicYear = await prisma.academicYear.findFirst({
     where: { isCurrent: true },
     select: { id: true },
@@ -528,7 +528,10 @@ async function finalizeSync(
   return result;
 }
 
-export async function syncStudents(actorId: string, options: SyncOptions = {}): Promise<SyncResult> {
+export async function syncStudents(
+  actorId: string,
+  options: SyncOptions = {},
+): Promise<SyncResult> {
   const startedAt = Date.now();
   const service = getPhidiasService();
 
@@ -577,7 +580,6 @@ export async function syncStudents(actorId: string, options: SyncOptions = {}): 
     }
 
     return finalizeSync(syncLog.id, actorId, year.externalId, sections.length, context, startedAt);
-
   } catch (error) {
     await prisma.phidiasSyncLog.update({
       where: { id: syncLog.id },

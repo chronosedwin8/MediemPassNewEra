@@ -175,6 +175,25 @@
       "LONG_ANSWER": "Long answer"
     }
   },
+  "editor": {
+    "imageUrl": "Image URL",
+    "altText": "Alternative text",
+    "allowMultiple": "Allow selecting several areas",
+    "hotspotHint": "Click on the image to add an area.",
+    "hotspotLabel": "Area label",
+    "ignoreAccents": "Ignore accents",
+    "caseSensitive": "Case sensitive",
+    "minWords": "Minimum number of words",
+    "rubric": "Marking criteria",
+    "orderingHint": "Write the items in their correct order.",
+    "leftColumn": "Left column",
+    "rightColumn": "Right column",
+    "groups": "Groups",
+    "items": "Items",
+    "textWithBlanks": "Text with blanks",
+    "blankHint": "Each blank is written as a placeholder in double curly braces.",
+    "answerVariants": "answer, variant"
+  },
   "attempt": {
     "questionOf": "Question {current} of {total}",
     "progress": "Progress",
@@ -323,7 +342,10 @@
     "PHIDIAS_UNAUTHORIZED": "Phidias rejected the request. Check the integration token.",
     "PHIDIAS_SYNC_FAILED": "The Phidias synchronisation failed.",
     "AI_PROVIDER_ERROR": "The AI provider failed.",
-    "AI_RESPONSE_INVALID": "The AI returned a response that could not be validated."
+    "AI_RESPONSE_INVALID": "The AI returned a response that could not be validated.",
+    "UNSUPPORTED_LANGUAGE": "That language is not available.",
+    "SSO_STATE_MISMATCH": "The sign-in could not be verified. Please start again from the login page.",
+    "ATTEMPT_ALREADY_IN_PROGRESS": "You already have an attempt in progress. Continue with that one."
   },
   "validation": {
     "required": "This field is required",

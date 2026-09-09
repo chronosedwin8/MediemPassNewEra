@@ -71,7 +71,8 @@ let userCounter = 0;
 export async function createUser(options: CreateUserOptions = {}): Promise<TestUser> {
   userCounter += 1;
   const username = options.username ?? `usuario${userCounter}`;
-  const email = options.email === null ? null : (options.email ?? `${username}@colegioaleman.edu.co`);
+  const email =
+    options.email === null ? null : (options.email ?? `${username}@colegioaleman.edu.co`);
   const password = options.password === null ? null : (options.password ?? TEST_PASSWORD);
 
   const user = await prisma.user.create({

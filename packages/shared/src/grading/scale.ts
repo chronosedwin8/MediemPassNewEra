@@ -145,7 +145,10 @@ export function bandDisplayRange(
   const better = bands
     .filter((b) => b.minPercentage > band.minPercentage)
     .sort((a, b) => a.minPercentage - b.minPercentage)[0];
-  return { min: band.minPercentage, max: better ? roundPercentage(better.minPercentage - 0.01) : 100 };
+  return {
+    min: band.minPercentage,
+    max: better ? roundPercentage(better.minPercentage - 0.01) : 100,
+  };
 }
 
 /** Devuelve la banda a la que pertenece un porcentaje. */

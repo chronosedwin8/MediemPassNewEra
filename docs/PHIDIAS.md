@@ -14,7 +14,7 @@ Phidias → Backend → Validación → Normalización → PostgreSQL → API pr
 
 **Nunca** `Vue → Phidias`. El token de Phidias no sale del backend: no viaja al navegador, no aparece en respuestas de la API, no se escribe en registros y no atraviesa proxies de terceros.
 
-> **Antecedente relevante.** El prototipo anterior (`PhidiasC`) incrustaba el token en JavaScript de navegador y, cuando el navegador bloqueaba CORS, reenviaba la petición completa a través de `corsproxy.io` y `api.allorigins.win`. Esos proxies públicos vieron la cabecera `Authorization` íntegra, y el token quedó además en los *bundles* de `dist/` desplegados. El JWT en cuestión (`sub: 3165`, `restapi_access`, `exp` en enero de 2031) **debe considerarse comprometido y conviene solicitar su rotación**. La arquitectura de esta plataforma elimina la causa: el navegador nunca habla con Phidias.
+> **Antecedente relevante.** El prototipo anterior (`PhidiasC`) incrustaba el token en JavaScript de navegador y, cuando el navegador bloqueaba CORS, reenviaba la petición completa a través de `corsproxy.io` y `api.allorigins.win`. Esos proxies públicos vieron la cabecera `Authorization` íntegra, y el token quedó además en los _bundles_ de `dist/` desplegados. El JWT en cuestión (`sub: 3165`, `restapi_access`, `exp` en enero de 2031) **debe considerarse comprometido y conviene solicitar su rotación**. La arquitectura de esta plataforma elimina la causa: el navegador nunca habla con Phidias.
 
 ## 2. Configuración
 
@@ -36,25 +36,25 @@ Estas son las que cuestan tiempo si se descubren sobre la marcha.
 
 Es un **identificador interno** de Phidias. La documentación que circula dice «año académico (ej: 2026)» y es incorrecto: pedir `subjects?year=2026` devuelve una lista vacía.
 
-| `year` | Curso real |
-|---|---|
-| 1 | 2021-2022 |
-| 2 | 2022-2023 |
-| 3 | 2023-2024 |
-| 4 | 2024-2025 |
-| 5 | 2025-2026 |
-| **6** | **2026-2027 (vigente)** |
-| 7 | 2027-2028 (ya creado, casi vacío) |
+| `year` | Curso real                        |
+| ------ | --------------------------------- |
+| 1      | 2021-2022                         |
+| 2      | 2022-2023                         |
+| 3      | 2023-2024                         |
+| 4      | 2024-2025                         |
+| 5      | 2025-2026                         |
+| **6**  | **2026-2027 (vigente)**           |
+| 7      | 2027-2028 (ya creado, casi vacío) |
 
 Por eso `resolveCurrentAcademicYear()` **no** confía en una constante: agrupa los periodos por `year`, calcula el rango de fechas de cada grupo y elige el que contiene la fecha de hoy. Fijar el año a mano significaría que el sistema deja de funcionar cada mes de agosto. La variable de entorno queda solo como anulación de emergencia.
 
 ### 3.2 Las respuestas no tienen una forma común
 
-| Endpoint | Forma |
-|---|---|
-| `/1/academic/areas` | Array plano |
-| `/1/academic/subjects` | `{ response: [...] }` |
-| `/1/academic/periods` | `{ response: [...] }` |
+| Endpoint                | Forma                       |
+| ----------------------- | --------------------------- |
+| `/1/academic/areas`     | Array plano                 |
+| `/1/academic/subjects`  | `{ response: [...] }`       |
+| `/1/academic/periods`   | `{ response: [...] }`       |
 | `/1/course/consolidate` | Array plano (árbol anidado) |
 
 Además, las claves de `subjects` **llevan espacios**: `"id subject"`, `"subject en"`, `"id area"`.
@@ -67,11 +67,11 @@ Además, las claves de `subjects` **llevan espacios**: `"id subject"`, `"subject
 
 Comprobado sobre los 1.177 estudiantes matriculados:
 
-| Campo | Tipos observados |
-|---|---|
-| `username` | cadena (1.087) · **número (90)** |
-| `code` | número (1.139) · nulo (36) · cadena (2) |
-| `email` | cadena (1.166) · nulo (11) |
+| Campo      | Tipos observados                        |
+| ---------- | --------------------------------------- |
+| `username` | cadena (1.087) · **número (90)**        |
+| `code`     | número (1.139) · nulo (36) · cadena (2) |
+| `email`    | cadena (1.166) · nulo (11)              |
 
 Noventa estudiantes tienen su código numérico como nombre de usuario. Un esquema que exija `string` rompe la sincronización entera por ello, así que los esquemas aceptan la unión y el mapper normaliza.
 
@@ -97,19 +97,19 @@ En el curso vigente hay cinco periodos activos simultáneamente, de categorías 
 
 ## 4. Estado real de los endpoints
 
-| Endpoint | Estado | Notas |
-|---|---|---|
-| `GET /1/academic/areas` | ✅ 200 | 262 filas para todos los años; hay que filtrar por `year` |
-| `GET /1/academic/subjects?year=N` | ✅ 200 | 124 materias en `year=6` |
-| `GET /1/academic/periods` | ✅ 200 | 72 periodos, años 1 a 7 |
-| `GET /1/course/consolidate` | ✅ 200 | ~2 MB, 3 niveles / 15 grados / 52 secciones / 1.177 estudiantes; ~7 s |
-| `GET /1/academic/course_group` | ❌ 500 | Roto en el servidor |
-| `GET /1/academic/period_categories` | ❌ 500 | Roto en el servidor |
-| `GET /1/academic/grading2/ranking` | ❌ 401 | El token carece de permisos |
-| `GET /1/academic/student/report/...` | ❌ 401 | El token carece de permisos |
-| `GET /1/academic/grading/evaluation` | ❌ 401 | El token carece de permisos |
-| `GET /1/academic/grading/areas` \| `/courses` | ⚠️ 200 vacío | Sin calificaciones publicadas |
-| `GET /1/attendance/...` | ⚠️ 200 vacío | Restringido por usuario |
+| Endpoint                                      | Estado       | Notas                                                                 |
+| --------------------------------------------- | ------------ | --------------------------------------------------------------------- |
+| `GET /1/academic/areas`                       | ✅ 200       | 262 filas para todos los años; hay que filtrar por `year`             |
+| `GET /1/academic/subjects?year=N`             | ✅ 200       | 124 materias en `year=6`                                              |
+| `GET /1/academic/periods`                     | ✅ 200       | 72 periodos, años 1 a 7                                               |
+| `GET /1/course/consolidate`                   | ✅ 200       | ~2 MB, 3 niveles / 15 grados / 52 secciones / 1.177 estudiantes; ~7 s |
+| `GET /1/academic/course_group`                | ❌ 500       | Roto en el servidor                                                   |
+| `GET /1/academic/period_categories`           | ❌ 500       | Roto en el servidor                                                   |
+| `GET /1/academic/grading2/ranking`            | ❌ 401       | El token carece de permisos                                           |
+| `GET /1/academic/student/report/...`          | ❌ 401       | El token carece de permisos                                           |
+| `GET /1/academic/grading/evaluation`          | ❌ 401       | El token carece de permisos                                           |
+| `GET /1/academic/grading/areas` \| `/courses` | ⚠️ 200 vacío | Sin calificaciones publicadas                                         |
+| `GET /1/attendance/...`                       | ⚠️ 200 vacío | Restringido por usuario                                               |
 
 Los endpoints de calificación no son críticos: la plataforma genera sus propias notas. Se declaran en `PhidiasService.getStatus().knownBrokenEndpoints` para que la interfaz de administración pueda explicarlo en lugar de mostrar un error genérico.
 
@@ -131,15 +131,15 @@ PhidiasSyncService     escritura: obtener → validar → normalizar →
 
 ### Manejo de fallos
 
-| Situación | Respuesta |
-|---|---|
-| 401 / 403 | `PHIDIAS_UNAUTHORIZED` (502). No se reintenta: insistir no arregla un token caducado |
-| 404 | `EXTERNAL_SERVICE_ERROR` (502) |
-| 429 | `RATE_LIMIT_EXCEEDED`, con reintento y retroceso exponencial |
-| 5xx | `EXTERNAL_SERVICE_UNAVAILABLE`, con reintento |
-| Tiempo agotado | `EXTERNAL_SERVICE_TIMEOUT` (504) |
-| 5 fallos seguidos | Cortacircuitos abierto 60 s: las llamadas fallan al instante en lugar de dejar esperando al usuario 30 s por petición |
-| Respuesta que no cumple el contrato | `EXTERNAL_SERVICE_ERROR` con las cinco primeras discrepancias, para poder diagnosticar |
+| Situación                           | Respuesta                                                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 401 / 403                           | `PHIDIAS_UNAUTHORIZED` (502). No se reintenta: insistir no arregla un token caducado                                  |
+| 404                                 | `EXTERNAL_SERVICE_ERROR` (502)                                                                                        |
+| 429                                 | `RATE_LIMIT_EXCEEDED`, con reintento y retroceso exponencial                                                          |
+| 5xx                                 | `EXTERNAL_SERVICE_UNAVAILABLE`, con reintento                                                                         |
+| Tiempo agotado                      | `EXTERNAL_SERVICE_TIMEOUT` (504)                                                                                      |
+| 5 fallos seguidos                   | Cortacircuitos abierto 60 s: las llamadas fallan al instante en lugar de dejar esperando al usuario 30 s por petición |
+| Respuesta que no cumple el contrato | `EXTERNAL_SERVICE_ERROR` con las cinco primeras discrepancias, para poder diagnosticar                                |
 
 ## 6. Minimización de datos
 
@@ -185,13 +185,13 @@ Requiere el permiso `phidias:sync`. Devuelve un informe completo:
 
 ### Otros endpoints
 
-| Método | Ruta | Para qué |
-|---|---|---|
-| `GET` | `/api/integrations/phidias/status` | Modo, si hay token configurado, estado del cortacircuitos, endpoints rotos conocidos |
-| `GET` | `/api/integrations/phidias/academic-year` | Año vigente resuelto por fecha |
-| `GET` | `/api/integrations/phidias/catalog` | Áreas, materias y periodos **tal cual**, para que el administrador elija qué crear |
-| `GET` | `/api/integrations/phidias/preview/students` | Vista previa sin escribir nada |
-| `GET` | `/api/integrations/phidias/sync/logs` | Historial |
+| Método | Ruta                                         | Para qué                                                                             |
+| ------ | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `GET`  | `/api/integrations/phidias/status`           | Modo, si hay token configurado, estado del cortacircuitos, endpoints rotos conocidos |
+| `GET`  | `/api/integrations/phidias/academic-year`    | Año vigente resuelto por fecha                                                       |
+| `GET`  | `/api/integrations/phidias/catalog`          | Áreas, materias y periodos **tal cual**, para que el administrador elija qué crear   |
+| `GET`  | `/api/integrations/phidias/preview/students` | Vista previa sin escribir nada                                                       |
+| `GET`  | `/api/integrations/phidias/sync/logs`        | Historial                                                                            |
 
 Las áreas y materias **no se crean solas**. De las 262 «áreas» que devuelve Phidias, muchas son propósitos pedagógicos de preescolar o rúbricas de comportamiento; agregarlas sin criterio produciría estadísticas sin sentido. El catálogo se expone para que una persona decida.
 

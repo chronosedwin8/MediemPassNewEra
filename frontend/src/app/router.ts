@@ -105,6 +105,20 @@ const routes: RouteRecordRaw[] = [
         meta: { permissions: [PERMISSION.RESULT_READ_OWN], titleKey: 'result.title' },
       },
 
+      {
+        path: 'statistics',
+        name: 'statistics',
+        component: () => import('@/modules/statistics/StatisticsView.vue'),
+        meta: {
+          permissions: [
+            PERMISSION.STATS_READ_OWN,
+            PERMISSION.STATS_READ_SCOPED,
+            PERMISSION.STATS_READ_GLOBAL,
+          ],
+          titleKey: 'nav.statistics',
+        },
+      },
+
       // --- Común ---------------------------------------------------------
       {
         path: 'competencies',
@@ -199,4 +213,3 @@ router.beforeEach(async (to) => {
 
   return true;
 });
-

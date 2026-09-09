@@ -166,7 +166,9 @@ describe('GET /api/auth/me', () => {
     const { body } = await login((await createTeacher({ username: 'manipulado' })).username);
     const tampered = `${body.data.accessToken.slice(0, -6)}abcdef`;
 
-    const response = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${tampered}`);
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${tampered}`);
 
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe(ERROR_CODE.TOKEN_INVALID);
@@ -174,7 +176,12 @@ describe('GET /api/auth/me', () => {
 
   it('distingue un token expirado de uno inválido', async () => {
     const user = await createTeacher({ username: 'expirado' });
-    const expiredToken = await new SignJWT({ username: user.username, roles: [], permissions: [], sid: 'x' })
+    const expiredToken = await new SignJWT({
+      username: user.username,
+      roles: [],
+      permissions: [],
+      sid: 'x',
+    })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setSubject(user.id)
       .setIssuer('medienpass')
@@ -194,7 +201,12 @@ describe('GET /api/auth/me', () => {
 
   it('rechaza un token firmado con otro secreto', async () => {
     const user = await createTeacher({ username: 'otro.secreto' });
-    const foreignToken = await new SignJWT({ username: user.username, roles: [ROLE.ADMIN], permissions: [], sid: 'x' })
+    const foreignToken = await new SignJWT({
+      username: user.username,
+      roles: [ROLE.ADMIN],
+      permissions: [],
+      sid: 'x',
+    })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setSubject(user.id)
       .setIssuer('medienpass')
@@ -329,7 +341,9 @@ describe('POST /api/auth/logout', () => {
       .set('Cookie', [readCookie(session, 'mp_refresh')!]);
 
     expect(response.status).toBe(204);
-    expect(await prisma.refreshToken.count({ where: { userId: user.id, revokedAt: null } })).toBe(0);
+    expect(await prisma.refreshToken.count({ where: { userId: user.id, revokedAt: null } })).toBe(
+      0,
+    );
   });
 });
 

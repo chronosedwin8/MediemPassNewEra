@@ -203,7 +203,9 @@ function stripSolution(type: QuestionType, payload: unknown): unknown {
     case QUESTION_TYPE.TIMELINE: {
       const items = (data['items'] as Array<Record<string, unknown>>) ?? [];
       // También se baraja: presentarlos en su orden correcto sería absurdo.
-      const stripped = items.map(({ correctPosition: _position, dateLabel: _label, ...rest }) => rest);
+      const stripped = items.map(
+        ({ correctPosition: _position, dateLabel: _label, ...rest }) => rest,
+      );
       return { ...data, items: shuffle(stripped) };
     }
 
@@ -311,9 +313,13 @@ async function assertCanStart(recipientId: string, userId: string) {
     throw AppError.conflict(ERROR_CODE.ASSIGNMENT_CLOSED, 'The assignment was cancelled');
   }
   if (now < assignment.startAt) {
-    throw AppError.conflict(ERROR_CODE.ASSIGNMENT_NOT_OPEN_YET, 'The assignment has not opened yet', {
-      startAt: assignment.startAt,
-    });
+    throw AppError.conflict(
+      ERROR_CODE.ASSIGNMENT_NOT_OPEN_YET,
+      'The assignment has not opened yet',
+      {
+        startAt: assignment.startAt,
+      },
+    );
   }
   if (assignment.endAt && now > assignment.endAt) {
     throw AppError.conflict(ERROR_CODE.ASSIGNMENT_CLOSED, 'The assignment is closed', {
@@ -355,9 +361,8 @@ export async function startAttempt(userId: string, recipientId: string): Promise
 
   // El plazo se calcula y se persiste aquí, en el servidor. El cliente solo lo
   // muestra; nunca lo decide.
-  const deadlineAt = timeLimit && timeLimit > 0
-    ? new Date(startedAt.getTime() + timeLimit * 60_000)
-    : null;
+  const deadlineAt =
+    timeLimit && timeLimit > 0 ? new Date(startedAt.getTime() + timeLimit * 60_000) : null;
 
   // Si la asignación cierra antes de que se agote el tiempo, manda el cierre.
   const effectiveDeadline =
@@ -477,7 +482,13 @@ export async function getAttempt(userId: string, attemptId: string): Promise<Att
 async function assertWritable(attemptId: string, userId: string) {
   const attempt = await prisma.assessmentAttempt.findFirst({
     where: { id: attemptId, userId },
-    select: { id: true, status: true, deadlineAt: true, assessmentVersionId: true, startedAt: true },
+    select: {
+      id: true,
+      status: true,
+      deadlineAt: true,
+      assessmentVersionId: true,
+      startedAt: true,
+    },
   });
 
   if (!attempt) throw AppError.notFound(ERROR_CODE.ATTEMPT_NOT_FOUND, { attemptId });
@@ -528,13 +539,17 @@ export async function saveAnswer(
 
   const parsed = safeParseAnswer(question.type as QuestionType, response);
   if (!parsed.success) {
-    throw new AppError(ERROR_CODE.ANSWER_FORMAT_INVALID, 'The answer does not match the question type', {
-      issues: parsed.error.issues.map((issue) => ({
-        path: issue.path.map(String).join('.'),
-        rule: issue.code,
-        message: issue.message,
-      })),
-    });
+    throw new AppError(
+      ERROR_CODE.ANSWER_FORMAT_INVALID,
+      'The answer does not match the question type',
+      {
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.map(String).join('.'),
+          rule: issue.code,
+          message: issue.message,
+        })),
+      },
+    );
   }
 
   const answeredAt = new Date();
@@ -680,12 +695,16 @@ async function persistSubmission(params: {
   grade: ReturnType<typeof gradeFromPoints>;
   requiresManualGrading: boolean;
 }): Promise<void> {
-  const status = params.requiresManualGrading ? ATTEMPT_STATUS.PENDING_REVIEW : ATTEMPT_STATUS.GRADED;
+  const status = params.requiresManualGrading
+    ? ATTEMPT_STATUS.PENDING_REVIEW
+    : ATTEMPT_STATUS.GRADED;
 
   await prisma.$transaction(async (tx) => {
     for (const update of params.updates) {
       await tx.attemptAnswer.upsert({
-        where: { attemptId_questionId: { attemptId: params.attemptId, questionId: update.questionId } },
+        where: {
+          attemptId_questionId: { attemptId: params.attemptId, questionId: update.questionId },
+        },
         create: {
           attemptId: params.attemptId,
           questionId: update.questionId,
@@ -709,7 +728,11 @@ async function persistSubmission(params: {
         gradingScaleId: params.scaleId,
         gradeValue: params.grade.band?.value ?? null,
         gradeLabel: params.grade.band
-          ? { es: params.grade.band.label, de: params.grade.band.label, en: params.grade.band.label }
+          ? {
+              es: params.grade.band.label,
+              de: params.grade.band.label,
+              en: params.grade.band.label,
+            }
           : undefined,
         passingPercentage: params.passingPercentage,
         passed: params.grade.passed,
@@ -745,7 +768,16 @@ export async function submitAttempt(userId: string, attemptId: string): Promise<
       version: {
         include: {
           assessment: { select: { audience: true } },
-          questions: { select: { id: true, type: true, points: true, payload: true, kmkCompetencyId: true, kmkSubcompetencyId: true } },
+          questions: {
+            select: {
+              id: true,
+              type: true,
+              points: true,
+              payload: true,
+              kmkCompetencyId: true,
+              kmkSubcompetencyId: true,
+            },
+          },
         },
       },
       answers: true,
@@ -881,10 +913,19 @@ interface AnswerForResult {
  * Es la razón de ser de la plataforma, y sale de las copias que la
  * calificación dejó en cada respuesta: no hace falta volver a la pregunta.
  */
-function buildCompetencyBreakdown(answers: AnswerForResult[]): AttemptResult['competencyBreakdown'] {
+function buildCompetencyBreakdown(
+  answers: AnswerForResult[],
+): AttemptResult['competencyBreakdown'] {
   const byCompetency = new Map<
     string,
-    { code: string; name: LocalizedText; color: string; earned: number; possible: number; count: number }
+    {
+      code: string;
+      name: LocalizedText;
+      color: string;
+      earned: number;
+      possible: number;
+      count: number;
+    }
   >();
 
   for (const answer of answers) {
@@ -935,7 +976,9 @@ function buildFeedback(
     pointsEarned: Number(answer.pointsEarned),
     pointsPossible: Number(answer.pointsPossible),
     feedback:
-      answer.isCorrect === true ? answer.question.feedbackCorrect : answer.question.feedbackIncorrect,
+      answer.isCorrect === true
+        ? answer.question.feedbackCorrect
+        : answer.question.feedbackIncorrect,
     explanation: answer.question.explanation,
     teacherFeedback: answer.teacherFeedback,
     correctAnswer: showCorrectAnswers ? answer.question.payload : null,
@@ -999,7 +1042,11 @@ export async function getResult(userId: string, attemptId: string): Promise<Atte
     submittedAt: attempt.submittedAt,
     durationSeconds: attempt.durationSeconds,
     competencyBreakdown: buildCompetencyBreakdown(attempt.answers as unknown as AnswerForResult[]),
-    feedback: buildFeedback(attempt.answers as unknown as AnswerForResult[], showFeedback, showCorrect),
+    feedback: buildFeedback(
+      attempt.answers as unknown as AnswerForResult[],
+      showFeedback,
+      showCorrect,
+    ),
   };
 }
 
@@ -1088,7 +1135,11 @@ export async function gradeAnswerManually(
 ): Promise<AttemptResult> {
   const answer = await prisma.attemptAnswer.findUnique({
     where: { attemptId_questionId: { attemptId, questionId } },
-    include: { attempt: { select: { id: true, userId: true, gradingScaleId: true, passingPercentage: true } } },
+    include: {
+      attempt: {
+        select: { id: true, userId: true, gradingScaleId: true, passingPercentage: true },
+      },
+    },
   });
 
   if (!answer) throw AppError.notFound(ERROR_CODE.QUESTION_NOT_FOUND, { attemptId, questionId });

@@ -175,6 +175,25 @@
       "LONG_ANSWER": "Respuesta larga"
     }
   },
+  "editor": {
+    "imageUrl": "URL de la imagen",
+    "altText": "Texto alternativo",
+    "allowMultiple": "Permitir seleccionar varias zonas",
+    "hotspotHint": "Haz clic sobre la imagen para añadir una zona.",
+    "hotspotLabel": "Etiqueta de la zona",
+    "ignoreAccents": "Ignorar tildes",
+    "caseSensitive": "Distinguir mayúsculas",
+    "minWords": "Mínimo de palabras",
+    "rubric": "Criterios de corrección",
+    "orderingHint": "Escribe los elementos en su orden correcto.",
+    "leftColumn": "Columna izquierda",
+    "rightColumn": "Columna derecha",
+    "groups": "Grupos",
+    "items": "Elementos",
+    "textWithBlanks": "Texto con huecos",
+    "blankHint": "Cada hueco se escribe como una marca entre llaves dobles.",
+    "answerVariants": "respuesta, variante"
+  },
   "attempt": {
     "questionOf": "Pregunta {current} de {total}",
     "progress": "Progreso",
@@ -323,7 +342,10 @@
     "PHIDIAS_UNAUTHORIZED": "Phidias rechazó la petición. Revisa el token de integración.",
     "PHIDIAS_SYNC_FAILED": "La sincronización con Phidias falló.",
     "AI_PROVIDER_ERROR": "El proveedor de IA ha fallado.",
-    "AI_RESPONSE_INVALID": "La IA devolvió una respuesta que no se pudo validar."
+    "AI_RESPONSE_INVALID": "La IA devolvió una respuesta que no se pudo validar.",
+    "UNSUPPORTED_LANGUAGE": "Ese idioma no está disponible.",
+    "SSO_STATE_MISMATCH": "El inicio de sesión no se pudo verificar. Vuelve a intentarlo desde la pantalla de acceso.",
+    "ATTEMPT_ALREADY_IN_PROGRESS": "Ya tienes un intento empezado. Continúa con ese."
   },
   "validation": {
     "required": "Este campo es obligatorio",

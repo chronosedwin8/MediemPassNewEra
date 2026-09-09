@@ -63,7 +63,12 @@ attemptsRouter.put(
     const { response } = req.body as { response: unknown };
     ok(
       res,
-      await saveAnswer(requireAuth(req).userId, req.params['id']!, req.params['questionId']!, response),
+      await saveAnswer(
+        requireAuth(req).userId,
+        req.params['id']!,
+        req.params['questionId']!,
+        response,
+      ),
     );
   }),
 );

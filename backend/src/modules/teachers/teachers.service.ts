@@ -179,7 +179,10 @@ export async function getTeacher(id: string): Promise<TeacherView> {
   return toView(row as unknown as TeacherRow);
 }
 
-export async function createTeacher(input: CreateTeacherInput, actorId: string): Promise<TeacherView> {
+export async function createTeacher(
+  input: CreateTeacherInput,
+  actorId: string,
+): Promise<TeacherView> {
   const username = input.username.toLowerCase();
   const email = input.email.toLowerCase();
 
@@ -298,7 +301,10 @@ export async function setTeacherAreas(
   }
 
   if (primaryAreaId && !areaIds.includes(primaryAreaId)) {
-    throw AppError.conflict(ERROR_CODE.CONFLICT, 'The primary area must be among the assigned ones');
+    throw AppError.conflict(
+      ERROR_CODE.CONFLICT,
+      'The primary area must be among the assigned ones',
+    );
   }
 
   await prisma.$transaction([

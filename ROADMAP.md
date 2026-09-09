@@ -3,12 +3,22 @@
 Plataforma de evaluación académica y competencias digitales KMK.
 Fecha: 2026-09-08 · Última actualización: 2026-09-09
 
-**Estado: etapas 0 a 6 completadas.** El recorrido de extremo a extremo
+**Estado: etapas 0 a 6 completas; 7 a 9 con el backend terminado.** El
+recorrido de extremo a extremo
 funciona: un docente crea una evaluación, añade preguntas asociadas a
 competencias KMK, publica y asigna; un estudiante responde, recarga sin perder
 nada, finaliza y obtiene su nota en la escala alemana con estrellas
 accesibles, desglose por competencia y retroalimentación. Editar la evaluación
 después no altera ese resultado.
+
+Sobre eso se apoyan ya, **en el backend y con pruebas de integración**, las
+estadísticas KMK con filtros centralizados, los planes de evaluación, la
+capacitación docente —que reutiliza el mismo motor de evaluación— y la
+generación asistida por IA, que produce siempre borradores.
+
+Del lado del frontend solo está hecha la pantalla de estadísticas. Faltan las
+vistas de planes de evaluación, de capacitación y del formulario de generación:
+son API sin interfaz todavía.
 
 Verificación en el estado actual: **lint limpio, tipos estrictos sin errores,
 138 pruebas automatizadas en verde** (42 unitarias de calificación y escala,
@@ -76,19 +86,19 @@ Las cuatro reglas estructurales que sostienen todo lo demás:
 
 Correspondencia con las fases de la especificación: la sección 60 define FASE 1…9. Este plan las conserva y añade una Etapa 0 de cimientos, divide el motor de evaluación en backend y frontend (es demasiado grande para una sola etapa verificable), y adelanta la abstracción de Phidias para no bloquearse en el token.
 
-| Etapa | Nombre | FASE spec | Estado |
-|---|---|---|---|
-| 0 | Cimientos del repositorio | — | ✅ Completada |
-| 1 | Arquitectura y modelo de datos | FASE 1 | ✅ Completada |
-| 2 | Backend base: auth, RBAC, plataforma | FASE 2 | ✅ Completada |
-| 3 | Dominio académico y administración | FASE 2 | ✅ Completada |
-| 4 | Integración Phidias | FASE 3 | ✅ Completada y verificada contra la API real |
-| 5 | Motor de evaluaciones (backend) | FASE 5 | ✅ Completada |
-| 6 | Frontend base + experiencia de evaluación | FASE 4 + 5 | ✅ Completada — **hito de revisión** |
-| 7 | Estadísticas KMK y planes de evaluación | FASE 6 | Pendiente |
-| 8 | Capacitación KMK y evaluación docente | FASE 7 | Pendiente |
-| 9 | Generación con IA | FASE 8 | Pendiente · requiere clave de Google |
-| 10 | Endurecimiento y entrega | FASE 9 | Pendiente |
+| Etapa | Nombre                                    | FASE spec  | Estado                                        |
+| ----- | ----------------------------------------- | ---------- | --------------------------------------------- |
+| 0     | Cimientos del repositorio                 | —          | ✅ Completada                                 |
+| 1     | Arquitectura y modelo de datos            | FASE 1     | ✅ Completada                                 |
+| 2     | Backend base: auth, RBAC, plataforma      | FASE 2     | ✅ Completada                                 |
+| 3     | Dominio académico y administración        | FASE 2     | ✅ Completada                                 |
+| 4     | Integración Phidias                       | FASE 3     | ✅ Completada y verificada contra la API real |
+| 5     | Motor de evaluaciones (backend)           | FASE 5     | ✅ Completada                                 |
+| 6     | Frontend base + experiencia de evaluación | FASE 4 + 5 | ✅ Completada — **hito de revisión**          |
+| 7     | Estadísticas KMK y planes de evaluación   | FASE 6     | Backend ✅ · frontend parcial                 |
+| 8     | Capacitación KMK y evaluación docente     | FASE 7     | Backend ✅ · frontend pendiente               |
+| 9     | Generación con IA                         | FASE 8     | Backend ✅ · frontend pendiente               |
+| 10    | Endurecimiento y entrega                  | FASE 9     | En curso                                      |
 
 ---
 
@@ -97,6 +107,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** que cualquiera pueda clonar, instalar y arrancar en un comando, con calidad automatizada desde el primer commit.
 
 **Alcance**
+
 - `git init`, `.gitignore`, monorepo npm workspaces (`backend`, `frontend`, `packages/shared`).
 - TypeScript en modo `strict` real (incluye `noUncheckedIndexedAccess`, prohibición de `any` vía ESLint).
 - ESLint + Prettier + `lint-staged` + hook de pre-commit.
@@ -114,6 +125,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** cerrar el diseño antes de escribir lógica, para no pagar migraciones destructivas más adelante.
 
 **Alcance**
+
 - `docs/ARCHITECTURE.md`: capas, módulos, flujo de dependencias, convenciones, dónde vive cada tipo de lógica y por qué.
 - `docs/DATABASE.md`: diagrama, tabla por tabla, claves, índices, restricciones, estrategia de soft delete y de versionado.
 - `docs/API.md`: contrato REST completo, formato de respuesta y catálogo de códigos de error.
@@ -122,6 +134,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 - Semilla demo (sección 78): 1 admin, 3 docentes, 30 estudiantes, 4 grupos, 4 materias, 3 evaluaciones.
 
 **Detalle relevante del modelo**
+
 - Catálogo `question_types` en base de datos (código, familia, esquema del payload, si admite calificación automática) → añadir un tipo nuevo no requiere migración de las evaluaciones existentes (sección 14).
 - `kmk_competencies` → `kmk_subcompetencies` → `kmk_indicators` desde el inicio, aunque los dos últimos niveles nazcan vacíos (sección 12).
 - `academic_years` y `academic_periods` con `external_id` previsto para Phidias.
@@ -136,6 +149,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** el esqueleto de servidor sobre el que todo módulo posterior se apoya sin reinventar nada.
 
 **Alcance**
+
 - Servidor Express tipado, arranque, apagado ordenado, healthcheck.
 - **Auth:** login, refresh rotativo, logout, cambio de contraseña, recuperación; Argon2id; bloqueo por intentos fallidos.
 - **RBAC:** roles y permisos en base de datos, middleware `requirePermission()` + guardas de propiedad y de alcance (un docente solo ve sus grupos).
@@ -154,6 +168,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** que exista el mundo sobre el que se evalúa: áreas, materias, docentes, estudiantes, grupos, años y periodos.
 
 **Alcance**
+
 - Módulos `areas`, `subjects`, `academic_years`, `academic_periods`, `teachers`, `students`, `groups`, `kmk` (gestión de competencias, subcompetencias e indicadores).
 - Relaciones docente↔área, docente↔materia, agrupación por nivel y grupo de trabajo (sección 8).
 - Grupos con docente responsable, materia, nivel, año académico e inscripción de estudiantes.
@@ -169,6 +184,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** que Phidias sea la fuente oficial de estudiantes sin que su token salga jamás del backend.
 
 **Alcance**
+
 - `PhidiasClient`: timeout, reintentos con retroceso exponencial, manejo diferenciado de 401/403/404/429/5xx, cortacircuitos, caché de 5 minutos vía `CacheService`, logging sin datos sensibles.
 - `PhidiasService` con los métodos de la sección 10, cada uno con su esquema de validación y su mapper.
 - `PhidiasMockService` **totalmente separado**, seleccionable por `PHIDIAS_MODE=mock|live`, sin posibilidad de mezcla con producción (sección 77).
@@ -188,9 +204,10 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** el corazón del sistema. Un único motor, genérico, desacoplado de Vue.
 
 **Alcance**
+
 - `assessments` + `assessment_versions`: crear, editar borrador, publicar (congela la versión), archivar, duplicar, nueva versión desde una publicada.
 - `questions`: los 13 tipos de la sección 14, con `payload` validado por esquema propio de cada tipo y competencia KMK obligatoria por pregunta (sección 16).
-- `GraderRegistry`: un *grader* por familia de tipo, con puntuación parcial donde corresponde; los tipos abiertos quedan marcados para calificación manual.
+- `GraderRegistry`: un _grader_ por familia de tipo, con puntuación parcial donde corresponde; los tipos abiertos quedan marcados para calificación manual.
 - `assignments` + `assignment_recipients`: asignación a estudiante, grupo o varios grupos, con ventana, intentos permitidos, límite de tiempo y estados de la sección 24.
 - `AssessmentEngine`: disponibilidad, inicio de intento, guardado incremental de respuestas (idempotente), reanudación tras recarga, control de tiempo autoritativo en servidor, envío, calificación, cálculo de porcentaje, conversión de escala, desglose por competencia y generación de retroalimentación.
 - Calificación manual de respuestas abiertas por el docente, con recálculo del resultado del intento.
@@ -204,12 +221,13 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** la aplicación deja de ser una API y se vuelve utilizable. Aquí se cierra el recorrido completo.
 
 **Alcance**
+
 - Design system sobre Tailwind: tokens (color, tipografía, espaciado, radios, sombras) y componentes base (botón, input, select, tabla, card, modal, toast, badge, tabs, paginación, estados de carga/vacío/error). Sin colores sueltos por componente (sección 63).
 - Layout con barra lateral adaptada al rol, cabecera, selector de idioma, perfil.
 - i18n real es/de/en desde el primer componente, incluyendo mensajes de error traducidos por código (D-06); idioma preferido persistido por usuario.
 - Autenticación, guardas de ruta por permiso, cliente HTTP único con refresco transparente.
 - Pantallas de administración de la Etapa 3 y constructor de evaluaciones con editor por tipo de pregunta y asignación de competencia KMK.
-- **Runner de evaluación** (sección 37): progreso, temporizador, navegación entre preguntas, mapa de estado, autoguardado con *debounce*, recuperación tras recarga, confirmación antes de finalizar. Diseñado para tablet.
+- **Runner de evaluación** (sección 37): progreso, temporizador, navegación entre preguntas, mapa de estado, autoguardado con _debounce_, recuperación tras recarga, confirmación antes de finalizar. Diseñado para tablet.
 - Pantalla de resultado: porcentaje, nota 1.0–6.0, **estrellas accesibles** (nunca solo color o icono: número, etiqueta textual y `aria-label`, con la explicación de que 1.0 es el mejor resultado), retroalimentación y desglose por competencia.
 
 **Criterio de aceptación:** el recorrido de la sección 82 completo en el navegador, verificado además por un test E2E de Playwright: admin crea docente → área → grupo → evaluación con preguntas y KMK → publica → asigna → el estudiante entra, responde, recarga a mitad y no pierde respuestas, finaliza, ve porcentaje, nota, estrellas y retroalimentación. Los tres idiomas conmutan sin texto sin traducir en las pantallas cubiertas.
@@ -221,6 +239,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** convertir los datos ya capturados en información pedagógica.
 
 **Alcance**
+
 - Servicio de estadísticas con **filtros centralizados** (año, periodo, área, materia, docente, grado, grupo, competencia) — una sola implementación reutilizada por todos los cuadros de mando, para que ningún número se contradiga (sección 50).
 - Analítica por competencia: promedio, número de preguntas, porcentaje de acierto, nivel alcanzado y evolución temporal; identificación automática de fortaleza y debilidad (sección 74).
 - Los tres cuadros de mando de la sección 26 con gráficos (ECharts).
@@ -236,6 +255,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** cerrar el circuito docente reutilizando el motor, sin un segundo sistema.
 
 **Alcance**
+
 - `teacher_training_modules` / `contents` / `progress`, estructurados por competencia (contenido, vídeos, documentos, enlaces, actividades).
 - Evaluación de módulo apoyada en el mismo `AssessmentEngine` con `audience = TEACHER`, `purpose = TRAINING`.
 - Escala docente 0–100 % con aprobación configurable (80 % por defecto) resuelta por la misma maquinaria de escalas.
@@ -250,6 +270,7 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** acelerar la creación de evaluaciones sin ceder el control pedagógico.
 
 **Alcance**
+
 - `AiProvider` como interfaz + adaptador del proveedor elegido (P-03) + `AiMockProvider` para tests, sin llamadas reales en la suite.
 - Prompts especializados por tipo de evaluación, con contexto de la competencia KMK (nombre, descripción, indicadores) inyectado desde base de datos, no escrito en el prompt a mano.
 - Salida estructurada validada con Zod **más** validación semántica (R-05).
@@ -266,14 +287,27 @@ Correspondencia con las fases de la especificación: la sección 60 define FASE 
 **Objetivo:** pasar de "funciona" a "se puede operar".
 
 **Alcance**
+
 - Revisión de seguridad completa, cabeceras, CORS, CSRF, cookies, dependencias auditadas, verificación de que ningún secreto ni dato sensible aparece en logs o respuestas.
 - Accesibilidad WCAG AA: contraste, foco, navegación por teclado, `aria`, lectores de pantalla; auditoría específica del runner de evaluación y de las estrellas.
-- Rendimiento: revisión de planes de consulta, índices, paginación, *code splitting*, carga diferida, caché; prueba de carga con el volumen objetivo de la sección 67 (500 docentes / 5.000 estudiantes / 100.000 intentos).
+- Rendimiento: revisión de planes de consulta, índices, paginación, _code splitting_, carga diferida, caché; prueba de carga con el volumen objetivo de la sección 67 (500 docentes / 5.000 estudiantes / 100.000 intentos).
 - Cobertura de pruebas y suite E2E completa de los criterios de la sección 59.
 - Documentación final: los ocho documentos de la sección 55 al día, más registro de decisiones.
 - `docker-compose` de producción, variables de entorno documentadas, guía de despliegue agnóstica de proveedor.
 
 **Criterio de aceptación:** los 26 criterios de la sección 59 demostrables; suite completa en verde; sin hallazgos de seguridad de severidad alta; auditoría de accesibilidad sin fallos bloqueantes.
+
+**Avance**
+
+- ✅ Documentación: los ocho documentos de la sección 55 están escritos.
+- ✅ `docker-compose`, `Dockerfile` de backend y frontend, configuración de nginx y guía de despliegue.
+- ✅ Compilación de producción de ambos paquetes verificada (`tsup` y `vite build`).
+- ⏳ **Las imágenes de Docker no se han construido todavía.** El `compose` está
+  validado sintácticamente (`docker compose config`), pero el demonio no estaba
+  disponible al escribirlo, así que los `Dockerfile` están sin ejecutar. Es lo
+  primero que hay que comprobar al retomar.
+- ⏳ Suite E2E con Playwright de los 26 criterios de la sección 59.
+- ⏳ Auditoría WCAG AA y prueba de carga con el volumen de la sección 67.
 
 ---
 
@@ -296,11 +330,11 @@ Las etapas 4, 7, 8 y 9 son independientes entre sí una vez alcanzada la 6: pued
 
 ## 4. Qué necesito para arrancar
 
-| Ref | Necesidad | Bloquea | Alternativa mientras tanto |
-|---|---|---|---|
-| P-01 | `PHIDIAS_BASE_URL` y `PHIDIAS_TOKEN` | Validación real de la Etapa 4 | Mock aislado; el ajuste posterior queda confinado al mapper |
-| P-02 | Cómo se autentican los estudiantes | Alta de cuentas en Etapa 4 | Cuentas en `PENDING_ACTIVATION` con contraseña temporal emitida por ADMIN |
-| P-03 | Proveedor y clave de IA | Etapa 9 | Proveedor simulado; el adaptador real es un archivo |
-| P-04 | Nombre visible e idioma por defecto | Cosmético | "Medienpass", idioma por defecto español |
+| Ref  | Necesidad                            | Bloquea                       | Alternativa mientras tanto                                                |
+| ---- | ------------------------------------ | ----------------------------- | ------------------------------------------------------------------------- |
+| P-01 | `PHIDIAS_BASE_URL` y `PHIDIAS_TOKEN` | Validación real de la Etapa 4 | Mock aislado; el ajuste posterior queda confinado al mapper               |
+| P-02 | Cómo se autentican los estudiantes   | Alta de cuentas en Etapa 4    | Cuentas en `PENDING_ACTIVATION` con contraseña temporal emitida por ADMIN |
+| P-03 | Proveedor y clave de IA              | Etapa 9                       | Proveedor simulado; el adaptador real es un archivo                       |
+| P-04 | Nombre visible e idioma por defecto  | Cosmético                     | "Medienpass", idioma por defecto español                                  |
 
 Ninguna de estas cuatro impide comenzar por las Etapas 0 a 3, que son la mayor parte de los cimientos.

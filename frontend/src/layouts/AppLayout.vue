@@ -2,7 +2,13 @@
 import { computed, ref } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { LANGUAGE, PERMISSION, SUPPORTED_LANGUAGES, type Language, type Permission } from '@medienpass/shared';
+import {
+  LANGUAGE,
+  PERMISSION,
+  SUPPORTED_LANGUAGES,
+  type Language,
+  type Permission,
+} from '@medienpass/shared';
 import { useAuthStore } from '@/stores/auth';
 import { setLanguage } from '@/app/i18n';
 import BaseButton from '@/design-system/BaseButton.vue';
@@ -36,12 +42,18 @@ interface NavSection {
 
 /** Trazados de iconos, en un solo sitio para no repetir SVG por el menú. */
 const ICONS: Record<string, string> = {
-  dashboard: 'M4 5a1 1 0 011-1h5v7H4V5zm0 9h6v6H5a1 1 0 01-1-1v-5zm10 6v-9h6v8a1 1 0 01-1 1h-5zm6-11h-6V4h5a1 1 0 011 1v4z',
-  assessment: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-  users: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-  chart: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-  competency: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-  settings: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 005.4 8.322c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z',
+  dashboard:
+    'M4 5a1 1 0 011-1h5v7H4V5zm0 9h6v6H5a1 1 0 01-1-1v-5zm10 6v-9h6v8a1 1 0 01-1 1h-5zm6-11h-6V4h5a1 1 0 011 1v4z',
+  assessment:
+    'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  users:
+    'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+  chart:
+    'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+  competency:
+    'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+  settings:
+    'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 005.4 8.322c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z',
 };
 
 const sections = computed<NavSection[]>(() => {
@@ -54,6 +66,7 @@ const sections = computed<NavSection[]>(() => {
     result.push({
       items: [
         { to: '/my-assessments', labelKey: 'nav.myAssessments', icon: 'assessment' },
+        { to: '/statistics', labelKey: 'nav.statistics', icon: 'chart' },
         { to: '/competencies', labelKey: 'nav.competencies', icon: 'competency' },
       ],
     });
@@ -73,6 +86,9 @@ const sections = computed<NavSection[]>(() => {
   if (teaching.length > 0) result.push({ labelKey: 'nav.assessments', items: teaching });
 
   const reference: NavItem[] = [];
+  if (auth.canAny(PERMISSION.STATS_READ_SCOPED, PERMISSION.STATS_READ_GLOBAL)) {
+    reference.push({ to: '/statistics', labelKey: 'nav.statistics', icon: 'chart' });
+  }
   if (auth.can(PERMISSION.KMK_READ)) {
     reference.push({ to: '/competencies', labelKey: 'nav.competencies', icon: 'competency' });
   }
@@ -123,7 +139,9 @@ function isActive(path: string): boolean {
       :aria-hidden="!mobileMenuOpen && undefined"
     >
       <div class="flex h-16 items-center gap-2 border-b border-border px-5">
-        <div class="flex size-8 items-center justify-center rounded-md bg-brand-600 text-ink-inverse">
+        <div
+          class="flex size-8 items-center justify-center rounded-md bg-brand-600 text-ink-inverse"
+        >
           <span class="text-sm font-bold">M</span>
         </div>
         <span class="font-semibold">{{ t('app.name') }}</span>
@@ -150,7 +168,14 @@ function isActive(path: string): boolean {
             :aria-current="isActive(item.to) ? 'page' : undefined"
             @click="mobileMenuOpen = false"
           >
-            <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <svg
+              class="size-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" :d="ICONS[item.icon]" />
             </svg>
             {{ t(item.labelKey) }}
@@ -168,7 +193,9 @@ function isActive(path: string): boolean {
     />
 
     <div class="lg:pl-64">
-      <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur sm:px-6">
+      <header
+        class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur sm:px-6"
+      >
         <button
           type="button"
           class="rounded-md p-2 text-ink-muted hover:bg-surface-muted lg:hidden"
@@ -176,7 +203,14 @@ function isActive(path: string): boolean {
           :aria-expanded="mobileMenuOpen"
           @click="mobileMenuOpen = !mobileMenuOpen"
         >
-          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
             <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>

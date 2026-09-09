@@ -75,7 +75,12 @@ describe('MULTIPLE_CHOICE', () => {
   };
 
   const grade = (optionIds: string[], custom = payload) =>
-    gradeAnswer(QUESTION_TYPE.MULTIPLE_CHOICE, custom, { kind: QUESTION_TYPE.MULTIPLE_CHOICE, optionIds }, 4);
+    gradeAnswer(
+      QUESTION_TYPE.MULTIPLE_CHOICE,
+      custom,
+      { kind: QUESTION_TYPE.MULTIPLE_CHOICE, optionIds },
+      4,
+    );
 
   it('otorga todos los puntos con las dos correctas', () => {
     expect(grade(['a', 'b'])).toMatchObject({ pointsEarned: 4, isCorrect: true });
@@ -117,15 +122,23 @@ describe('TRUE_FALSE', () => {
 
   it('acierta', () => {
     expect(
-      gradeAnswer(QUESTION_TYPE.TRUE_FALSE, payload, { kind: QUESTION_TYPE.TRUE_FALSE, value: true }, 2)
-        .pointsEarned,
+      gradeAnswer(
+        QUESTION_TYPE.TRUE_FALSE,
+        payload,
+        { kind: QUESTION_TYPE.TRUE_FALSE, value: true },
+        2,
+      ).pointsEarned,
     ).toBe(2);
   });
 
   it('falla', () => {
     expect(
-      gradeAnswer(QUESTION_TYPE.TRUE_FALSE, payload, { kind: QUESTION_TYPE.TRUE_FALSE, value: false }, 2)
-        .pointsEarned,
+      gradeAnswer(
+        QUESTION_TYPE.TRUE_FALSE,
+        payload,
+        { kind: QUESTION_TYPE.TRUE_FALSE, value: false },
+        2,
+      ).pointsEarned,
     ).toBe(0);
   });
 
@@ -353,8 +366,12 @@ describe('IMAGE_CHOICE y HOTSPOT', () => {
     };
 
     expect(
-      gradeAnswer(QUESTION_TYPE.IMAGE_CHOICE, payload, { kind: QUESTION_TYPE.IMAGE_CHOICE, optionIds: ['a'] }, 2)
-        .pointsEarned,
+      gradeAnswer(
+        QUESTION_TYPE.IMAGE_CHOICE,
+        payload,
+        { kind: QUESTION_TYPE.IMAGE_CHOICE, optionIds: ['a'] },
+        2,
+      ).pointsEarned,
     ).toBe(2);
     expect(
       gradeAnswer(
@@ -373,18 +390,44 @@ describe('IMAGE_CHOICE y HOTSPOT', () => {
       alt: 'Mapa',
       multiple: false,
       regions: [
-        { id: 'r1', label: 'Norte', shape: 'rect' as const, x: 10, y: 10, width: 20, height: 20, correct: true },
-        { id: 'r2', label: 'Sur', shape: 'rect' as const, x: 50, y: 50, width: 20, height: 20, correct: false },
+        {
+          id: 'r1',
+          label: 'Norte',
+          shape: 'rect' as const,
+          x: 10,
+          y: 10,
+          width: 20,
+          height: 20,
+          correct: true,
+        },
+        {
+          id: 'r2',
+          label: 'Sur',
+          shape: 'rect' as const,
+          x: 50,
+          y: 50,
+          width: 20,
+          height: 20,
+          correct: false,
+        },
       ],
     };
 
     expect(
-      gradeAnswer(QUESTION_TYPE.HOTSPOT, payload, { kind: QUESTION_TYPE.HOTSPOT, regionIds: ['r1'] }, 3)
-        .pointsEarned,
+      gradeAnswer(
+        QUESTION_TYPE.HOTSPOT,
+        payload,
+        { kind: QUESTION_TYPE.HOTSPOT, regionIds: ['r1'] },
+        3,
+      ).pointsEarned,
     ).toBe(3);
     expect(
-      gradeAnswer(QUESTION_TYPE.HOTSPOT, payload, { kind: QUESTION_TYPE.HOTSPOT, regionIds: ['r2'] }, 3)
-        .pointsEarned,
+      gradeAnswer(
+        QUESTION_TYPE.HOTSPOT,
+        payload,
+        { kind: QUESTION_TYPE.HOTSPOT, regionIds: ['r2'] },
+        3,
+      ).pointsEarned,
     ).toBe(0);
   });
 });
@@ -436,7 +479,12 @@ describe('robustez', () => {
   it('un contenido de pregunta corrupto sí es un error visible', () => {
     // Es un defecto de datos que hay que ver, no algo que deba silenciarse.
     expect(() =>
-      gradeAnswer(QUESTION_TYPE.SINGLE_CHOICE, { kind: 'SINGLE_CHOICE' }, { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'b' }, 3),
+      gradeAnswer(
+        QUESTION_TYPE.SINGLE_CHOICE,
+        { kind: 'SINGLE_CHOICE' },
+        { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'b' },
+        3,
+      ),
     ).toThrow(/payload/i);
   });
 

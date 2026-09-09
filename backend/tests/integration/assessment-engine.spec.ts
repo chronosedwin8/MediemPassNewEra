@@ -58,7 +58,13 @@ async function buildFixture(): Promise<Fixture> {
     data: { code: 'SEC', name: trilingual('Secundaria'), position: 0 },
   });
   const gradeLevel = await prisma.gradeLevel.create({
-    data: { educationLevelId: level.id, code: 'K8', name: trilingual('KLASSE 8'), ordinal: 8, position: 0 },
+    data: {
+      educationLevelId: level.id,
+      code: 'K8',
+      name: trilingual('KLASSE 8'),
+      ordinal: 8,
+      position: 0,
+    },
   });
   const year = await prisma.academicYear.create({
     data: {
@@ -459,7 +465,9 @@ describe('realización de una evaluación', () => {
         .send({ response: { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'b' } });
     }
 
-    expect(await prisma.attemptAnswer.count({ where: { attemptId: attempt.body.data.id } })).toBe(1);
+    expect(await prisma.attemptAnswer.count({ where: { attemptId: attempt.body.data.id } })).toBe(
+      1,
+    );
   });
 
   it('rechaza una respuesta con forma ajena al tipo de pregunta', async () => {
@@ -526,7 +534,9 @@ describe('realización de una evaluación', () => {
   });
 
   it('el servidor rechaza responder fuera de plazo', async () => {
-    const { versionId, questionIds } = await createPublishedAssessment(fixture, { timeLimitMinutes: 30 });
+    const { versionId, questionIds } = await createPublishedAssessment(fixture, {
+      timeLimitMinutes: 30,
+    });
     await assignToGroup(fixture, versionId);
     const { attempt } = await startAttempt(fixture);
 
@@ -607,7 +617,9 @@ describe('desglose por competencia KMK', () => {
       .set('Authorization', `Bearer ${fixture.studentToken}`);
 
     // Es lo que hace que la analítica sea un GROUP BY sobre una sola tabla.
-    const answers = await prisma.attemptAnswer.findMany({ where: { attemptId: attempt.body.data.id } });
+    const answers = await prisma.attemptAnswer.findMany({
+      where: { attemptId: attempt.body.data.id },
+    });
     expect(answers).toHaveLength(2);
     for (const answer of answers) {
       expect(answer.kmkCompetencyId).toBeTypeOf('string');
@@ -677,7 +689,10 @@ describe('respuestas abiertas y calificación manual', () => {
       .put(`/api/attempts/${attemptId}/answers/${openId}`)
       .set('Authorization', `Bearer ${fixture.studentToken}`)
       .send({
-        response: { kind: QUESTION_TYPE.OPEN_TEXT, text: 'Comprobaría la fuente original y la fecha.' },
+        response: {
+          kind: QUESTION_TYPE.OPEN_TEXT,
+          text: 'Comprobaría la fuente original y la fecha.',
+        },
       });
 
     const submitted = await request(app)

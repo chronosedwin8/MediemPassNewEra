@@ -48,8 +48,8 @@ onMounted(async () => {
         {{ t('group.studentCount', { count: group.studentCount }) }}
       </p>
       <p v-if="group.homeroomTeacher" class="mt-1 text-xs text-ink-subtle">
-        {{ t('group.homeroomTeacher') }}:
-        {{ group.homeroomTeacher.firstName }} {{ group.homeroomTeacher.lastName }}
+        {{ t('group.homeroomTeacher') }}: {{ group.homeroomTeacher.firstName }}
+        {{ group.homeroomTeacher.lastName }}
       </p>
     </BaseCard>
   </div>

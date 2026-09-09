@@ -33,9 +33,15 @@ export const createAssessmentSchema = z.object({
   title: z.string().trim().min(3).max(200),
   description: z.string().trim().max(2000).optional(),
   instructions: z.string().trim().max(5000).optional(),
-  audience: z.enum([ASSESSMENT_AUDIENCE.STUDENT, ASSESSMENT_AUDIENCE.TEACHER]).default(ASSESSMENT_AUDIENCE.STUDENT),
+  audience: z
+    .enum([ASSESSMENT_AUDIENCE.STUDENT, ASSESSMENT_AUDIENCE.TEACHER])
+    .default(ASSESSMENT_AUDIENCE.STUDENT),
   purpose: z
-    .enum([ASSESSMENT_PURPOSE.EVALUATION, ASSESSMENT_PURPOSE.TRAINING, ASSESSMENT_PURPOSE.DIAGNOSTIC])
+    .enum([
+      ASSESSMENT_PURPOSE.EVALUATION,
+      ASSESSMENT_PURPOSE.TRAINING,
+      ASSESSMENT_PURPOSE.DIAGNOSTIC,
+    ])
     .default(ASSESSMENT_PURPOSE.EVALUATION),
   subjectId: z.string().uuid().nullable().optional(),
   areaId: z.string().uuid().nullable().optional(),

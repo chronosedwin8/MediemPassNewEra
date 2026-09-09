@@ -145,7 +145,9 @@ describe('recorrido de administración: área → materia → docente → grupo 
       .get(`/api/groups/${group.body.data.id}/members`)
       .set('Authorization', `Bearer ${token}`);
     expect(list.body.data).toHaveLength(3);
-    expect(list.body.data.filter((m: { email: string | null }) => m.email === null)).toHaveLength(1);
+    expect(list.body.data.filter((m: { email: string | null }) => m.email === null)).toHaveLength(
+      1,
+    );
   });
 });
 

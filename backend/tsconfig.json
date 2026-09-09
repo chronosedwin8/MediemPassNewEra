@@ -5,20 +5,10 @@
     "outDir": "dist",
     "noEmit": true,
     "composite": false,
-    "types": [
-      "node"
-    ],
-    "lib": [
-      "ES2023"
-    ],
+    "types": ["node"],
+    "lib": ["ES2023"],
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": false
   },
-  "include": [
-    "src/**/*.ts",
-    "prisma/**/*.ts",
-    "tools/**/*.ts",
-    "tests/**/*.ts",
-    "*.config.ts"
-  ]
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "tools/**/*.ts", "tests/**/*.ts", "*.config.ts"]
 }

@@ -72,14 +72,24 @@ function toDomainError(status: number, path: string): ExternalServiceError {
     );
   }
   if (status === 404) {
-    return new ExternalServiceError('phidias', ERROR_CODE.EXTERNAL_SERVICE_ERROR, 'Endpoint not found', {
-      details,
-    });
+    return new ExternalServiceError(
+      'phidias',
+      ERROR_CODE.EXTERNAL_SERVICE_ERROR,
+      'Endpoint not found',
+      {
+        details,
+      },
+    );
   }
   if (status === 429) {
-    return new ExternalServiceError('phidias', ERROR_CODE.RATE_LIMIT_EXCEEDED, 'Phidias rate limit', {
-      details,
-    });
+    return new ExternalServiceError(
+      'phidias',
+      ERROR_CODE.RATE_LIMIT_EXCEEDED,
+      'Phidias rate limit',
+      {
+        details,
+      },
+    );
   }
   if (status >= 500) {
     return new ExternalServiceError(
@@ -108,16 +118,15 @@ export interface RequestOptions {
   skipCache?: boolean;
 }
 
-/*
- * El bucle de reintentos concentra a propósito toda la política de fallo:
- * qué se reintenta, cuánto se espera, cuándo se abre el cortacircuitos y cómo
- * se traduce cada estado. Repartirlo en funciones sueltas obligaría a seguir
- * el flujo de control saltando entre ellas, que es peor de leer y más fácil de
- * romper. Se acepta la complejidad a cambio de que la política esté completa
- * y a la vista en un solo sitio.
+/**
+ * Lo que debe cumplirse antes de intentar siquiera la primera llamada.
+ *
+ * Son dos negativas distintas y conviene no confundirlas: sin token, la
+ * integración está mal configurada y ningún reintento lo arreglará; con el
+ * cortacircuitos abierto, Phidias está caído y la política es precisamente no
+ * insistir hasta que pase el plazo.
  */
-/* eslint-disable-next-line complexity */
-async function requestRaw(path: string, query?: Record<string, string | number | undefined>): Promise<unknown> {
+function assertCallable(): void {
   if (!env.PHIDIAS_TOKEN) {
     throw new ExternalServiceError(
       'phidias',
@@ -135,12 +144,33 @@ async function requestRaw(path: string, query?: Record<string, string | number |
       { details: { retryInMs: status.retryInMs } },
     );
   }
+}
 
+/** Compone la URL descartando los parámetros no informados. */
+function buildUrl(path: string, query?: Record<string, string | number | undefined>): URL {
   const url = new URL(`${env.PHIDIAS_BASE_URL}${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined) url.searchParams.set(key, String(value));
   }
+  return url;
+}
 
+/**
+ * El bucle de reintentos, con toda la política de fallo a la vista: qué se
+ * reintenta, cuánto se espera entre intentos, cuándo se contabiliza el fallo
+ * en el cortacircuitos y cómo se traduce cada estado a un error del dominio.
+ *
+ * Se mantiene en una sola función a propósito. Repartir el flujo de control de
+ * un `for` con `continue` entre varias funciones obligaría a seguirlo saltando
+ * de una a otra, que es donde estas políticas se rompen sin que nadie lo note.
+ */
+async function requestRaw(
+  path: string,
+  query?: Record<string, string | number | undefined>,
+): Promise<unknown> {
+  assertCallable();
+
+  const url = buildUrl(path, query);
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= env.PHIDIAS_RETRIES; attempt += 1) {
@@ -202,10 +232,15 @@ async function requestRaw(path: string, query?: Record<string, string | number |
     }
   }
 
-  throw new ExternalServiceError('phidias', ERROR_CODE.EXTERNAL_SERVICE_ERROR, 'Exhausted retries', {
-    details: { path },
-    cause: lastError,
-  });
+  throw new ExternalServiceError(
+    'phidias',
+    ERROR_CODE.EXTERNAL_SERVICE_ERROR,
+    'Exhausted retries',
+    {
+      details: { path },
+      cause: lastError,
+    },
+  );
 }
 
 /**

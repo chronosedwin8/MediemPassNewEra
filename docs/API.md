@@ -13,7 +13,7 @@ Toda respuesta usa la misma envoltura, sin excepciones.
 **Éxito**
 
 ```json
-{ "success": true, "data": { } }
+{ "success": true, "data": {} }
 ```
 
 **Éxito paginado**
@@ -55,19 +55,19 @@ El catálogo completo de códigos está en [`packages/shared/src/errors.ts`](../
 
 ## 2. Estados HTTP
 
-| Estado | Cuándo |
-|---|---|
-| 200 | Consulta o actualización correcta |
-| 201 | Recurso creado |
-| 204 | Eliminado, sin cuerpo |
-| 400 | Petición malformada |
-| 401 | Sin autenticar, token inválido o expirado |
-| 403 | Autenticado pero sin permiso, o fuera de su alcance |
-| 404 | No existe, o existe pero el usuario no puede saberlo |
-| 409 | Conflicto de estado (versión publicada, intento ya enviado) |
-| 422 | Validación o regla de dominio incumplida |
-| 429 | Límite de peticiones superado |
-| 500 | Fallo interno |
+| Estado          | Cuándo                                                            |
+| --------------- | ----------------------------------------------------------------- |
+| 200             | Consulta o actualización correcta                                 |
+| 201             | Recurso creado                                                    |
+| 204             | Eliminado, sin cuerpo                                             |
+| 400             | Petición malformada                                               |
+| 401             | Sin autenticar, token inválido o expirado                         |
+| 403             | Autenticado pero sin permiso, o fuera de su alcance               |
+| 404             | No existe, o existe pero el usuario no puede saberlo              |
+| 409             | Conflicto de estado (versión publicada, intento ya enviado)       |
+| 422             | Validación o regla de dominio incumplida                          |
+| 429             | Límite de peticiones superado                                     |
+| 500             | Fallo interno                                                     |
 | 502 / 503 / 504 | Fallo, indisponibilidad o tiempo de espera de un servicio externo |
 
 ## 3. Convenciones
@@ -82,15 +82,15 @@ El catálogo completo de códigos está en [`packages/shared/src/errors.ts`](../
 
 ## 4. Autenticación
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `POST` | `/api/auth/login` | Credenciales locales. Devuelve token de acceso y fija la cookie de refresco. |
-| `POST` | `/api/auth/refresh` | Rota el refresco y emite un acceso nuevo. Requiere cabecera CSRF. |
-| `POST` | `/api/auth/logout` | Revoca la cadena de refresco. |
-| `GET` | `/api/auth/me` | Usuario actual, roles y permisos efectivos. |
-| `POST` | `/api/auth/change-password` | Cambio de contraseña propia. |
-| `GET` | `/api/auth/sso/entra/start` | Inicia el flujo OIDC con Microsoft Entra ID. |
-| `GET` | `/api/auth/sso/entra/callback` | Retorno del proveedor. |
+| Método | Ruta                           | Descripción                                                                  |
+| ------ | ------------------------------ | ---------------------------------------------------------------------------- |
+| `POST` | `/api/auth/login`              | Credenciales locales. Devuelve token de acceso y fija la cookie de refresco. |
+| `POST` | `/api/auth/refresh`            | Rota el refresco y emite un acceso nuevo. Requiere cabecera CSRF.            |
+| `POST` | `/api/auth/logout`             | Revoca la cadena de refresco.                                                |
+| `GET`  | `/api/auth/me`                 | Usuario actual, roles y permisos efectivos.                                  |
+| `POST` | `/api/auth/change-password`    | Cambio de contraseña propia.                                                 |
+| `GET`  | `/api/auth/sso/entra/start`    | Inicia el flujo OIDC con Microsoft Entra ID.                                 |
+| `GET`  | `/api/auth/sso/entra/callback` | Retorno del proveedor.                                                       |
 
 El token de acceso vive 15 minutos y viaja en la cabecera. El refresco es rotativo, se guarda solo su hash y viaja en una cookie `httpOnly`, `SameSite=Strict`, `Secure` en producción. Reutilizar un refresco ya rotado revoca la cadena completa: es la señal de que alguien lo robó.
 
@@ -98,53 +98,53 @@ El token de acceso vive 15 minutos y viaja en la cabecera. El refresco es rotati
 
 Salvo indicación contraria, cada recurso ofrece `GET /` (listado paginado), `POST /` (crear), `GET /:id`, `PATCH /:id` y `DELETE /:id` (lógico).
 
-| Prefijo | Recurso | Notas |
-|---|---|---|
-| `/api/users` | Usuarios | `POST /:id/roles`, `POST /:id/reset-password` |
-| `/api/teachers` | Docentes | `PUT /:id/areas`, `PUT /:id/subjects` |
-| `/api/students` | Estudiantes | Solo lectura y edición; el alta masiva llega por sincronización |
-| `/api/groups` | Grupos | `POST /:id/members`, `DELETE /:id/members/:studentId` |
-| `/api/areas`, `/api/subjects` | Estructura | Curados por administración |
-| `/api/academic/years`, `/api/academic/periods` | Calendario | |
-| `/api/kmk/competencies` | Competencias | Incluye subcompetencias e indicadores anidados |
-| `/api/assessments` | Evaluaciones | Ver detalle abajo |
-| `/api/assignments` | Asignaciones | `GET /:id/recipients` para el seguimiento |
-| `/api/attempts` | Intentos | Ver detalle abajo |
-| `/api/evaluation-plans` | Planes | `POST /:id/duplicate`, `GET /:id/compliance` |
-| `/api/training` | Capacitación | `modules`, `modules/:id/progress` |
-| `/api/statistics` | Estadísticas | `overview`, `kmk`, `students/:id`, `teachers/:id`, `groups/:id` |
-| `/api/ai` | IA | `POST /generate`, `GET /requests`, `GET /requests/:id` |
-| `/api/settings` | Configuración | `GET /`, `PATCH /`; escalas en `/api/settings/scales` |
-| `/api/audit` | Auditoría | Solo lectura, solo administración |
-| `/api/integrations/phidias` | Phidias | Ver detalle abajo |
+| Prefijo                                        | Recurso       | Notas                                                           |
+| ---------------------------------------------- | ------------- | --------------------------------------------------------------- |
+| `/api/users`                                   | Usuarios      | `POST /:id/roles`, `POST /:id/reset-password`                   |
+| `/api/teachers`                                | Docentes      | `PUT /:id/areas`, `PUT /:id/subjects`                           |
+| `/api/students`                                | Estudiantes   | Solo lectura y edición; el alta masiva llega por sincronización |
+| `/api/groups`                                  | Grupos        | `POST /:id/members`, `DELETE /:id/members/:studentId`           |
+| `/api/areas`, `/api/subjects`                  | Estructura    | Curados por administración                                      |
+| `/api/academic/years`, `/api/academic/periods` | Calendario    |                                                                 |
+| `/api/kmk/competencies`                        | Competencias  | Incluye subcompetencias e indicadores anidados                  |
+| `/api/assessments`                             | Evaluaciones  | Ver detalle abajo                                               |
+| `/api/assignments`                             | Asignaciones  | `GET /:id/recipients` para el seguimiento                       |
+| `/api/attempts`                                | Intentos      | Ver detalle abajo                                               |
+| `/api/evaluation-plans`                        | Planes        | `POST /:id/duplicate`, `GET /:id/compliance`                    |
+| `/api/training`                                | Capacitación  | `modules`, `modules/:id/progress`                               |
+| `/api/statistics`                              | Estadísticas  | `overview`, `kmk`, `students/:id`, `teachers/:id`, `groups/:id` |
+| `/api/ai`                                      | IA            | `POST /generate`, `GET /requests`, `GET /requests/:id`          |
+| `/api/settings`                                | Configuración | `GET /`, `PATCH /`; escalas en `/api/settings/scales`           |
+| `/api/audit`                                   | Auditoría     | Solo lectura, solo administración                               |
+| `/api/integrations/phidias`                    | Phidias       | Ver detalle abajo                                               |
 
 ### 5.1 Evaluaciones y versiones
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `POST` | `/api/assessments` | Crea la evaluación y su versión 1 en `DRAFT` |
-| `GET` | `/api/assessments/:id/versions` | Historial de versiones |
-| `POST` | `/api/assessments/:id/versions` | Nueva versión `DRAFT` a partir de la última |
-| `PATCH` | `/api/assessments/:id/versions/:versionId` | Solo si está en `DRAFT`; si no, `409 VERSION_IMMUTABLE` |
-| `POST` | `/api/assessments/:id/versions/:versionId/publish` | Congela la versión y materializa puntos y número de preguntas |
-| `POST` | `/api/assessments/:id/duplicate` | Copia completa como evaluación nueva |
-| `GET`/`POST` | `…/versions/:versionId/questions` | Preguntas de una versión en borrador |
-| `PATCH`/`DELETE` | `…/questions/:questionId` | |
-| `PUT` | `…/questions/reorder` | Reordena en una sola operación |
+| Método           | Ruta                                               | Descripción                                                   |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------------- |
+| `POST`           | `/api/assessments`                                 | Crea la evaluación y su versión 1 en `DRAFT`                  |
+| `GET`            | `/api/assessments/:id/versions`                    | Historial de versiones                                        |
+| `POST`           | `/api/assessments/:id/versions`                    | Nueva versión `DRAFT` a partir de la última                   |
+| `PATCH`          | `/api/assessments/:id/versions/:versionId`         | Solo si está en `DRAFT`; si no, `409 VERSION_IMMUTABLE`       |
+| `POST`           | `/api/assessments/:id/versions/:versionId/publish` | Congela la versión y materializa puntos y número de preguntas |
+| `POST`           | `/api/assessments/:id/duplicate`                   | Copia completa como evaluación nueva                          |
+| `GET`/`POST`     | `…/versions/:versionId/questions`                  | Preguntas de una versión en borrador                          |
+| `PATCH`/`DELETE` | `…/questions/:questionId`                          |                                                               |
+| `PUT`            | `…/questions/reorder`                              | Reordena en una sola operación                                |
 
 Publicar exige al menos una pregunta (`ASSESSMENT_HAS_NO_QUESTIONS`) y que cada pregunta tenga competencia KMK (`KMK_COMPETENCY_REQUIRED`).
 
 ### 5.2 Realización de una evaluación
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/attempts/assigned` | Evaluaciones asignadas al usuario actual, con su estado |
-| `POST` | `/api/attempts` | Inicia un intento. El servidor calcula y persiste `deadlineAt` |
-| `GET` | `/api/attempts/:id` | Estado del intento y preguntas **sin** respuestas correctas |
-| `PUT` | `/api/attempts/:id/answers/:questionId` | Guarda una respuesta. Idempotente. Es el autoguardado |
-| `POST` | `/api/attempts/:id/submit` | Finaliza, califica y devuelve el resultado |
-| `GET` | `/api/attempts/:id/result` | Resultado, según la configuración de visibilidad de la versión |
-| `POST` | `/api/attempts/:id/answers/:questionId/grade` | Calificación manual por el docente |
+| Método | Ruta                                          | Descripción                                                    |
+| ------ | --------------------------------------------- | -------------------------------------------------------------- |
+| `GET`  | `/api/attempts/assigned`                      | Evaluaciones asignadas al usuario actual, con su estado        |
+| `POST` | `/api/attempts`                               | Inicia un intento. El servidor calcula y persiste `deadlineAt` |
+| `GET`  | `/api/attempts/:id`                           | Estado del intento y preguntas **sin** respuestas correctas    |
+| `PUT`  | `/api/attempts/:id/answers/:questionId`       | Guarda una respuesta. Idempotente. Es el autoguardado          |
+| `POST` | `/api/attempts/:id/submit`                    | Finaliza, califica y devuelve el resultado                     |
+| `GET`  | `/api/attempts/:id/result`                    | Resultado, según la configuración de visibilidad de la versión |
+| `POST` | `/api/attempts/:id/answers/:questionId/grade` | Calificación manual por el docente                             |
 
 `GET /api/attempts/:id` **nunca** incluye qué opción es correcta mientras el intento está en curso: el payload se poda en el servidor antes de responder. Enviarlo y ocultarlo en el cliente sería regalar las respuestas a cualquiera que abra las herramientas de desarrollo.
 
@@ -152,12 +152,12 @@ Guardar o enviar fuera de plazo devuelve `409 TIME_LIMIT_EXCEEDED`, salvo dentro
 
 ### 5.3 Phidias
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/integrations/phidias/status` | Modo, disponibilidad y estado del cortacircuitos |
-| `GET` | `/api/integrations/phidias/preview/students` | Vista previa sin escribir en la base |
-| `POST` | `/api/integrations/phidias/sync/students` | Sincroniza. Devuelve creados, actualizados, desactivados e incidencias |
-| `GET` | `/api/integrations/phidias/sync/logs` | Historial de sincronizaciones |
+| Método | Ruta                                         | Descripción                                                            |
+| ------ | -------------------------------------------- | ---------------------------------------------------------------------- |
+| `GET`  | `/api/integrations/phidias/status`           | Modo, disponibilidad y estado del cortacircuitos                       |
+| `GET`  | `/api/integrations/phidias/preview/students` | Vista previa sin escribir en la base                                   |
+| `POST` | `/api/integrations/phidias/sync/students`    | Sincroniza. Devuelve creados, actualizados, desactivados e incidencias |
+| `GET`  | `/api/integrations/phidias/sync/logs`        | Historial de sincronizaciones                                          |
 
 El token de Phidias no aparece en ninguna respuesta, en ningún registro ni en ninguna cabecera devuelta al cliente.
 

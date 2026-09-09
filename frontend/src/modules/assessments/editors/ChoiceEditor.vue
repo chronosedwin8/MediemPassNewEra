@@ -48,7 +48,15 @@ function nextId(): string {
 
 function addOption(): void {
   update({
-    options: [...options.value, { id: nextId(), text: '', ...(isImage.value ? { imageUrl: '', alt: '' } : {}), correct: false }],
+    options: [
+      ...options.value,
+      {
+        id: nextId(),
+        text: '',
+        ...(isImage.value ? { imageUrl: '', alt: '' } : {}),
+        correct: false,
+      },
+    ],
   });
 }
 
@@ -83,7 +91,11 @@ function setCorrect(id: string, correct: boolean): void {
   <!-- Verdadero o falso: la única elección es cuál de las dos es correcta. -->
   <fieldset v-if="isTrueFalse" class="flex flex-col gap-2">
     <legend class="mb-1 text-sm font-medium">{{ t('question.markCorrect') }}</legend>
-    <label v-for="value in [true, false]" :key="String(value)" class="flex items-center gap-2 text-sm">
+    <label
+      v-for="value in [true, false]"
+      :key="String(value)"
+      class="flex items-center gap-2 text-sm"
+    >
       <input
         type="radio"
         name="tf-correct"
@@ -106,7 +118,11 @@ function setCorrect(id: string, correct: boolean): void {
       {{ t('question.types.MULTIPLE_CHOICE') }}
     </label>
 
-    <div v-for="option in options" :key="option.id" class="flex flex-col gap-2 rounded-md border border-border p-3">
+    <div
+      v-for="option in options"
+      :key="option.id"
+      class="flex flex-col gap-2 rounded-md border border-border p-3"
+    >
       <div class="flex items-center gap-3">
         <input
           :type="isMultiple || (isImage && payload.multiple === true) ? 'checkbox' : 'radio'"
@@ -132,7 +148,14 @@ function setCorrect(id: string, correct: boolean): void {
           :aria-label="t('common.delete')"
           @click="removeOption(option.id)"
         >
-          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
             <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>

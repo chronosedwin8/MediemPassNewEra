@@ -3,15 +3,20 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { QUESTION_TYPE, type QuestionType } from '@medienpass/shared';
 import BaseButton from '@/design-system/BaseButton.vue';
+import FillBlankEditor from './FillBlankEditor.vue';
+import TextCriteriaEditor from './TextCriteriaEditor.vue';
 
 /**
  * Editor de las preguntas que se construyen a partir de listas.
  *
- * Cubre respuesta corta, texto abierto, ordenamiento, línea de tiempo,
- * relacionar, agrupar y completar espacios. Todas ellas se editan igual desde
- * el punto de vista del docente —añadir filas, escribir textos y decir cuál
- * corresponde con cuál—, así que compartir el componente evita seis
- * variaciones del mismo formulario.
+ * Cubre respuesta corta, ordenamiento, línea de tiempo, relacionar y agrupar.
+ * Todas ellas se editan igual desde el punto de vista del docente —añadir
+ * filas, escribir textos y decir cuál corresponde con cuál—, así que compartir
+ * el componente evita cinco variaciones del mismo formulario.
+ *
+ * Los otros dos tipos que llegan por el mismo selector no se editan con listas
+ * y tienen su propio componente: el texto abierto en `TextCriteriaEditor` y los
+ * huecos en `FillBlankEditor`.
  */
 
 const props = defineProps<{
@@ -116,7 +121,9 @@ interface Labelled {
 const left = computed(() => readArray<Labelled>('left'));
 const right = computed(() => readArray<Labelled>('right'));
 const groups = computed(() => readArray<Labelled>('groups'));
-const groupItems = computed(() => readArray<{ id: string; text: string; groupId: string }>('items'));
+const groupItems = computed(() =>
+  readArray<{ id: string; text: string; groupId: string }>('items'),
+);
 const pairs = computed(() => readArray<{ leftId: string; rightId: string }>('pairs'));
 
 function addTo(key: 'left' | 'right' | 'groups'): void {
@@ -146,43 +153,16 @@ function setPair(leftId: string, rightId: string): void {
 function addGroupItem(): void {
   const items = groupItems.value;
   update({
-    items: [...items, { id: generateId('it', items), text: '', groupId: groups.value[0]?.id ?? '' }],
+    items: [
+      ...items,
+      { id: generateId('it', items), text: '', groupId: groups.value[0]?.id ?? '' },
+    ],
   });
 }
 
 function patchGroupItem(id: string, patch: Partial<{ text: string; groupId: string }>): void {
   update({
     items: groupItems.value.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-  });
-}
-
-// --- Completar espacios ------------------------------------------------------
-
-interface Blank {
-  id: string;
-  acceptedAnswers: string[];
-  caseSensitive: boolean;
-  ignoreAccents: boolean;
-}
-
-const blanks = computed(() => readArray<Blank>('blanks'));
-
-function addBlank(): void {
-  const current = blanks.value;
-  const id = generateId('b', current);
-  update({
-    blanks: [...current, { id, acceptedAnswers: [], caseSensitive: false, ignoreAccents: true }],
-    template: `${(props.payload.template as string) ?? ''} {{${id}}}`.trim(),
-  });
-}
-
-function patchBlank(id: string, answers: string): void {
-  update({
-    blanks: blanks.value.map((blank) =>
-      blank.id === id
-        ? { ...blank, acceptedAnswers: answers.split(',').map((value) => value.trim()).filter(Boolean) }
-        : blank,
-    ),
   });
 }
 
@@ -209,7 +189,7 @@ const inputClass =
           :checked="payload.ignoreAccents !== false"
           @change="update({ ignoreAccents: ($event.target as HTMLInputElement).checked })"
         />
-        Ignorar tildes
+        {{ t('editor.ignoreAccents') }}
       </label>
       <label class="flex items-center gap-2">
         <input
@@ -218,43 +198,25 @@ const inputClass =
           :checked="payload.caseSensitive === true"
           @change="update({ caseSensitive: ($event.target as HTMLInputElement).checked })"
         />
-        Distinguir mayúsculas
+        {{ t('editor.caseSensitive') }}
       </label>
     </div>
   </div>
 
-  <!-- Texto abierto: solo criterios de extensión y rúbrica. -->
-  <div v-else-if="kind === 'text'" class="flex flex-col gap-3">
-    <div class="flex gap-3">
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium" for="min-words">Mínimo de palabras</label>
-        <input
-          id="min-words"
-          type="number"
-          min="0"
-          :value="payload.minWords ?? ''"
-          class="h-9 w-28 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
-          @input="update({ minWords: Number(($event.target as HTMLInputElement).value) || undefined })"
-        />
-      </div>
-    </div>
-    <div class="flex flex-col gap-1.5">
-      <label class="text-sm font-medium" for="rubric">Criterios de corrección</label>
-      <textarea
-        id="rubric"
-        rows="3"
-        :value="(payload.rubric as string) ?? ''"
-        class="resize-y rounded-md border border-border bg-surface p-3 text-sm outline-none focus:border-brand-500"
-        @input="update({ rubric: ($event.target as HTMLTextAreaElement).value })"
-      />
-    </div>
-  </div>
+  <!-- Texto abierto: no es una lista, así que tiene su propio editor. -->
+  <TextCriteriaEditor
+    v-else-if="kind === 'text'"
+    :payload="payload"
+    @update:payload="emit('update:payload', $event)"
+  />
 
   <!-- Secuencia: el orden en que se escriben es el correcto. -->
   <div v-else-if="kind === 'sequence'" class="flex flex-col gap-2">
-    <p class="text-xs text-ink-subtle">Escribe los elementos en su orden correcto.</p>
+    <p class="text-xs text-ink-subtle">{{ t('editor.orderingHint') }}</p>
     <div v-for="(item, index) in sequenceItems" :key="item.id" class="flex items-center gap-2">
-      <span class="w-6 shrink-0 text-center text-xs tabular-nums text-ink-subtle">{{ index + 1 }}</span>
+      <span class="w-6 shrink-0 text-center text-xs tabular-nums text-ink-subtle">{{
+        index + 1
+      }}</span>
       <input
         type="text"
         :value="item.text"
@@ -267,7 +229,9 @@ const inputClass =
         :value="item.dateLabel ?? ''"
         placeholder="1969"
         :class="[inputClass, 'w-24']"
-        @input="patchSequenceItem(item.id, { dateLabel: ($event.target as HTMLInputElement).value })"
+        @input="
+          patchSequenceItem(item.id, { dateLabel: ($event.target as HTMLInputElement).value })
+        "
       />
       <button
         type="button"
@@ -275,7 +239,14 @@ const inputClass =
         :aria-label="t('common.delete')"
         @click="removeSequenceItem(item.id)"
       >
-        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <svg
+          class="size-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
           <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
@@ -289,7 +260,7 @@ const inputClass =
   <div v-else-if="kind === 'matching'" class="flex flex-col gap-4">
     <div class="grid gap-4 sm:grid-cols-2">
       <div class="flex flex-col gap-2">
-        <p class="text-sm font-medium">Columna izquierda</p>
+        <p class="text-sm font-medium">{{ t('editor.leftColumn') }}</p>
         <input
           v-for="entry in left"
           :key="entry.id"
@@ -298,10 +269,12 @@ const inputClass =
           :class="inputClass"
           @input="patchIn('left', entry.id, ($event.target as HTMLInputElement).value)"
         />
-        <BaseButton variant="secondary" size="sm" type="button" @click="addTo('left')">+</BaseButton>
+        <BaseButton variant="secondary" size="sm" type="button" @click="addTo('left')"
+          >+</BaseButton
+        >
       </div>
       <div class="flex flex-col gap-2">
-        <p class="text-sm font-medium">Columna derecha</p>
+        <p class="text-sm font-medium">{{ t('editor.rightColumn') }}</p>
         <input
           v-for="entry in right"
           :key="entry.id"
@@ -310,7 +283,9 @@ const inputClass =
           :class="inputClass"
           @input="patchIn('right', entry.id, ($event.target as HTMLInputElement).value)"
         />
-        <BaseButton variant="secondary" size="sm" type="button" @click="addTo('right')">+</BaseButton>
+        <BaseButton variant="secondary" size="sm" type="button" @click="addTo('right')"
+          >+</BaseButton
+        >
       </div>
     </div>
 
@@ -335,7 +310,7 @@ const inputClass =
   <!-- Agrupar: grupos y a cuál pertenece cada elemento. -->
   <div v-else-if="kind === 'grouping'" class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
-      <p class="text-sm font-medium">Grupos</p>
+      <p class="text-sm font-medium">{{ t('editor.groups') }}</p>
       <input
         v-for="group in groups"
         :key="group.id"
@@ -344,11 +319,13 @@ const inputClass =
         :class="inputClass"
         @input="patchIn('groups', group.id, ($event.target as HTMLInputElement).value)"
       />
-      <BaseButton variant="secondary" size="sm" type="button" @click="addTo('groups')">+</BaseButton>
+      <BaseButton variant="secondary" size="sm" type="button" @click="addTo('groups')"
+        >+</BaseButton
+      >
     </div>
 
     <div class="flex flex-col gap-2">
-      <p class="text-sm font-medium">Elementos</p>
+      <p class="text-sm font-medium">{{ t('editor.items') }}</p>
       <div v-for="item in groupItems" :key="item.id" class="flex items-center gap-2">
         <input
           type="text"
@@ -370,33 +347,10 @@ const inputClass =
     </div>
   </div>
 
-  <!-- Completar espacios: texto con marcadores y respuestas por hueco. -->
-  <div v-else-if="kind === 'fillBlank'" class="flex flex-col gap-3">
-    <div class="flex flex-col gap-1.5">
-      <label class="text-sm font-medium" for="template">Texto con huecos</label>
-      <textarea
-        id="template"
-        rows="3"
-        :value="(payload.template as string) ?? ''"
-        class="resize-y rounded-md border border-border bg-surface p-3 text-sm outline-none focus:border-brand-500"
-        @input="update({ template: ($event.target as HTMLTextAreaElement).value })"
-      />
-      <p class="text-xs text-ink-subtle">Cada hueco se escribe como una marca entre llaves dobles.</p>
-    </div>
-
-    <div v-for="blank in blanks" :key="blank.id" class="flex items-center gap-3">
-      <span class="w-16 shrink-0 font-mono text-xs text-ink-subtle">{{ blank.id }}</span>
-      <input
-        type="text"
-        :value="blank.acceptedAnswers.join(', ')"
-        placeholder="respuesta, variante"
-        :class="[inputClass, 'flex-1']"
-        @input="patchBlank(blank.id, ($event.target as HTMLInputElement).value)"
-      />
-    </div>
-
-    <BaseButton variant="secondary" size="sm" type="button" @click="addBlank">
-      {{ t('question.addOption') }}
-    </BaseButton>
-  </div>
+  <!-- Completar espacios: los huecos viven dentro del texto, no en filas. -->
+  <FillBlankEditor
+    v-else-if="kind === 'fillBlank'"
+    :payload="payload"
+    @update:payload="emit('update:payload', $event)"
+  />
 </template>

@@ -120,16 +120,28 @@ const fillBlankBase = z.object({
 
 const matchingBase = z.object({
   kind: z.literal(QUESTION_TYPE.MATCHING),
-  left: z.array(z.object({ id: optionId, text: richText })).min(2).max(12),
-  right: z.array(z.object({ id: optionId, text: richText })).min(2).max(12),
+  left: z
+    .array(z.object({ id: optionId, text: richText }))
+    .min(2)
+    .max(12),
+  right: z
+    .array(z.object({ id: optionId, text: richText }))
+    .min(2)
+    .max(12),
   pairs: z.array(z.object({ leftId: optionId, rightId: optionId })).min(1),
   partialCredit: z.boolean().default(true),
 });
 
 const groupingBase = z.object({
   kind: z.literal(QUESTION_TYPE.GROUPING),
-  groups: z.array(z.object({ id: optionId, label: richText })).min(2).max(8),
-  items: z.array(z.object({ id: optionId, text: richText, groupId: optionId })).min(2).max(40),
+  groups: z
+    .array(z.object({ id: optionId, label: richText }))
+    .min(2)
+    .max(8),
+  items: z
+    .array(z.object({ id: optionId, text: richText, groupId: optionId }))
+    .min(2)
+    .max(40),
   partialCredit: z.boolean().default(true),
 });
 
@@ -262,7 +274,8 @@ const imageChoicePayload = imageChoiceBase
     path: ['options'],
   })
   .refine(
-    (payload) => payload.multiple || payload.options.filter((option) => option.correct).length === 1,
+    (payload) =>
+      payload.multiple || payload.options.filter((option) => option.correct).length === 1,
     {
       message: 'Sin selección múltiple solo puede haber una imagen correcta',
       path: ['options'],
@@ -270,12 +283,18 @@ const imageChoicePayload = imageChoiceBase
   );
 
 const openTextPayload = openTextBase.refine(
-  (payload) => payload.minWords === undefined || payload.maxWords === undefined || payload.minWords <= payload.maxWords,
+  (payload) =>
+    payload.minWords === undefined ||
+    payload.maxWords === undefined ||
+    payload.minWords <= payload.maxWords,
   { message: 'El mínimo de palabras no puede superar al máximo', path: ['minWords'] },
 );
 
 const longAnswerPayload = longAnswerBase.refine(
-  (payload) => payload.minWords === undefined || payload.maxWords === undefined || payload.minWords <= payload.maxWords,
+  (payload) =>
+    payload.minWords === undefined ||
+    payload.maxWords === undefined ||
+    payload.minWords <= payload.maxWords,
   { message: 'El mínimo de palabras no puede superar al máximo', path: ['minWords'] },
 );
 

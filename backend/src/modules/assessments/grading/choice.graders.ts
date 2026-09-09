@@ -1,5 +1,11 @@
 import { QUESTION_TYPE, type AnswerOf, type PayloadOf } from '@medienpass/shared';
-import { EMPTY_OUTCOME, allOrNothing, partialPoints, type GradeOutcome, type Grader } from './types.js';
+import {
+  EMPTY_OUTCOME,
+  allOrNothing,
+  partialPoints,
+  type GradeOutcome,
+  type Grader,
+} from './types.js';
 
 /**
  * Calificadores de la familia de opciones.

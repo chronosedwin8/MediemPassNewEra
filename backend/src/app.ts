@@ -19,6 +19,10 @@ import { phidiasRouter } from './modules/integrations/phidias/phidias.routes.js'
 import { assessmentsRouter } from './modules/assessments/assessments.routes.js';
 import { assignmentsRouter } from './modules/assignments/assignments.routes.js';
 import { attemptsRouter } from './modules/attempts/attempts.routes.js';
+import { statisticsRouter } from './modules/statistics/statistics.routes.js';
+import { plansRouter } from './modules/plans/plans.routes.js';
+import { trainingRouter } from './modules/training/training.routes.js';
+import { aiRouter } from './modules/ai/ai.routes.js';
 
 /**
  * Composición de la aplicación.
@@ -101,6 +105,10 @@ export function createApp(): Express {
   app.use('/api/assessments', assessmentsRouter);
   app.use('/api/assignments', assignmentsRouter);
   app.use('/api/attempts', attemptsRouter);
+  app.use('/api/statistics', statisticsRouter);
+  app.use('/api/evaluation-plans', plansRouter);
+  app.use('/api/training', trainingRouter);
+  app.use('/api/ai', aiRouter);
   app.use('/api/integrations/phidias', phidiasRouter);
 
   app.use(notFoundHandler);

@@ -1,5 +1,12 @@
 import type { RequestHandler } from 'express';
-import { ERROR_CODE, ROLE, hasAnyPermission, hasPermission, type Permission, type Role } from '@medienpass/shared';
+import {
+  ERROR_CODE,
+  ROLE,
+  hasAnyPermission,
+  hasPermission,
+  type Permission,
+  type Role,
+} from '@medienpass/shared';
 import { AppError } from '../shared/errors/app-error.js';
 
 /**

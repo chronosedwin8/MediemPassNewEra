@@ -50,11 +50,19 @@ export const KMK_COMPETENCIES: CompetencySeed[] = [
       },
       {
         code: '1.2',
-        name: { es: 'Analizar y valorar', de: 'Auswerten und Bewerten', en: 'Analysing and evaluating' },
+        name: {
+          es: 'Analizar y valorar',
+          de: 'Auswerten und Bewerten',
+          en: 'Analysing and evaluating',
+        },
       },
       {
         code: '1.3',
-        name: { es: 'Guardar y recuperar', de: 'Speichern und Abrufen', en: 'Storing and retrieving' },
+        name: {
+          es: 'Guardar y recuperar',
+          de: 'Speichern und Abrufen',
+          en: 'Storing and retrieving',
+        },
       },
     ],
   },
@@ -111,7 +119,11 @@ export const KMK_COMPETENCIES: CompetencySeed[] = [
     subcompetencies: [
       {
         code: '3.1',
-        name: { es: 'Desarrollar y producir', de: 'Entwickeln und Produzieren', en: 'Developing and producing' },
+        name: {
+          es: 'Desarrollar y producir',
+          de: 'Entwickeln und Produzieren',
+          en: 'Developing and producing',
+        },
       },
       {
         code: '3.2',
@@ -162,7 +174,10 @@ export const KMK_COMPETENCIES: CompetencySeed[] = [
           en: 'Protecting personal data and privacy',
         },
       },
-      { code: '4.3', name: { es: 'Proteger la salud', de: 'Gesundheit schützen', en: 'Protecting health' } },
+      {
+        code: '4.3',
+        name: { es: 'Proteger la salud', de: 'Gesundheit schützen', en: 'Protecting health' },
+      },
       {
         code: '4.4',
         name: {

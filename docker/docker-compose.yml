@@ -1,0 +1,130 @@
+# =============================================================================
+# Medienpass — despliegue completo
+#
+#   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+#
+# Los secretos salen del `.env` de la raíz. Ninguno está escrito aquí, y este
+# fichero sí se versiona: por eso cada valor sensible se declara como
+# `${VARIABLE:?mensaje}`, que hace fallar el arranque si falta en lugar de
+# levantar el sistema con un valor por defecto inseguro.
+# =============================================================================
+
+name: medienpass
+
+services:
+  # --- Base de datos ---------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-medienpass}
+      # Comparaciones y ordenaciones deterministas, independientes del locale
+      # del anfitrión. Sin esto, «Ángel» y «Angel» ordenan distinto según dónde
+      # se levante el contenedor.
+      POSTGRES_INITDB_ARGS: '--locale-provider=icu --icu-locale=es-CO --encoding=UTF8'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Sin `ports`: la base no se expone fuera de la red del compose. Para
+    # inspeccionarla, `docker compose exec postgres psql`.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-medienpass}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [interna]
+
+  # --- API -------------------------------------------------------------------
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_NAME: ${APP_NAME:-Medienpass}
+      APP_URL: ${APP_URL:?falta APP_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medienpass}?schema=public
+
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?falta REFRESH_TOKEN_SECRET}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
+      COOKIE_SECRET: ${COOKIE_SECRET:?falta COOKIE_SECRET}
+
+      SSO_ENABLED: ${SSO_ENABLED:-false}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+      ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
+      ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
+      ENTRA_REDIRECT_URI: ${ENTRA_REDIRECT_URI:-}
+      SSO_ALLOWED_DOMAINS: ${SSO_ALLOWED_DOMAINS:-}
+
+      CORS_ORIGIN: ${CORS_ORIGIN:?falta CORS_ORIGIN}
+
+      PHIDIAS_BASE_URL: ${PHIDIAS_BASE_URL}
+      PHIDIAS_TOKEN: ${PHIDIAS_TOKEN:-}
+      PHIDIAS_MODE: ${PHIDIAS_MODE:-mock}
+      PHIDIAS_TIMEOUT_MS: ${PHIDIAS_TIMEOUT_MS:-30000}
+      PHIDIAS_RETRIES: ${PHIDIAS_RETRIES:-2}
+      PHIDIAS_CACHE_TTL_SECONDS: ${PHIDIAS_CACHE_TTL_SECONDS:-300}
+      PHIDIAS_ACADEMIC_YEAR_ID: ${PHIDIAS_ACADEMIC_YEAR_ID}
+
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gemini-2.5-pro}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-120000}
+      AI_MAX_QUESTIONS_PER_REQUEST: ${AI_MAX_QUESTIONS_PER_REQUEST:-30}
+      AI_RATE_LIMIT_PER_USER_PER_DAY: ${AI_RATE_LIMIT_PER_USER_PER_DAY:-50}
+
+      CACHE_DRIVER: ${CACHE_DRIVER:-memory}
+      REDIS_URL: ${REDIS_URL:-}
+
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
+      RATE_LIMIT_AUTH_MAX: ${RATE_LIMIT_AUTH_MAX:-10}
+
+    # Las migraciones se aplican al arrancar, antes de aceptar tráfico.
+    # `migrate deploy` solo aplica lo pendiente: nunca borra ni reescribe, a
+    # diferencia de `migrate dev`, que jamás debe correr aquí.
+    command: >
+      sh -c "npx prisma migrate deploy --schema backend/prisma/schema.prisma
+             && node backend/dist/server.js"
+
+    # Ni `ports` ni acceso directo: al backend se llega por nginx.
+    networks: [interna]
+
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  # --- Aplicación web --------------------------------------------------------
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    networks: [interna]
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  interna:
+    driver: bridge
+
+volumes:
+  postgres-data:

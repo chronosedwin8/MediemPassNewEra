@@ -43,7 +43,13 @@ async function start(): Promise<void> {
     forceExit.unref();
 
     server.close((error) => {
-      if (error) logger.error({ err: error }, 'error al cerrar el servidor HTTP');
+      // Un servidor que nunca llegó a escuchar —por ejemplo, porque el puerto
+      // estaba ocupado— responde aquí con ERR_SERVER_NOT_RUNNING. No es un
+      // fallo del cierre, y registrarlo como tal despista: el error de verdad
+      // es el que provocó el apagado, y ya está unas líneas más arriba.
+      const closeFailed =
+        error && (error as NodeJS.ErrnoException).code !== 'ERR_SERVER_NOT_RUNNING';
+      if (closeFailed) logger.error({ err: error }, 'error al cerrar el servidor HTTP');
       disconnectDatabase()
         .catch((dbError: unknown) => logger.error({ err: dbError }, 'error al cerrar la base'))
         .finally(() => {

@@ -166,7 +166,9 @@ describe('gestión de usuarios por el administrador', () => {
     const teacher = await createTeacher({ username: 'a.suspender' });
     await tokenFor('a.suspender');
 
-    expect(await prisma.refreshToken.count({ where: { userId: teacher.id, revokedAt: null } })).toBe(1);
+    expect(
+      await prisma.refreshToken.count({ where: { userId: teacher.id, revokedAt: null } }),
+    ).toBe(1);
 
     const response = await request(app)
       .patch(`/api/users/${teacher.id}`)
@@ -174,12 +176,17 @@ describe('gestión de usuarios por el administrador', () => {
       .send({ status: 'SUSPENDED' });
 
     expect(response.status).toBe(200);
-    expect(await prisma.refreshToken.count({ where: { userId: teacher.id, revokedAt: null } })).toBe(0);
+    expect(
+      await prisma.refreshToken.count({ where: { userId: teacher.id, revokedAt: null } }),
+    ).toBe(0);
   });
 
   it('el borrado es lógico y libera los identificadores únicos', async () => {
     await createAdmin({ username: 'admin.borra' });
-    const teacher = await createTeacher({ username: 'a.borrar', email: 'a.borrar@colegioaleman.edu.co' });
+    const teacher = await createTeacher({
+      username: 'a.borrar',
+      email: 'a.borrar@colegioaleman.edu.co',
+    });
 
     const response = await request(app)
       .delete(`/api/users/${teacher.id}`)
@@ -233,7 +240,9 @@ describe('gestión de usuarios por el administrador', () => {
 
     const row = await prisma.user.findUniqueOrThrow({ where: { id: teacher.id } });
     expect(row.mustChangePassword).toBe(true);
-    expect(await prisma.refreshToken.count({ where: { userId: teacher.id, revokedAt: null } })).toBe(0);
+    expect(
+      await prisma.refreshToken.count({ where: { userId: teacher.id, revokedAt: null } }),
+    ).toBe(0);
 
     const login = await request(app)
       .post('/api/auth/login')

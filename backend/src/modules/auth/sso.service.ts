@@ -160,7 +160,10 @@ class EntraIdProvider implements SsoProvider {
       // Nunca se propaga el cuerpo de la respuesta: puede contener el secreto
       // del cliente reflejado por el proveedor.
       log.warn({ status: response.status }, 'el canje del código con Entra ID falló');
-      throw AppError.unauthorized(ERROR_CODE.SSO_STATE_MISMATCH, 'Authorization code exchange failed');
+      throw AppError.unauthorized(
+        ERROR_CODE.SSO_STATE_MISMATCH,
+        'Authorization code exchange failed',
+      );
     }
 
     const tokens = (await response.json()) as { id_token?: string };
@@ -168,7 +171,8 @@ class EntraIdProvider implements SsoProvider {
       throw AppError.unauthorized(ERROR_CODE.TOKEN_INVALID, 'Entra ID returned no id_token');
     }
 
-    if (!this.jwks) throw AppError.internal('El conjunto de claves de Entra ID no está inicializado');
+    if (!this.jwks)
+      throw AppError.internal('El conjunto de claves de Entra ID no está inicializado');
 
     let payload: JWTPayload;
     try {

@@ -71,11 +71,14 @@ describe('escala de estudiantes — fronteras exigidas por la especificación', 
     { percentage: 100, value: 1.0, passed: true },
   ];
 
-  it.each(cases)('$percentage% → nota $value (aprobado: $passed)', ({ percentage, value, passed }) => {
-    const result = gradeFromPercentage(percentage, studentScale);
-    expect(result.band?.value).toBe(value);
-    expect(result.passed).toBe(passed);
-  });
+  it.each(cases)(
+    '$percentage% → nota $value (aprobado: $passed)',
+    ({ percentage, value, passed }) => {
+      const result = gradeFromPercentage(percentage, studentScale);
+      expect(result.band?.value).toBe(value);
+      expect(result.passed).toBe(passed);
+    },
+  );
 
   it('no deja huecos entre bandas: cualquier porcentaje tiene banda', () => {
     for (let p = 0; p <= 10000; p += 1) {

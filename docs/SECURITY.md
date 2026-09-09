@@ -33,11 +33,11 @@ El campo de acceso admite **el correo o el nombre de usuario**, sin distinguir m
 
 ### Qué hace el SSO y qué no
 
-| Hace | No hace |
-|---|---|
-| Reconoce a quien ya existe en la plataforma | **Crear cuentas** |
-| Vincula la identidad federada en el primer acceso | Conceder roles |
-| Activa una cuenta pendiente de activación | Saltarse el censo de Phidias |
+| Hace                                              | No hace                      |
+| ------------------------------------------------- | ---------------------------- |
+| Reconoce a quien ya existe en la plataforma       | **Crear cuentas**            |
+| Vincula la identidad federada en el primer acceso | Conceder roles               |
+| Activa una cuenta pendiente de activación         | Saltarse el censo de Phidias |
 
 El SSO no da de alta a nadie. El censo de estudiantes viene de Phidias y el de docentes lo gestiona administración; permitir que cualquiera con cuenta en el tenant se registrara solo por iniciar sesión vaciaría de sentido ese control. Sin correspondencia se responde `SSO_ACCOUNT_NOT_LINKED` y se registra el intento.
 
@@ -75,11 +75,11 @@ Un estudiante recién sincronizado nace **sin contraseña** y en estado `PENDING
 
 Hay tres momentos para hacerlo:
 
-| Cuándo | Cómo |
-|---|---|
-| Al sincronizar | `POST /api/integrations/phidias/sync/students` con `initialPassword` |
-| Al crear a mano | `POST /api/students` con `password` |
-| En cualquier momento | `POST /api/students/credentials` |
+| Cuándo               | Cómo                                                                 |
+| -------------------- | -------------------------------------------------------------------- |
+| Al sincronizar       | `POST /api/integrations/phidias/sync/students` con `initialPassword` |
+| Al crear a mano      | `POST /api/students` con `password`                                  |
+| En cualquier momento | `POST /api/students/credentials`                                     |
 
 La emisión masiva acepta un grupo completo, una lista de estudiantes o «solo quienes aún no pueden entrar», que es el caso justo después de sincronizar. Se puede indicar una contraseña compartida para toda la entrega o dejar que se genere **una distinta por persona**.
 
@@ -91,11 +91,11 @@ Cambiar la contraseña **revoca todas las sesiones abiertas**. Es intencionado: 
 
 ## 3. Sesiones
 
-| Pieza | Duración | Dónde vive |
-|---|---|---|
-| Token de acceso | 15 minutos | Cabecera `Authorization`; en el cliente, **en memoria** |
-| Token de refresco | 30 días, rotativo | Cookie `httpOnly`, `SameSite=Strict`, `Secure` en producción |
-| Token CSRF | Igual que el refresco | Cookie legible + cabecera `x-csrf-token` |
+| Pieza             | Duración              | Dónde vive                                                   |
+| ----------------- | --------------------- | ------------------------------------------------------------ |
+| Token de acceso   | 15 minutos            | Cabecera `Authorization`; en el cliente, **en memoria**      |
+| Token de refresco | 30 días, rotativo     | Cookie `httpOnly`, `SameSite=Strict`, `Secure` en producción |
+| Token CSRF        | Igual que el refresco | Cookie legible + cabecera `x-csrf-token`                     |
 
 El token de acceso **no se guarda en `localStorage`**: si un script ajeno llegara a ejecutarse en la página, no podría leerlo. La sesión sobrevive a las recargas gracias a la cookie de refresco, que JavaScript no puede leer.
 
@@ -118,12 +118,12 @@ En el cliente, varias peticiones que caducan a la vez comparten una única renov
 
 Dos preguntas distintas, respondidas en sitios distintos:
 
-| Pregunta | Dónde se responde |
-|---|---|
+| Pregunta           | Dónde se responde                                 |
+| ------------------ | ------------------------------------------------- |
 | ¿Puede hacer esto? | Middleware, con el permiso (`assessment:publish`) |
-| ¿Sobre qué filas? | Servicio, con la guarda de propiedad o de alcance |
+| ¿Sobre qué filas?  | Servicio, con la guarda de propiedad o de alcance |
 
-Confundirlas produce el error clásico de dar por segura la autorización porque «el middleware ya lo comprobó», cuando el middleware solo sabe que el usuario puede editar *alguna* evaluación, no *esa*.
+Confundirlas produce el error clásico de dar por segura la autorización porque «el middleware ya lo comprobó», cuando el middleware solo sabe que el usuario puede editar _alguna_ evaluación, no _esa_.
 
 El catálogo de 54 permisos vive en `packages/shared` y lo consumen tanto el servidor —que los exige— como la interfaz —que decide qué muestra—. Ocultar un botón es cortesía; impedir la acción es cosa del backend, que vuelve a comprobarlo todo en cada petición.
 
@@ -174,6 +174,6 @@ ENTRA_REDIRECT_URI=https://…/api/auth/sso/entra/callback
 SSO_ALLOWED_DOMAINS=colegioaleman.edu.co
 ```
 
-En el registro de aplicación de Entra ID hay que declarar como *redirect URI* exactamente el valor de `ENTRA_REDIRECT_URI`, con tipo «Web», y conceder los permisos delegados `openid`, `profile` y `email`.
+En el registro de aplicación de Entra ID hay que declarar como _redirect URI_ exactamente el valor de `ENTRA_REDIRECT_URI`, con tipo «Web», y conceder los permisos delegados `openid`, `profile` y `email`.
 
 Con `SSO_ENABLED=false` la pantalla de acceso no muestra el botón y solo se ofrece el acceso con credenciales. El arranque falla si se activa el SSO sin las credenciales del tenant: es preferible descubrirlo al desplegar que en pleno inicio de sesión.

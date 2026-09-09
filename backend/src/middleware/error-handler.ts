@@ -1,7 +1,12 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
-import { ERROR_CODE, ERROR_HTTP_STATUS, type ApiErrorBody, type ValidationIssue } from '@medienpass/shared';
+import {
+  ERROR_CODE,
+  ERROR_HTTP_STATUS,
+  type ApiErrorBody,
+  type ValidationIssue,
+} from '@medienpass/shared';
 import { AppError } from '../shared/errors/app-error.js';
 import { createLogger } from '../shared/logger.js';
 import { isProduction } from '../config/env.js';

@@ -129,7 +129,9 @@ watch(showFinishDialog, async (open) => {
             <div class="min-w-0">
               <p class="truncate text-sm font-medium">{{ store.attempt.assessment.title }}</p>
               <p class="text-xs text-ink-muted">
-                {{ t('attempt.questionOf', { current: store.currentIndex + 1, total: store.total }) }}
+                {{
+                  t('attempt.questionOf', { current: store.currentIndex + 1, total: store.total })
+                }}
               </p>
             </div>
 
@@ -146,7 +148,14 @@ watch(showFinishDialog, async (open) => {
                 role="timer"
                 aria-live="off"
               >
-                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <svg
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="12" r="9" />
                   <path stroke-linecap="round" d="M12 7v5l3 2" />
                 </svg>
@@ -154,7 +163,11 @@ watch(showFinishDialog, async (open) => {
                 {{ timeDisplay }}
               </p>
 
-              <p class="text-xs" :class="store.saveState === 'error' ? 'text-danger' : 'text-ink-subtle'" aria-live="polite">
+              <p
+                class="text-xs"
+                :class="store.saveState === 'error' ? 'text-danger' : 'text-ink-subtle'"
+                aria-live="polite"
+              >
                 <span v-if="store.saveState === 'saving'">{{ t('attempt.saving') }}</span>
                 <span v-else-if="store.saveState === 'saved'">{{ t('common.saved') }}</span>
                 <span v-else-if="store.saveState === 'error'">{{ t('attempt.saveFailed') }}</span>
@@ -162,14 +175,15 @@ watch(showFinishDialog, async (open) => {
             </div>
           </div>
 
-          <ProgressBar
-            :value="store.progressPercentage"
-            :label="t('attempt.progress')"
-          />
+          <ProgressBar :value="store.progressPercentage" :label="t('attempt.progress')" />
         </div>
       </header>
 
-      <p v-if="timeIsCritical" class="bg-danger-soft py-2 text-center text-sm font-medium text-danger" role="alert">
+      <p
+        v-if="timeIsCritical"
+        class="bg-danger-soft py-2 text-center text-sm font-medium text-danger"
+        role="alert"
+      >
         {{ t('attempt.timeAlmostUp') }}
       </p>
 
@@ -191,7 +205,9 @@ watch(showFinishDialog, async (open) => {
               </span>
             </div>
 
-            <h2 class="text-lg font-medium leading-relaxed">{{ store.currentQuestion.statement }}</h2>
+            <h2 class="text-lg font-medium leading-relaxed">
+              {{ store.currentQuestion.statement }}
+            </h2>
             <p v-if="store.currentQuestion.instructions" class="text-sm text-ink-muted">
               {{ store.currentQuestion.instructions }}
             </p>
@@ -241,10 +257,7 @@ watch(showFinishDialog, async (open) => {
               {{ t('common.previous') }}
             </BaseButton>
 
-            <BaseButton
-              v-if="store.currentIndex < store.total - 1"
-              @click="store.goNext"
-            >
+            <BaseButton v-if="store.currentIndex < store.total - 1" @click="store.goNext">
               {{ t('common.next') }}
             </BaseButton>
 

@@ -255,10 +255,16 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
         </div>
       </div>
 
-      <p v-if="isDraft" class="mt-4 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm text-warning">
+      <p
+        v-if="isDraft"
+        class="mt-4 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm text-warning"
+      >
         {{ t('assessment.publishWarning') }}
       </p>
-      <p v-else-if="isPublished" class="mt-4 rounded-md border border-info/30 bg-info-soft px-3 py-2 text-sm text-info">
+      <p
+        v-else-if="isPublished"
+        class="mt-4 rounded-md border border-info/30 bg-info-soft px-3 py-2 text-sm text-info"
+      >
         {{ t('assessment.versionImmutableHint') }}
       </p>
     </BaseCard>
@@ -346,7 +352,14 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
             :aria-label="`${t('common.delete')}: ${question.statement}`"
             @click="removeQuestion(question.id)"
           >
-            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <svg
+              class="size-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
               <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>

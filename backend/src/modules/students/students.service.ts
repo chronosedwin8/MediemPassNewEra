@@ -173,9 +173,7 @@ export async function listStudents(
   const where = {
     user: { deletedAt: null },
     ...scopeFor(actor),
-    ...(query.groupId
-      ? { memberships: { some: { groupId: query.groupId, active: true } } }
-      : {}),
+    ...(query.groupId ? { memberships: { some: { groupId: query.groupId, active: true } } } : {}),
     ...(query.gradeLevelId ? { gradeLevelId: query.gradeLevelId } : {}),
     ...(query.enrollmentStatus ? { enrollmentStatus: query.enrollmentStatus } : {}),
     ...(query.evaluableOnly
@@ -295,7 +293,8 @@ export const issueCredentialsSchema = z
     mustChangePassword: z.boolean().default(true),
   })
   .refine(
-    (input) => Boolean(input.studentIds?.length) || Boolean(input.groupId) || input.onlyWithoutCredentials,
+    (input) =>
+      Boolean(input.studentIds?.length) || Boolean(input.groupId) || input.onlyWithoutCredentials,
     { message: 'Indica estudiantes, un grupo, o marca los que no tienen credenciales' },
   );
 

@@ -47,7 +47,11 @@ interface SettingDefinition<T> {
   description: string;
 }
 
-function define<T>(schema: z.ZodType<T>, defaultValue: T, description: string): SettingDefinition<T> {
+function define<T>(
+  schema: z.ZodType<T>,
+  defaultValue: T,
+  description: string,
+): SettingDefinition<T> {
   return { schema, defaultValue, description };
 }
 
@@ -123,10 +127,7 @@ export const SETTING_DEFINITIONS = {
   ),
 } as const;
 
-export type SettingValue<K extends SettingKey> = (typeof SETTING_DEFINITIONS)[K] extends SettingDefinition<
-  infer T
->
-  ? T
-  : never;
+export type SettingValue<K extends SettingKey> =
+  (typeof SETTING_DEFINITIONS)[K] extends SettingDefinition<infer T> ? T : never;
 
 export const ALL_SETTING_KEYS = Object.keys(SETTING_DEFINITIONS) as SettingKey[];

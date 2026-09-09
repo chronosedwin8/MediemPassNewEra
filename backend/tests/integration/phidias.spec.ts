@@ -11,7 +11,10 @@ import {
   type PhidiasStatus,
 } from '../../src/infrastructure/external/phidias/phidias.service.js';
 import type { NormalizedSection } from '../../src/infrastructure/external/phidias/phidias.mapper.js';
-import type { PhidiasArea, PhidiasSubject } from '../../src/infrastructure/external/phidias/phidias.schemas.js';
+import type {
+  PhidiasArea,
+  PhidiasSubject,
+} from '../../src/infrastructure/external/phidias/phidias.schemas.js';
 import {
   TEST_PASSWORD,
   createAdmin,
@@ -85,7 +88,9 @@ class StubPhidiasService implements PhidiasService {
 
 let stub: StubPhidiasService;
 
-function student(overrides: Partial<NormalizedSection['students'][number]> & { externalId: number }) {
+function student(
+  overrides: Partial<NormalizedSection['students'][number]> & { externalId: number },
+) {
   return {
     firstName: 'Alumno',
     lastName: 'Prueba',
@@ -100,7 +105,13 @@ function student(overrides: Partial<NormalizedSection['students'][number]> & { e
 }
 
 function section(code: string, courseName: string, students: NormalizedSection['students']) {
-  return { externalId: 200 + code.charCodeAt(1), code, levelName: 'SECUNDARIA', courseName, students };
+  return {
+    externalId: 200 + code.charCodeAt(1),
+    code,
+    levelName: 'SECUNDARIA',
+    courseName,
+    students,
+  };
 }
 
 async function seedPlatformStructure() {
@@ -251,9 +262,7 @@ describe('POST /api/integrations/phidias/sync/students', () => {
 
   it('acepta estudiantes sin correo', async () => {
     await createAdmin({ username: 'admin.sincorreo' });
-    stub.sections = [
-      section('K8A', 'KLASSE 8', [student({ externalId: 3001, email: null })]),
-    ];
+    stub.sections = [section('K8A', 'KLASSE 8', [student({ externalId: 3001, email: null })])];
 
     const response = await request(app)
       .post('/api/integrations/phidias/sync/students')
@@ -282,9 +291,15 @@ describe('POST /api/integrations/phidias/sync/students', () => {
 
     expect(response.body.data.studentsCreated).toBe(2);
     expect(response.body.data.status).toBe('PARTIAL');
-    expect(response.body.data.issues.some((i: { reason: string }) => i.reason === 'EMAIL_ALREADY_IN_USE')).toBe(true);
+    expect(
+      response.body.data.issues.some(
+        (i: { reason: string }) => i.reason === 'EMAIL_ALREADY_IN_USE',
+      ),
+    ).toBe(true);
 
-    const withEmail = await prisma.user.count({ where: { email: 'repetido@colegioaleman.edu.co' } });
+    const withEmail = await prisma.user.count({
+      where: { email: 'repetido@colegioaleman.edu.co' },
+    });
     expect(withEmail).toBe(1);
   });
 
@@ -300,7 +315,9 @@ describe('POST /api/integrations/phidias/sync/students', () => {
       .send({});
 
     expect(response.body.data.studentsCreated).toBe(1);
-    expect(response.body.data.issues.some((i: { reason: string }) => i.reason === 'USERNAME_TAKEN')).toBe(true);
+    expect(
+      response.body.data.issues.some((i: { reason: string }) => i.reason === 'USERNAME_TAKEN'),
+    ).toBe(true);
 
     const created = await prisma.student.findFirstOrThrow({ include: { user: true } });
     expect(created.user.username).toBe('alumno3001.3001');
@@ -319,7 +336,9 @@ describe('POST /api/integrations/phidias/sync/students', () => {
       .send({});
 
     expect(response.body.data.studentsCreated).toBe(1);
-    expect(response.body.data.issues.some((i: { reason: string }) => i.reason === 'UNKNOWN_GRADE')).toBe(true);
+    expect(
+      response.body.data.issues.some((i: { reason: string }) => i.reason === 'UNKNOWN_GRADE'),
+    ).toBe(true);
   });
 
   it('la vista previa no escribe nada', async () => {

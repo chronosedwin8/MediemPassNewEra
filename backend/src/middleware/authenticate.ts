@@ -49,9 +49,9 @@ export const authenticateOptional: RequestHandler = (req, _res, next) => {
 };
 
 /** Devuelve el contexto de autenticación o falla: evita comprobar `undefined`. */
-export function requireAuth(req: { auth?: NonNullable<Express.Request['auth']> }): NonNullable<
-  Express.Request['auth']
-> {
+export function requireAuth(req: {
+  auth?: NonNullable<Express.Request['auth']>;
+}): NonNullable<Express.Request['auth']> {
   if (!req.auth) throw AppError.unauthorized(ERROR_CODE.UNAUTHENTICATED);
   return req.auth;
 }

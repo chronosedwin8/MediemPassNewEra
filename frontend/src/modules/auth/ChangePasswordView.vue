@@ -121,7 +121,11 @@ async function submit(): Promise<void> {
             :aria-invalid="policyIssues.length > 0"
             aria-describedby="policy-hint"
           />
-          <p id="policy-hint" class="text-xs" :class="policyIssues.length > 0 ? 'text-danger' : 'text-ink-subtle'">
+          <p
+            id="policy-hint"
+            class="text-xs"
+            :class="policyIssues.length > 0 ? 'text-danger' : 'text-ink-subtle'"
+          >
             {{ policyIssues[0] ?? t('auth.passwordPolicy') }}
           </p>
         </div>

@@ -185,7 +185,11 @@ export async function deleteArea(id: string): Promise<void> {
 
   await prisma.academicArea.update({
     where: { id },
-    data: { deletedAt: new Date(), active: false, code: `${area.code}-DEL-${Date.now()}`.slice(0, 20) },
+    data: {
+      deletedAt: new Date(),
+      active: false,
+      code: `${area.code}-DEL-${Date.now()}`.slice(0, 20),
+    },
   });
 }
 

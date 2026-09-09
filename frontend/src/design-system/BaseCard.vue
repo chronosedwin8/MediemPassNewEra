@@ -7,7 +7,10 @@ withDefaults(defineProps<{ title?: string; subtitle?: string; padded?: boolean }
 
 <template>
   <section class="rounded-lg border border-border bg-surface shadow-card">
-    <header v-if="title || $slots.actions" class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+    <header
+      v-if="title || $slots.actions"
+      class="flex items-start justify-between gap-4 border-b border-border px-5 py-4"
+    >
       <div>
         <h2 v-if="title" class="font-semibold text-ink">{{ title }}</h2>
         <p v-if="subtitle" class="mt-0.5 text-sm text-ink-muted">{{ subtitle }}</p>
