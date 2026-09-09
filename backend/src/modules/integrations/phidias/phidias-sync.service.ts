@@ -9,6 +9,7 @@ import {
 import { prisma } from '../../../infrastructure/database/prisma.js';
 import { createLogger } from '../../../shared/logger.js';
 import { recordAudit } from '../../audit/audit.service.js';
+import { hashPassword } from '../../../shared/security/password.js';
 import { getPhidiasService } from '../../../infrastructure/external/phidias/phidias.service.js';
 import type {
   NormalizedSection,
@@ -59,6 +60,15 @@ export interface SyncResult {
 export interface SyncOptions {
   /** Ejecuta el flujo completo sin escribir nada. Para previsualizar. */
   dryRun?: boolean;
+  /**
+   * Contraseña inicial para las cuentas que se crean.
+   *
+   * Sin ella, el estudiante nace pendiente de activación y solo puede entrar
+   * por SSO. Con ella, puede entrar además con su correo y esta contraseña, y
+   * se le obliga a cambiarla en el primer acceso. No se guarda en claro en
+   * ningún sitio: se hashea y se olvida.
+   */
+  initialPassword?: string;
 }
 
 /** Estado mutable que acompaña a una ejecución. */
@@ -74,6 +84,8 @@ interface SyncContext {
   studentRoleId: string;
   academicYearId: string;
   gradeByCode: Map<string, string>;
+  /** Hash de la contraseña inicial, calculado una sola vez. */
+  initialPasswordHash: string | null;
 }
 
 /**
@@ -204,6 +216,22 @@ async function upsertStudent(
     return existing.id;
   }
 
+  return createStudentAccount(student, email, gradeLevelId, context);
+}
+
+/**
+ * Crea la cuenta y el perfil de un estudiante nuevo.
+ *
+ * Con contraseña inicial la cuenta nace utilizable y se obliga a cambiarla;
+ * sin ella queda pendiente de activación y solo entra por SSO hasta que
+ * administración le emita credenciales.
+ */
+async function createStudentAccount(
+  student: NormalizedStudent,
+  email: string | null,
+  gradeLevelId: string,
+  context: SyncContext,
+): Promise<string | null> {
   const username = await resolveUsername(student, context.issues);
 
   try {
@@ -215,10 +243,12 @@ async function upsertStudent(
           firstName: student.firstName,
           lastName: student.lastName,
           preferredLanguage: student.language,
-          // Sin contraseña: la cuenta nace pendiente de activación. Quien tenga
-          // correo institucional entrará por SSO; el resto recibirá
-          // credenciales locales del administrador.
-          status: USER_STATUS.PENDING_ACTIVATION,
+          status: context.initialPasswordHash
+            ? USER_STATUS.ACTIVE
+            : USER_STATUS.PENDING_ACTIVATION,
+          passwordHash: context.initialPasswordHash,
+          passwordUpdatedAt: context.initialPasswordHash ? new Date() : null,
+          mustChangePassword: Boolean(context.initialPasswordHash),
           roles: { create: { roleId: context.studentRoleId } },
         },
       });
@@ -368,7 +398,9 @@ async function markVanishedStudents(seenExternalIds: Set<number>): Promise<numbe
   return vanished.length;
 }
 
-async function buildContext(): Promise<Pick<SyncContext, 'studentRoleId' | 'academicYearId' | 'gradeByCode'>> {
+async function buildContext(
+  initialPassword?: string,
+): Promise<Pick<SyncContext, 'studentRoleId' | 'academicYearId' | 'gradeByCode' | 'initialPasswordHash'>> {
   const academicYear = await prisma.academicYear.findFirst({
     where: { isCurrent: true },
     select: { id: true },
@@ -386,6 +418,9 @@ async function buildContext(): Promise<Pick<SyncContext, 'studentRoleId' | 'acad
     studentRoleId: studentRole.id,
     academicYearId: academicYear.id,
     gradeByCode: new Map(gradeLevels.map((grade) => [grade.code, grade.id])),
+    // Se hashea una vez y se reutiliza: Argon2id es caro a propósito, y
+    // repetirlo mil doscientas veces convertiría la sincronización en minutos.
+    initialPasswordHash: initialPassword ? await hashPassword(initialPassword) : null,
   };
 }
 
@@ -515,8 +550,13 @@ export async function syncStudents(actorId: string, options: SyncOptions = {}): 
       groupsMatched: 0,
       seenExternalIds: new Set<number>(),
       ...(options.dryRun
-        ? { studentRoleId: '', academicYearId: '', gradeByCode: new Map<string, string>() }
-        : await buildContext()),
+        ? {
+            studentRoleId: '',
+            academicYearId: '',
+            gradeByCode: new Map<string, string>(),
+            initialPasswordHash: null,
+          }
+        : await buildContext(options.initialPassword)),
     };
 
     if (discarded > 0) {

@@ -66,15 +66,22 @@ phidiasRouter.get(
   }),
 );
 
-const syncBody = z.object({ dryRun: z.boolean().default(false) });
+const syncBody = z.object({
+  dryRun: z.boolean().default(false),
+  /**
+   * Contraseña inicial para las cuentas nuevas. No se persiste en claro ni
+   * aparece en los registros: se hashea y se descarta.
+   */
+  initialPassword: z.string().min(10).max(128).optional(),
+});
 
 phidiasRouter.post(
   '/sync/students',
   requirePermission(PERMISSION.PHIDIAS_SYNC),
   validate({ body: syncBody }),
   asyncHandler(async (req, res) => {
-    const { dryRun } = req.body as { dryRun: boolean };
-    ok(res, await syncStudents(requireAuth(req).userId, { dryRun }));
+    const { dryRun, initialPassword } = req.body as { dryRun: boolean; initialPassword?: string };
+    ok(res, await syncStudents(requireAuth(req).userId, { dryRun, initialPassword }));
   }),
 );
 

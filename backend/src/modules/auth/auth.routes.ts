@@ -10,6 +10,9 @@ import {
   logoutController,
   meController,
   refreshController,
+  ssoCallbackController,
+  ssoStartController,
+  ssoStatusController,
 } from './auth.controller.js';
 
 export const authRouter: Router = Router();
@@ -34,3 +37,14 @@ authRouter.post(
   validate({ body: changePasswordSchema }),
   asyncHandler(changePasswordController),
 );
+
+// --- Inicio de sesión federado ------------------------------------------------
+//
+// Conviven con las credenciales locales: son dos formas de demostrar la misma
+// identidad. El estado del proveedor es público porque la pantalla de acceso
+// necesita saber si debe mostrar el botón antes de que nadie se identifique.
+
+authRouter.get('/sso/status', ssoStatusController);
+
+authRouter.get('/sso/entra/start', authRateLimit, asyncHandler(ssoStartController));
+authRouter.get('/sso/entra/callback', asyncHandler(ssoCallbackController));

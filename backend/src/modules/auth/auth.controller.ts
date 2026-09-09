@@ -5,11 +5,13 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { noContent, ok } from '../../shared/http/response.js';
 import { requireAuth } from '../../middleware/authenticate.js';
 import { createCsrfToken, safeCompare } from './token.service.js';
+import { getSsoProvider, isSsoEnabled } from './sso.service.js';
 import {
   changeOwnPassword,
   getCurrentUser,
   login,
   logout,
+  loginWithSso,
   refreshSession,
   type LoginResult,
   type RequestMetadata,
@@ -107,6 +109,121 @@ export async function logoutController(req: Request, res: Response): Promise<voi
   res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
   res.clearCookie(CSRF_COOKIE, { path: '/' });
   noContent(res);
+}
+
+// --- Inicio de sesión federado -----------------------------------------------
+
+const SSO_COOKIE = 'mp_sso';
+
+/** Contexto del flujo OIDC entre la ida al proveedor y la vuelta. */
+interface SsoHandshakeCookie {
+  state: string;
+  nonce: string;
+  codeVerifier: string;
+  redirect: string;
+}
+
+function ssoCookieOptions(): CookieOptions {
+  return {
+    httpOnly: true,
+    // `lax` y no `strict`: el proveedor devuelve al usuario mediante una
+    // navegación desde otro sitio, y con `strict` el navegador no enviaría la
+    // cookie y el flujo no podría completarse nunca.
+    sameSite: 'lax',
+    secure: isProduction,
+    path: '/api/auth/sso',
+    maxAge: 10 * 60 * 1000,
+    signed: true,
+  };
+}
+
+function redirectUriFor(req: Request): string {
+  const provider = getSsoProvider();
+  return env.ENTRA_REDIRECT_URI ?? `${req.protocol}://${req.get('host')}/api/auth/sso/${provider.id.toLowerCase()}/callback`;
+}
+
+/** Indica si el SSO está disponible. Público: la pantalla de acceso lo necesita. */
+export function ssoStatusController(_req: Request, res: Response): void {
+  ok(res, {
+    enabled: isSsoEnabled(),
+    provider: isSsoEnabled() ? getSsoProvider().id : null,
+    allowedDomains: env.SSO_ALLOWED_DOMAINS,
+  });
+}
+
+export async function ssoStartController(req: Request, res: Response): Promise<void> {
+  if (!isSsoEnabled()) {
+    throw new AppError(ERROR_CODE.BAD_REQUEST, 'SSO is not enabled');
+  }
+
+  const redirectUri = redirectUriFor(req);
+  const handshake = await getSsoProvider().createHandshake(redirectUri);
+
+  const requested = typeof req.query['redirect'] === 'string' ? req.query['redirect'] : '/';
+
+  const cookie: SsoHandshakeCookie = {
+    state: handshake.state,
+    nonce: handshake.nonce,
+    codeVerifier: handshake.codeVerifier,
+    // Solo se acepta una ruta interna: sin esta comprobación, el parámetro
+    // sería un redirector abierto hacia cualquier sitio.
+    redirect: requested.startsWith('/') && !requested.startsWith('//') ? requested : '/',
+  };
+
+  res.cookie(SSO_COOKIE, JSON.stringify(cookie), ssoCookieOptions());
+  res.redirect(handshake.authorizationUrl);
+}
+
+/**
+ * Retorno del proveedor.
+ *
+ * No devuelve ningún token en la URL: fija la cookie de refresco y redirige a
+ * la aplicación, que ya sabe canjearla al arrancar. Un token en la barra de
+ * direcciones acaba en el historial, en los registros del servidor y en la
+ * cabecera `Referer` de la primera imagen que cargue la página.
+ */
+export async function ssoCallbackController(req: Request, res: Response): Promise<void> {
+  const raw = req.signedCookies?.[SSO_COOKIE] as string | undefined;
+  res.clearCookie(SSO_COOKIE, { path: '/api/auth/sso' });
+
+  const failureUrl = (code: string): string =>
+    `${env.APP_URL}/login?ssoError=${encodeURIComponent(code)}`;
+
+  if (!raw) {
+    res.redirect(failureUrl(ERROR_CODE.SSO_STATE_MISMATCH));
+    return;
+  }
+
+  const handshake = JSON.parse(raw) as SsoHandshakeCookie;
+  const code = typeof req.query['code'] === 'string' ? req.query['code'] : null;
+  const state = typeof req.query['state'] === 'string' ? req.query['state'] : null;
+
+  // El estado ata la respuesta a la petición que la originó: es lo que impide
+  // que alguien induzca a un usuario a completar un flujo que no empezó él.
+  if (!code || !state || !safeCompare(state, handshake.state)) {
+    res.redirect(failureUrl(ERROR_CODE.SSO_STATE_MISMATCH));
+    return;
+  }
+
+  try {
+    const profile = await getSsoProvider().exchangeCode({
+      code,
+      codeVerifier: handshake.codeVerifier,
+      nonce: handshake.nonce,
+      redirectUri: redirectUriFor(req),
+    });
+
+    const result = await loginWithSso(profile, metadataFrom(req));
+    const csrfToken = createCsrfToken();
+
+    res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions(result.refreshExpiresAt));
+    res.cookie(CSRF_COOKIE, csrfToken, csrfCookieOptions(result.refreshExpiresAt));
+    res.redirect(`${env.APP_URL}${handshake.redirect}`);
+  } catch (error) {
+    const failureCode =
+      error instanceof AppError ? error.code : ERROR_CODE.INTERNAL_ERROR;
+    res.redirect(failureUrl(failureCode));
+  }
 }
 
 export async function meController(req: Request, res: Response): Promise<void> {

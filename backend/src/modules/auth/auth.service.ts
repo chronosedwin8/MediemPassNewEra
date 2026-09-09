@@ -11,6 +11,7 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { hashPassword, verifyPassword } from '../../shared/security/password.js';
 import { createLogger } from '../../shared/logger.js';
 import { recordAudit } from '../audit/audit.service.js';
+import { assertAllowedDomain, type SsoProfile } from './sso.service.js';
 import {
   createRefreshToken,
   refreshTokenHash,
@@ -225,6 +226,113 @@ export async function login(
 
   await recordAudit({ userId: user.id, action: AUDIT_ACTION.LOGIN, ...metadata });
   log.info({ userId: user.id, roles: user.roles }, 'inicio de sesión correcto');
+
+  return issueSession(user, metadata);
+}
+
+/**
+ * Inicio de sesión federado.
+ *
+ * Resuelve la identidad en dos pasos, y el orden importa:
+ *
+ *  1. Por `(proveedor, sujeto)`, que en Entra ID es el `oid` y es estable
+ *     aunque la persona cambie de correo o de apellido.
+ *  2. Si no hay vínculo todavía, por correo. Es el primer inicio de sesión de
+ *     alguien que ya existe en la plataforma, y se aprovecha para dejar el
+ *     vínculo creado.
+ *
+ * **No crea cuentas.** El censo de estudiantes viene de Phidias y el de
+ * docentes lo gestiona administración; dar de alta a cualquiera que tenga
+ * cuenta en el tenant vaciaría de sentido ese control. Sin correspondencia, se
+ * rechaza con un código propio para que la interfaz pueda explicarlo.
+ */
+export async function loginWithSso(
+  profile: SsoProfile,
+  metadata: RequestMetadata = {},
+): Promise<LoginResult> {
+  assertAllowedDomain(profile.email);
+
+  const linked = await prisma.userIdentity.findUnique({
+    where: {
+      provider_providerUserId: { provider: profile.provider, providerUserId: profile.subject },
+    },
+    select: { id: true, userId: true },
+  });
+
+  let userId = linked?.userId ?? null;
+
+  if (!userId && profile.email) {
+    const byEmail = await prisma.user.findFirst({
+      where: { email: profile.email, deletedAt: null },
+      select: { id: true },
+    });
+    userId = byEmail?.id ?? null;
+  }
+
+  if (!userId) {
+    await recordAudit({
+      action: AUDIT_ACTION.LOGIN_FAILED,
+      metadata: { reason: 'sso_not_linked', provider: profile.provider },
+      ...metadata,
+    });
+    throw AppError.unauthorized(
+      ERROR_CODE.SSO_ACCOUNT_NOT_LINKED,
+      'No account matches this identity',
+    );
+  }
+
+  const account = await prisma.user.findFirstOrThrow({
+    where: { id: userId },
+    select: { id: true, status: true, lockedUntil: true },
+  });
+
+  /*
+   * Una cuenta creada por sincronización llega en `PENDING_ACTIVATION` porque
+   * no tiene contraseña. Entrar por SSO **es** activarla: la persona acaba de
+   * demostrar su identidad ante el proveedor del colegio, que es una prueba
+   * al menos tan buena como una contraseña que le habríamos enviado por
+   * correo.
+   */
+  if (account.status === USER_STATUS.PENDING_ACTIVATION) {
+    await prisma.user.update({ where: { id: userId }, data: { status: USER_STATUS.ACTIVE } });
+  } else {
+    assertAccountUsable(account.status, account.lockedUntil);
+  }
+
+  const user = await loadUserWithAccess(userId);
+  if (!user) throw AppError.unauthorized(ERROR_CODE.SSO_ACCOUNT_NOT_LINKED);
+
+  // El vínculo se crea o se refresca aquí, de modo que a partir del segundo
+  // inicio de sesión ya no hace falta buscar por correo.
+  if (linked) {
+    await prisma.userIdentity.update({
+      where: { id: linked.id },
+      data: { lastUsedAt: new Date(), email: profile.email },
+    });
+  } else {
+    await prisma.userIdentity.create({
+      data: {
+        userId,
+        provider: profile.provider,
+        providerUserId: profile.subject,
+        email: profile.email,
+        lastUsedAt: new Date(),
+      },
+    });
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
+  });
+
+  await recordAudit({
+    userId,
+    action: AUDIT_ACTION.LOGIN,
+    metadata: { method: 'sso', provider: profile.provider },
+    ...metadata,
+  });
+  log.info({ userId, provider: profile.provider }, 'inicio de sesión federado correcto');
 
   return issueSession(user, metadata);
 }

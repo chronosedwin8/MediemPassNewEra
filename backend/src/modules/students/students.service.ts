@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  AUDIT_ACTION,
   ENROLLMENT_STATUS,
   ERROR_CODE,
   EVALUABLE_ENROLLMENT_STATUSES,
@@ -16,6 +17,7 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
 import { hashPassword } from '../../shared/security/password.js';
 import { isAdmin } from '../../middleware/authorize.js';
+import { recordAudit } from '../audit/audit.service.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 
 /**
@@ -272,6 +274,134 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentV
     include: studentInclude,
   });
   return toView(created as unknown as StudentRow);
+}
+
+// --- Credenciales ------------------------------------------------------------
+
+export const issueCredentialsSchema = z
+  .object({
+    /** Estudiantes concretos. */
+    studentIds: z.array(z.string().uuid()).max(1000).optional(),
+    /** Todos los de un grupo. */
+    groupId: z.string().uuid().optional(),
+    /** Todos los que aún no pueden entrar. Es el caso tras sincronizar. */
+    onlyWithoutCredentials: z.boolean().default(false),
+    /**
+     * Contraseña a asignar. Si se omite, se genera una distinta por estudiante
+     * y se devuelven todas una única vez.
+     */
+    password: z.string().min(10).max(128).optional(),
+    /** Obligar a cambiarla en el primer acceso. */
+    mustChangePassword: z.boolean().default(true),
+  })
+  .refine(
+    (input) => Boolean(input.studentIds?.length) || Boolean(input.groupId) || input.onlyWithoutCredentials,
+    { message: 'Indica estudiantes, un grupo, o marca los que no tienen credenciales' },
+  );
+
+export type IssueCredentialsInput = z.infer<typeof issueCredentialsSchema>;
+
+export interface IssuedCredential {
+  studentId: string;
+  username: string;
+  email: string | null;
+  fullName: string;
+  /** Se devuelve una única vez: no se guarda en claro en ningún sitio. */
+  password: string;
+}
+
+/**
+ * Genera una contraseña legible de un solo uso.
+ *
+ * Se evitan los caracteres que se confunden al dictarla o copiarla a mano
+ * (l/I/1, O/0): estas contraseñas se van a leer en voz alta en un aula.
+ */
+function generatePassword(): string {
+  const letters = 'abcdefghjkmnpqrstuvwxyz';
+  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+  const digits = '23456789';
+  const pick = (source: string, count: number): string =>
+    Array.from({ length: count }, () => source[randomInt(source.length)]).join('');
+
+  return `${pick(upper, 1)}${pick(letters, 6)}${pick(digits, 3)}`;
+}
+
+function randomInt(max: number): number {
+  return Math.floor(Math.random() * max);
+}
+
+/**
+ * Asigna credenciales a un conjunto de estudiantes.
+ *
+ * Sirve tanto justo después de sincronizar con Phidias —cuando llegan mil
+ * cuentas sin contraseña— como para un caso suelto meses después. La cuenta
+ * pasa a activa: hasta ahora estaba pendiente precisamente por no tener
+ * credenciales.
+ *
+ * Las contraseñas generadas se devuelven **una sola vez**. No se almacenan en
+ * claro, así que si se pierden hay que volver a emitirlas.
+ */
+export async function issueCredentials(
+  input: IssueCredentialsInput,
+  actorId: string,
+): Promise<{ issued: IssuedCredential[]; skipped: number }> {
+  const where = {
+    user: { deletedAt: null },
+    ...(input.studentIds?.length ? { id: { in: input.studentIds } } : {}),
+    ...(input.groupId ? { memberships: { some: { groupId: input.groupId, active: true } } } : {}),
+    ...(input.onlyWithoutCredentials ? { user: { deletedAt: null, passwordHash: null } } : {}),
+  };
+
+  const students = await prisma.student.findMany({
+    where,
+    include: {
+      user: { select: { id: true, username: true, email: true, firstName: true, lastName: true } },
+    },
+    orderBy: { user: { lastName: 'asc' } },
+    take: 1000,
+  });
+
+  if (students.length === 0) return { issued: [], skipped: 0 };
+
+  const issued: IssuedCredential[] = [];
+
+  for (const student of students) {
+    const password = input.password ?? generatePassword();
+
+    await prisma.user.update({
+      where: { id: student.user.id },
+      data: {
+        passwordHash: await hashPassword(password),
+        passwordUpdatedAt: new Date(),
+        mustChangePassword: input.mustChangePassword,
+        status: USER_STATUS.ACTIVE,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+
+    issued.push({
+      studentId: student.id,
+      username: student.user.username,
+      email: student.user.email,
+      fullName: `${student.user.firstName} ${student.user.lastName}`,
+      password,
+    });
+  }
+
+  await recordAudit({
+    userId: actorId,
+    action: AUDIT_ACTION.UPDATE_USER,
+    entityType: 'student',
+    metadata: {
+      credentialsIssued: issued.length,
+      // Nunca la contraseña: ni la compartida ni las generadas.
+      sharedPassword: input.password !== undefined,
+      groupId: input.groupId,
+    },
+  });
+
+  return { issued, skipped: 0 };
 }
 
 export async function updateStudent(

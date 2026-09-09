@@ -37,6 +37,15 @@ export default defineConfig({
       PHIDIAS_MODE: 'mock',
       AI_PROVIDER: 'mock',
       LOG_LEVEL: 'error',
+      // El SSO se prueba con un proveedor controlado, no contra Entra ID. Los
+      // valores de tenant son ficticios: el proveedor real nunca se instancia.
+      SSO_ENABLED: 'true',
+      ENTRA_TENANT_ID: 'tenant-de-prueba',
+      ENTRA_CLIENT_ID: 'cliente-de-prueba',
+      ENTRA_CLIENT_SECRET: 'secreto-de-prueba',
+      ENTRA_REDIRECT_URI: 'http://localhost:3000/api/auth/sso/entra_id/callback',
+      SSO_ALLOWED_DOMAINS: 'colegioaleman.edu.co',
+      APP_URL: 'http://localhost:5173',
     },
   },
 });

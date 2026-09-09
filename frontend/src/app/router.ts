@@ -1,4 +1,10 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import {
+  createRouter,
+  createWebHistory,
+  type RouteLocationNormalized,
+  type RouteLocationRaw,
+  type RouteRecordRaw,
+} from 'vue-router';
 import { PERMISSION, type Permission } from '@medienpass/shared';
 import { useAuthStore } from '@/stores/auth';
 
@@ -32,6 +38,17 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
+    /*
+     * Vive fuera del layout: cuando el cambio es obligatorio, no debe haber
+     * menú que permita esquivarlo navegando a otra parte.
+     */
+    path: '/change-password',
+    name: 'change-password',
+    component: () => import('@/modules/auth/ChangePasswordView.vue'),
+    meta: { titleKey: 'auth.changePassword' },
+  },
+
+  {
     path: '/',
     component: () => import('@/layouts/AppLayout.vue'),
     children: [
@@ -60,6 +77,12 @@ const routes: RouteRecordRaw[] = [
         name: 'assessment-detail',
         component: () => import('@/modules/assessments/AssessmentDetailView.vue'),
         meta: { permissions: [PERMISSION.ASSESSMENT_READ], titleKey: 'assessment.title' },
+      },
+      {
+        path: 'students',
+        name: 'students',
+        component: () => import('@/modules/students/StudentListView.vue'),
+        meta: { permissions: [PERMISSION.STUDENT_READ], titleKey: 'nav.students' },
       },
       {
         path: 'groups',
@@ -117,28 +140,63 @@ export const router = createRouter({
   scrollBehavior: (_to, _from, saved) => saved ?? { top: 0 },
 });
 
+type AuthStore = ReturnType<typeof useAuthStore>;
+
+/** Una comprobación devuelve a dónde desviar, o `null` si deja pasar. */
+type NavigationGuard = (to: RouteLocationNormalized, auth: AuthStore) => RouteLocationRaw | null;
+
+/**
+ * Comprobaciones de navegación, en orden.
+ *
+ * Expresarlas como una lista y no como una cadena de condicionales tiene una
+ * ventaja concreta: añadir una regla nueva es añadir una entrada, y el orden
+ * en que se aplican queda a la vista en lugar de esconderse en el anidamiento.
+ */
+const NAVIGATION_GUARDS: NavigationGuard[] = [
+  // Sin sesión, a la pantalla de acceso, conservando el destino.
+  (to, auth) =>
+    to.meta.requiresAuth !== false && !auth.isAuthenticated
+      ? { name: 'login', query: { redirect: to.fullPath } }
+      : null,
+
+  // Con sesión, la pantalla de acceso no tiene sentido.
+  (to, auth) =>
+    to.meta.requiresAuth === false && auth.isAuthenticated && to.name === 'login'
+      ? { name: 'dashboard' }
+      : null,
+
+  /*
+   * Una contraseña emitida por administración ha pasado por manos ajenas: se
+   * dicta en clase, se imprime en un listado. Hasta cambiarla, la sesión solo
+   * puede ir a esa pantalla.
+   */
+  (to, auth) =>
+    auth.isAuthenticated && auth.user?.mustChangePassword && to.name !== 'change-password'
+      ? { name: 'change-password' }
+      : null,
+
+  /*
+   * Sin permiso, al panel y no a una pantalla de error: el usuario no ha hecho
+   * nada mal, simplemente ese apartado no es suyo. La autorización de verdad
+   * la aplica el servidor en cada petición; esto solo evita el parpadeo.
+   */
+  (to, auth) => {
+    const required = to.meta.permissions;
+    return required?.length && !auth.canAny(...required) ? { name: 'dashboard' } : null;
+  },
+];
+
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
 
   // La sesión se restaura una sola vez, en la primera navegación.
   if (!auth.initialised) await auth.restore();
 
-  const requiresAuth = to.meta.requiresAuth !== false;
-
-  if (requiresAuth && !auth.isAuthenticated) {
-    return { name: 'login', query: { redirect: to.fullPath } };
-  }
-
-  if (!requiresAuth && auth.isAuthenticated && to.name === 'login') {
-    return { name: 'dashboard' };
-  }
-
-  const required = to.meta.permissions;
-  if (required?.length && !auth.canAny(...required)) {
-    // Se envía al panel en lugar de a una pantalla de error: el usuario no
-    // ha hecho nada mal, simplemente ese apartado no es suyo.
-    return { name: 'dashboard' };
+  for (const guard of NAVIGATION_GUARDS) {
+    const redirect = guard(to, auth);
+    if (redirect) return redirect;
   }
 
   return true;
 });
+

@@ -49,7 +49,8 @@
     "orUseCredentials": "o usa tus credenciales",
     "mustChangePassword": "Debes cambiar tu contraseña antes de continuar",
     "passwordChanged": "Contraseña actualizada. Vuelve a iniciar sesión.",
-    "passwordPolicy": "Al menos 10 caracteres, con mayúscula, minúscula y número"
+    "passwordPolicy": "Al menos 10 caracteres, con mayúscula, minúscula y número",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "nav": {
     "dashboard": "Panel",
@@ -345,5 +346,24 @@
     "mode": "Modo",
     "modeLive": "API real",
     "modeMock": "Datos simulados"
+  },
+  "student": {
+    "title": "Estudiantes",
+    "credentials": "Credenciales",
+    "issueCredentials": "Emitir credenciales",
+    "issueForGroup": "Para todo un grupo",
+    "issueForPending": "Solo a quienes aún no pueden entrar",
+    "sharedPassword": "Contraseña compartida",
+    "sharedPasswordHint": "Si la dejas vacía, se genera una distinta para cada estudiante",
+    "forceChange": "Obligar a cambiarla al entrar",
+    "issuedTitle": "Credenciales emitidas",
+    "issuedWarning": "Estas contraseñas se muestran una sola vez. Guárdalas o repártelas ahora: no se pueden volver a consultar.",
+    "issuedCount": "{count} credenciales emitidas",
+    "copyAll": "Copiar todo",
+    "copied": "Copiado al portapapeles",
+    "noCredentials": "Sin credenciales",
+    "canSignIn": "Puede entrar",
+    "pendingActivation": "Pendiente de activación",
+    "loginIdentifier": "Identificador de acceso"
   }
 }

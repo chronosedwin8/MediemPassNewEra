@@ -49,7 +49,8 @@
     "orUseCredentials": "oder mit Zugangsdaten",
     "mustChangePassword": "Du musst dein Passwort ändern, bevor du fortfahren kannst",
     "passwordChanged": "Passwort aktualisiert. Bitte melde dich erneut an.",
-    "passwordPolicy": "Mindestens 10 Zeichen, mit Groß-, Kleinbuchstaben und Ziffer"
+    "passwordPolicy": "Mindestens 10 Zeichen, mit Groß-, Kleinbuchstaben und Ziffer",
+    "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein"
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -345,5 +346,24 @@
     "mode": "Modus",
     "modeLive": "Echte API",
     "modeMock": "Simulierte Daten"
+  },
+  "student": {
+    "title": "Schüler/innen",
+    "credentials": "Zugangsdaten",
+    "issueCredentials": "Zugangsdaten vergeben",
+    "issueForGroup": "Für eine ganze Klasse",
+    "issueForPending": "Nur für die, die sich noch nicht anmelden können",
+    "sharedPassword": "Gemeinsames Passwort",
+    "sharedPasswordHint": "Leer lassen, um für jede Person ein eigenes zu erzeugen",
+    "forceChange": "Änderung bei der ersten Anmeldung erzwingen",
+    "issuedTitle": "Vergebene Zugangsdaten",
+    "issuedWarning": "Diese Passwörter werden nur einmal angezeigt. Sichere oder verteile sie jetzt: sie lassen sich nicht erneut abrufen.",
+    "issuedCount": "{count} Zugangsdaten vergeben",
+    "copyAll": "Alles kopieren",
+    "copied": "In die Zwischenablage kopiert",
+    "noCredentials": "Ohne Zugangsdaten",
+    "canSignIn": "Kann sich anmelden",
+    "pendingActivation": "Aktivierung ausstehend",
+    "loginIdentifier": "Anmeldekennung"
   }
 }

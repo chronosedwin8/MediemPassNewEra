@@ -49,7 +49,8 @@
     "orUseCredentials": "or use your credentials",
     "mustChangePassword": "You must change your password before continuing",
     "passwordChanged": "Password updated. Please sign in again.",
-    "passwordPolicy": "At least 10 characters, with uppercase, lowercase and a number"
+    "passwordPolicy": "At least 10 characters, with uppercase, lowercase and a number",
+    "passwordsDoNotMatch": "The passwords do not match"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -345,5 +346,24 @@
     "mode": "Mode",
     "modeLive": "Live API",
     "modeMock": "Simulated data"
+  },
+  "student": {
+    "title": "Students",
+    "credentials": "Credentials",
+    "issueCredentials": "Issue credentials",
+    "issueForGroup": "For a whole group",
+    "issueForPending": "Only for those who cannot sign in yet",
+    "sharedPassword": "Shared password",
+    "sharedPasswordHint": "Leave empty to generate a different one for each student",
+    "forceChange": "Force a change on first sign-in",
+    "issuedTitle": "Credentials issued",
+    "issuedWarning": "These passwords are shown only once. Save or hand them out now: they cannot be looked up again.",
+    "issuedCount": "{count} credentials issued",
+    "copyAll": "Copy all",
+    "copied": "Copied to clipboard",
+    "noCredentials": "No credentials",
+    "canSignIn": "Can sign in",
+    "pendingActivation": "Pending activation",
+    "loginIdentifier": "Sign-in identifier"
   }
 }

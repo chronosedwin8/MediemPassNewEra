@@ -9,6 +9,8 @@ import type { PaginationQuery } from '../../middleware/validate.js';
 import {
   createStudent,
   createStudentSchema,
+  issueCredentials,
+  issueCredentialsSchema,
   getStudent,
   listStudents,
   updateStudent,
@@ -74,5 +76,21 @@ studentsRouter.patch(
   validate({ params: uuidParam(), body: updateStudentSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await updateStudent(req.params['id']!, req.body));
+  }),
+);
+
+/**
+ * Emisión de credenciales.
+ *
+ * Cubre los dos momentos que importan: justo después de sincronizar, cuando
+ * llegan cientos de cuentas sin contraseña, y el caso suelto de meses después.
+ * Las contraseñas generadas se devuelven una sola vez y no se guardan en claro.
+ */
+studentsRouter.post(
+  '/credentials',
+  requirePermission(PERMISSION.USER_RESET_PASSWORD),
+  validate({ body: issueCredentialsSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await issueCredentials(req.body, requireAuth(req).userId));
   }),
 );

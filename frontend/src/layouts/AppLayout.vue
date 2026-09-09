@@ -67,6 +67,9 @@ const sections = computed<NavSection[]>(() => {
   if (auth.can(PERMISSION.GROUP_READ)) {
     teaching.push({ to: '/groups', labelKey: 'nav.groups', icon: 'users' });
   }
+  if (auth.can(PERMISSION.STUDENT_READ)) {
+    teaching.push({ to: '/students', labelKey: 'nav.students', icon: 'users' });
+  }
   if (teaching.length > 0) result.push({ labelKey: 'nav.assessments', items: teaching });
 
   const reference: NavItem[] = [];
