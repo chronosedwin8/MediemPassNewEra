@@ -135,8 +135,35 @@ async function resolveEmail(
   issues: SyncIssue[],
 ): Promise<string | null> {
   const domain = await getSetting(SETTING_KEY.STUDENT_EMAIL_DOMAIN);
-  const candidate = institutionalEmail(student.code, domain) ?? student.email;
-  if (!candidate) return null;
+
+  /*
+   * El correo sale del código. El de Phidias solo vale si ya es institucional.
+   *
+   * En la matrícula real hay 46 estudiantes cuyo correo registrado es un gmail
+   * o un hotmail: son el contacto de la familia, no la identidad del
+   * estudiante. Crear una cuenta con ese correo significaría que quien recibe
+   * el restablecimiento de contraseña del alumno es su madre, y que el alumno
+   * entra con una dirección que el colegio no controla ni puede revocar.
+   *
+   * Los 38 sin código se quedan sin correo y con la incidencia anotada. Es
+   * preferible a inventarles una identidad: nacen pendientes de activación y
+   * el colegio decide qué hacer con ellos.
+   */
+  const fromCode = institutionalEmail(student.code, domain);
+  const fromPhidias =
+    student.email && student.email.toLowerCase().endsWith(`@${domain}`) ? student.email : null;
+
+  const candidate = fromCode ?? fromPhidias;
+
+  if (!candidate) {
+    issues.push({
+      externalId: student.externalId,
+      username: student.username,
+      reason: 'NO_INSTITUTIONAL_EMAIL',
+      detail: 'Sin código y sin correo institucional; queda pendiente de activación.',
+    });
+    return null;
+  }
 
   const clash = await prisma.user.findFirst({
     where: {

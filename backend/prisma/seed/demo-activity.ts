@@ -204,11 +204,21 @@ export async function seedDemoActivity(prisma: PrismaClient): Promise<void> {
 
     // El grupo destino es uno del mismo grado que la evaluación: asignarla a
     // un curso que no la va a entender no representa nada real.
+    /*
+     * Solo grupos con estudiantes de demostración.
+     *
+     * Esto no es un detalle: en cuanto se sincroniza la matrícula real, la base
+     * contiene nombres de menores reales. Generarles intentos y notas
+     * inventadas produciría un expediente académico falso a nombre de una
+     * persona concreta, y meses después nadie sabría distinguirlo del
+     * verdadero. Los datos de demostración solo se cuelgan de cuentas de
+     * demostración.
+     */
     const group = await prisma.group.findFirst({
       where: {
         gradeLevelId: version.assessment.gradeLevelId ?? undefined,
         active: true,
-        memberships: { some: { active: true } },
+        memberships: { some: { active: true, student: { externalSource: null } } },
       },
       orderBy: { code: 'asc' },
     });
@@ -243,8 +253,13 @@ export async function seedDemoActivity(prisma: PrismaClient): Promise<void> {
     });
     assignmentCount += 1;
 
+    // La asignación alcanza a todo el grupo, pero solo responden las cuentas
+    // de demostración: a un estudiante real se le asigna, y ya está.
     const recipients = await prisma.assignmentRecipient.findMany({
-      where: { assignmentId: assignment.id },
+      where: {
+        assignmentId: assignment.id,
+        user: { student: { externalSource: null } },
+      },
       select: { id: true, userId: true },
       orderBy: { id: 'asc' },
     });
