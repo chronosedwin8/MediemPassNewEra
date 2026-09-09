@@ -198,12 +198,12 @@ bucket y, sobre todo, **borrar de verdad** por año, por evaluación o por tipo.
 
 Configuración aplicada en la creación, toda comprobable desde la consola:
 
-| Ajuste | Valor | Por qué |
-| --- | --- | --- |
-| Acceso público | Bloqueado por completo | Son trabajos de menores de edad |
-| Cifrado en reposo | SSE-S3 (AES-256) | Por defecto en cada objeto |
-| Versionado | Desactivado | Un borrado con versionado deja el objeto ahí; el requisito es lo contrario |
-| CORS | Solo el origen de la aplicación | El navegador sube directamente |
+| Ajuste            | Valor                           | Por qué                                                                    |
+| ----------------- | ------------------------------- | -------------------------------------------------------------------------- |
+| Acceso público    | Bloqueado por completo          | Son trabajos de menores de edad                                            |
+| Cifrado en reposo | SSE-S3 (AES-256)                | Por defecto en cada objeto                                                 |
+| Versionado        | Desactivado                     | Un borrado con versionado deja el objeto ahí; el requisito es lo contrario |
+| CORS              | Solo el origen de la aplicación | El navegador sube directamente                                             |
 
 ### Cómo viaja un archivo
 

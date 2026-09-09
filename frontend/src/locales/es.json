@@ -156,7 +156,8 @@
     "deleteAttempts": "{count} intentos y sus notas, de {students} estudiantes",
     "deleteConfirmHint": "Escribe «{title}» para confirmar.",
     "deleteAction": "Eliminar definitivamente",
-    "deleteFiles": "{count} archivos adjuntos ({size})"
+    "deleteFiles": "{count} archivos adjuntos ({size})",
+    "backToDetail": "Volver a la evaluación"
   },
   "question": {
     "add": "Añadir pregunta",
@@ -475,7 +476,9 @@
     "rejected": "La respuesta no pasó la validación y se descartó",
     "questionNumber": "Pregunta {number}",
     "maxQuestions": "máx. {count} preguntas",
-    "dailyLimit": "{count} generaciones al día"
+    "dailyLimit": "{count} generaciones al día",
+    "simulatedTitle": "La IA está en modo simulado",
+    "simulatedHint": "Sin clave de API, el generador devuelve preguntas de relleno con la forma correcta pero sin relación con el tema. Sirve para probar el flujo, no para preparar una clase."
   },
   "admin": {
     "title": "Administración",
@@ -602,5 +605,33 @@
     "uploaded": "{name} subido.",
     "uploadFailed": "No se pudo subir el archivo. Inténtalo otra vez.",
     "limitReached": "Has alcanzado el máximo de {count} archivos."
+  },
+  "preview": {
+    "title": "Previsualización",
+    "action": "Previsualizar",
+    "notice": "Así verá la evaluación un estudiante. Puedes responder para probarla: nada de lo que escribas aquí se guarda.",
+    "showSolutions": "Ver las respuestas",
+    "solution": "Respuesta correcta",
+    "noSolution": "Esta pregunta no tiene respuesta correcta marcada y no se podrá calificar.",
+    "manualGrading": "La corrige el docente: no hay clave que mostrar.",
+    "questionNumber": "Pregunta {number}",
+    "evidenceHint": "El estudiante podrá adjuntar hasta {count} archivos."
+  },
+  "report": {
+    "title": "Resultados por grupo",
+    "action": "Ver resultados",
+    "intro": "Cómo fue esta evaluación en cada curso, y qué preguntas costaron más.",
+    "byGroup": "Por grupo",
+    "assigned": "Asignada a",
+    "submitted": "Entregadas",
+    "notStarted": "Sin empezar",
+    "pending": "Por corregir",
+    "average": "Media",
+    "passRate": "Aprobación",
+    "noResults": "Todavía no hay entregas de esta evaluación.",
+    "hardest": "Preguntas más falladas",
+    "hardestHint": "Ordenadas por la dificultad observada, no por la que se declaró al escribirlas. Cuando no coinciden, el problema suele estar en el enunciado.",
+    "correctRate": "Acierto",
+    "answered": "Respuestas"
   }
 }

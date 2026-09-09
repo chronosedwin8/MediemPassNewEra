@@ -5,6 +5,7 @@ import { authenticate, requireAuth } from '../../middleware/authenticate.js';
 import { requireAnyPermission } from '../../middleware/authorize.js';
 import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
 import { statisticsFiltersSchema, type StatisticsFilters } from './filters.js';
+import { getAssessmentReport } from './assessment-report.service.js';
 import {
   getGroupStatistics,
   getKmkReport,
@@ -104,5 +105,22 @@ statisticsRouter.get(
         getQuery<StatisticsFilters>(req),
       ),
     );
+  }),
+);
+
+/**
+ * Resultados de una evaluación, grupo por grupo.
+ *
+ * Responde a lo que un docente se pregunta al día siguiente de aplicar algo:
+ * cómo fue en cada curso y qué pregunta falló todo el mundo. El panel general
+ * responde a «cómo va el colegio», que es otra pregunta.
+ */
+statisticsRouter.get(
+  '/assessments/:id',
+  requireAnyPermission(PERMISSION.STATS_READ_SCOPED, PERMISSION.STATS_READ_GLOBAL),
+  validate({ params: uuidParam(), query: statisticsFiltersSchema }),
+  asyncHandler(async (req, res) => {
+    const filters = getQuery<StatisticsFilters>(req);
+    ok(res, await getAssessmentReport(requireAuth(req), req.params['id']!, filters));
   }),
 );

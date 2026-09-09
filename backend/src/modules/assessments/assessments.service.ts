@@ -8,7 +8,9 @@ import {
   ERROR_CODE,
   LANGUAGE,
   type AssessmentAudience,
+  type LocalizedText,
   type Paginated,
+  type QuestionType,
   type Role,
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
@@ -18,6 +20,7 @@ import { assertOwnership, isAdmin } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { getActiveScale } from '../settings/scales.service.js';
 import { previewPurge, purgeFiles } from '../files/files.service.js';
+import { stripSolution } from '../attempts/assessment-engine.js';
 import { createLogger } from '../../shared/logger.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 
@@ -757,4 +760,129 @@ export async function purgeAssessment(
   );
 
   return { ...impact, filesDeleted: purged.files, bytesDeleted: purged.bytes };
+}
+
+// --- Previsualización --------------------------------------------------------
+
+/**
+ * Una pregunta tal como se va a previsualizar.
+ *
+ * `payload` es el contenido que **vería el estudiante**, podado con la misma
+ * función que usa el motor. `solution` solo llega cuando el docente pide ver
+ * las respuestas, y va en un campo aparte para que la interfaz no pueda
+ * mezclarlas por descuido al pintar.
+ */
+export interface PreviewQuestion {
+  id: string;
+  type: string;
+  statement: string;
+  instructions: string | null;
+  points: number;
+  position: number;
+  mediaUrl: string | null;
+  payload: unknown;
+  allowsEvidence: boolean;
+  requiresEvidence: boolean;
+  maxEvidenceFiles: number;
+  competency: { id: string; code: string; name: LocalizedText; color: string };
+  solution: {
+    payload: unknown;
+    feedbackCorrect: string | null;
+    feedbackIncorrect: string | null;
+    explanation: string | null;
+  } | null;
+}
+
+export interface AssessmentPreview {
+  assessmentId: string;
+  versionId: string;
+  versionNumber: number;
+  status: string;
+  title: string;
+  name: string;
+  instructions: string | null;
+  timeLimitMinutes: number | null;
+  passingPercentage: number | null;
+  questionCount: number;
+  totalPoints: number;
+  questions: PreviewQuestion[];
+}
+
+/**
+ * Previsualiza una versión, publicada o en borrador.
+ *
+ * Existe por una razón concreta: entre escribir una evaluación y publicarla no
+ * había ningún momento en que el docente viera lo que va a ver su clase. Con
+ * las generadas por IA la necesidad es mayor todavía, porque nadie escribió esas
+ * preguntas y alguien tiene que leerlas antes de que lleguen a un estudiante.
+ *
+ * La clave del diseño está en `stripSolution`: es **la misma** función que usa
+ * el motor al servir un intento real. Una previsualización con su propia idea
+ * de qué ocultar deja de decir la verdad en cuanto una de las dos cambia, y
+ * entonces sirve para lo contrario de lo que existe.
+ */
+export async function previewVersion(
+  actor: Actor,
+  versionId: string,
+  withSolutions: boolean,
+): Promise<AssessmentPreview> {
+  const version = await prisma.assessmentVersion.findUnique({
+    where: { id: versionId },
+    include: {
+      assessment: { select: { id: true, title: true, createdById: true } },
+      questions: {
+        orderBy: { position: 'asc' },
+        include: {
+          kmkCompetency: { select: { id: true, code: true, name: true, color: true } },
+        },
+      },
+    },
+  });
+  if (!version) throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { versionId });
+
+  assertOwnership(actor, version.assessment.createdById, { versionId });
+
+  return {
+    assessmentId: version.assessment.id,
+    versionId: version.id,
+    versionNumber: version.versionNumber,
+    status: version.status,
+    title: version.assessment.title,
+    name: version.name,
+    instructions: version.instructions,
+    timeLimitMinutes: version.timeLimitMinutes,
+    passingPercentage: version.passingPercentage ? Number(version.passingPercentage) : null,
+    // Se cuentan las preguntas reales en lugar de leer el contador guardado:
+    // si alguna vez se desincroniza, la previsualización debe mostrar lo que
+    // hay, no lo que la fila dice que hay.
+    questionCount: version.questions.length,
+    totalPoints: version.questions.reduce((sum, question) => sum + Number(question.points), 0),
+    questions: version.questions.map((question) => ({
+      id: question.id,
+      type: question.type,
+      statement: question.statement,
+      instructions: question.instructions,
+      points: Number(question.points),
+      position: question.position,
+      mediaUrl: question.mediaUrl,
+      payload: stripSolution(question.type as QuestionType, question.payload),
+      allowsEvidence: question.allowsEvidence,
+      requiresEvidence: question.requiresEvidence,
+      maxEvidenceFiles: question.maxEvidenceFiles,
+      competency: {
+        id: question.kmkCompetency.id,
+        code: question.kmkCompetency.code,
+        name: question.kmkCompetency.name as LocalizedText,
+        color: question.kmkCompetency.color,
+      },
+      solution: withSolutions
+        ? {
+            payload: question.payload,
+            feedbackCorrect: question.feedbackCorrect,
+            feedbackIncorrect: question.feedbackIncorrect,
+            explanation: question.explanation,
+          }
+        : null,
+    })),
+  };
 }

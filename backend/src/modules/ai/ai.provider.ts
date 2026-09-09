@@ -328,6 +328,15 @@ export class MockAiProvider implements AiProvider {
   /** Permite forzar una respuesta concreta en las pruebas. */
   nextResponse: string | null = null;
 
+  /**
+   * Funciona, pero no genera nada.
+   *
+   * Devuelve `true` porque no le falta configuración: sirve para que las
+   * pruebas no dependan de la red ni de una clave. Lo que **no** hace es
+   * escribir preguntas sobre el tema pedido; produce relleno con la forma
+   * correcta. Quien lo confunda con el proveedor real concluirá que la IA
+   * «no entendió el tema», así que la interfaz debe decir cuál está activo.
+   */
   isConfigured(): boolean {
     return true;
   }

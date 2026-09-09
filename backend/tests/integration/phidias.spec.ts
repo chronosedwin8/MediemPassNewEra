@@ -288,9 +288,7 @@ describe('POST /api/integrations/phidias/sync/students', () => {
   it('ignora el correo personal de Phidias en favor del institucional', async () => {
     await createAdmin({ username: 'admin.personal' });
     stub.sections = [
-      section('K8A', 'KLASSE 8', [
-        student({ externalId: 3005, email: 'familia.perez@gmail.com' }),
-      ]),
+      section('K8A', 'KLASSE 8', [student({ externalId: 3005, email: 'familia.perez@gmail.com' })]),
     ];
 
     await request(app)

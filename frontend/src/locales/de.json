@@ -156,7 +156,8 @@
     "deleteAttempts": "{count} Versuche und deren Noten von {students} Schülern",
     "deleteConfirmHint": "Gib «{title}» ein, um zu bestätigen.",
     "deleteAction": "Endgültig löschen",
-    "deleteFiles": "{count} angehängte Dateien ({size})"
+    "deleteFiles": "{count} angehängte Dateien ({size})",
+    "backToDetail": "Zurück zur Prüfung"
   },
   "question": {
     "add": "Aufgabe hinzufügen",
@@ -475,7 +476,9 @@
     "rejected": "Die Antwort hat die Validierung nicht bestanden und wurde verworfen",
     "questionNumber": "Frage {number}",
     "maxQuestions": "max. {count} Fragen",
-    "dailyLimit": "{count} Generierungen pro Tag"
+    "dailyLimit": "{count} Generierungen pro Tag",
+    "simulatedTitle": "Die KI läuft im Simulationsmodus",
+    "simulatedHint": "Ohne API-Schlüssel liefert der Generator Platzhalterfragen mit korrekter Struktur, aber ohne Bezug zum Thema. Gut zum Testen des Ablaufs, nicht zur Unterrichtsvorbereitung."
   },
   "admin": {
     "title": "Verwaltung",
@@ -602,5 +605,33 @@
     "uploaded": "{name} hochgeladen.",
     "uploadFailed": "Die Datei konnte nicht hochgeladen werden. Bitte erneut versuchen.",
     "limitReached": "Das Maximum von {count} Dateien ist erreicht."
+  },
+  "preview": {
+    "title": "Vorschau",
+    "action": "Vorschau",
+    "notice": "So sieht ein Schüler die Prüfung. Du kannst zum Testen antworten: nichts davon wird gespeichert.",
+    "showSolutions": "Lösungen anzeigen",
+    "solution": "Richtige Antwort",
+    "noSolution": "Für diese Frage ist keine richtige Antwort markiert; sie kann nicht bewertet werden.",
+    "manualGrading": "Wird von der Lehrkraft bewertet: es gibt keine Lösung zum Anzeigen.",
+    "questionNumber": "Frage {number}",
+    "evidenceHint": "Der Schüler kann bis zu {count} Dateien anhängen."
+  },
+  "report": {
+    "title": "Ergebnisse nach Gruppe",
+    "action": "Ergebnisse ansehen",
+    "intro": "Wie diese Prüfung in jeder Klasse lief und welche Fragen am schwersten waren.",
+    "byGroup": "Nach Gruppe",
+    "assigned": "Zugewiesen an",
+    "submitted": "Abgegeben",
+    "notStarted": "Nicht begonnen",
+    "pending": "Zu bewerten",
+    "average": "Durchschnitt",
+    "passRate": "Bestehensquote",
+    "noResults": "Für diese Prüfung gibt es noch keine Abgaben.",
+    "hardest": "Am häufigsten falsch",
+    "hardestHint": "Sortiert nach der beobachteten Schwierigkeit, nicht nach der angegebenen. Wenn beide auseinandergehen, liegt es meist an der Formulierung.",
+    "correctRate": "Trefferquote",
+    "answered": "Antworten"
   }
 }

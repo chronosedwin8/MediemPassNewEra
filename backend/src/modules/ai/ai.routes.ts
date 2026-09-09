@@ -22,6 +22,16 @@ aiRouter.get(
     ok(res, {
       provider: getAiProvider().id,
       configured: getAiProvider().isConfigured(),
+      /*
+       * Si lo que hay detrás es el simulador.
+       *
+       * Se declara aparte de `configured` porque son cosas distintas: el
+       * simulador está perfectamente configurado y aun así no escribe
+       * preguntas sobre el tema pedido, sino relleno con la forma correcta.
+       * Sin este dato, la interfaz no puede distinguir «la IA falló» de «no
+       * hay IA», y el docente concluye lo primero.
+       */
+      simulated: getAiProvider().id === 'mock',
       model: env.AI_MODEL,
       supportedQuestionTypes: AI_SUPPORTED_TYPES,
       maxQuestions: env.AI_MAX_QUESTIONS_PER_REQUEST,

@@ -27,6 +27,7 @@ import { LANGUAGE_OPTIONS } from '@/app/languages';
 interface Capabilities {
   provider: string;
   configured: boolean;
+  simulated: boolean;
   model: string;
   supportedQuestionTypes: string[];
   maxQuestions: number;
@@ -162,14 +163,24 @@ const inputClass =
     </header>
 
     <!--
-      Si el proveedor no está configurado se dice por qué en lugar de dejar que
-      el docente rellene el formulario entero y falle al enviarlo.
+      Dos avisos distintos, y la diferencia importa.
+
+      «No configurado» significa que enviar el formulario fallará. «Simulado»
+      significa que funcionará y devolverá preguntas de relleno con la forma
+      correcta pero sin relación con el tema. Sin este segundo aviso, quien
+      pide una evaluación sobre el ciclo del agua y recibe «Opción correcta /
+      Opción incorrecta» concluye que la IA no entendió el tema.
     -->
     <BaseCard
       v-if="capabilities && !capabilities.configured"
       class="border-warning/40 bg-warning/5"
     >
       <p class="text-sm">{{ t('ai.notConfigured') }}</p>
+    </BaseCard>
+
+    <BaseCard v-else-if="capabilities?.simulated" class="border-warning/40 bg-warning/5">
+      <p class="text-sm font-medium">{{ t('ai.simulatedTitle') }}</p>
+      <p class="mt-1 text-sm">{{ t('ai.simulatedHint') }}</p>
     </BaseCard>
 
     <BaseCard v-if="capabilities" class="flex flex-wrap items-center gap-3 text-xs text-ink-muted">

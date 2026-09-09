@@ -71,6 +71,11 @@ const showDeleteDialog = ref(false);
 
 const currentVersion = computed<Version | null>(() => assessment.value?.versions[0] ?? null);
 const isDraft = computed(() => currentVersion.value?.status === ASSESSMENT_VERSION_STATUS.DRAFT);
+/** El informe solo tiene sentido si alguna versión llegó a asignarse. */
+const hasResults = computed(() =>
+  (assessment.value?.versions ?? []).some((version) => version.status !== 'DRAFT'),
+);
+
 const isPublished = computed(
   () => currentVersion.value?.status === ASSESSMENT_VERSION_STATUS.PUBLISHED,
 );
@@ -211,6 +216,19 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
         </div>
 
         <div class="flex shrink-0 flex-wrap gap-2">
+          <!--
+            Previsualizar está disponible siempre, también en borrador: es
+            justo antes de publicar cuando hace falta, y con las preguntas
+            generadas por IA es el único momento en que alguien las lee.
+          -->
+          <RouterLink :to="`/assessments/${route.params.id}/preview/${currentVersion.id}`">
+            <BaseButton variant="secondary">{{ t('preview.action') }}</BaseButton>
+          </RouterLink>
+
+          <RouterLink v-if="hasResults" :to="`/assessments/${route.params.id}/report`">
+            <BaseButton variant="secondary">{{ t('report.action') }}</BaseButton>
+          </RouterLink>
+
           <BaseButton v-if="isDraft" variant="secondary" @click="showSettings = !showSettings">
             {{ t('common.edit') }}
           </BaseButton>

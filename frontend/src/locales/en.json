@@ -156,7 +156,8 @@
     "deleteAttempts": "{count} attempts and their grades, from {students} students",
     "deleteConfirmHint": "Type \"{title}\" to confirm.",
     "deleteAction": "Delete permanently",
-    "deleteFiles": "{count} attached files ({size})"
+    "deleteFiles": "{count} attached files ({size})",
+    "backToDetail": "Back to the assessment"
   },
   "question": {
     "add": "Add question",
@@ -475,7 +476,9 @@
     "rejected": "The response failed validation and was discarded",
     "questionNumber": "Question {number}",
     "maxQuestions": "max {count} questions",
-    "dailyLimit": "{count} generations per day"
+    "dailyLimit": "{count} generations per day",
+    "simulatedTitle": "The AI is in simulation mode",
+    "simulatedHint": "Without an API key the generator returns placeholder questions with the right shape but no relation to the topic. Useful to test the flow, not to prepare a class."
   },
   "admin": {
     "title": "Administration",
@@ -602,5 +605,33 @@
     "uploaded": "{name} uploaded.",
     "uploadFailed": "The file could not be uploaded. Please try again.",
     "limitReached": "You have reached the maximum of {count} files."
+  },
+  "preview": {
+    "title": "Preview",
+    "action": "Preview",
+    "notice": "This is how a student sees the assessment. You can answer to try it out: nothing you write here is saved.",
+    "showSolutions": "Show answers",
+    "solution": "Correct answer",
+    "noSolution": "This question has no correct answer marked and cannot be graded.",
+    "manualGrading": "Graded by the teacher: there is no answer key to show.",
+    "questionNumber": "Question {number}",
+    "evidenceHint": "The student can attach up to {count} files."
+  },
+  "report": {
+    "title": "Results by group",
+    "action": "View results",
+    "intro": "How this assessment went in each class, and which questions were hardest.",
+    "byGroup": "By group",
+    "assigned": "Assigned to",
+    "submitted": "Submitted",
+    "notStarted": "Not started",
+    "pending": "To grade",
+    "average": "Average",
+    "passRate": "Pass rate",
+    "noResults": "There are no submissions for this assessment yet.",
+    "hardest": "Most-missed questions",
+    "hardestHint": "Sorted by observed difficulty, not the declared one. When they disagree, the problem is usually the wording.",
+    "correctRate": "Correct",
+    "answered": "Answers"
   }
 }

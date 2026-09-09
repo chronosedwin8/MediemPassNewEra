@@ -148,12 +148,17 @@ export interface AttemptResult {
  * Es lo primero que hay que revisar cuando se añade un tipo de pregunta: si
  * su contenido guarda la respuesta en un campo nuevo y aquí no se poda, el
  * estudiante puede leerla en la respuesta de la API.
+ *
+ * Se exporta para que la previsualización del docente use **esta** función y
+ * no una copia. Una previsualización que decide por su cuenta qué ocultar deja
+ * de decir la verdad en cuanto una de las dos cambia, y entonces sirve para lo
+ * contrario de lo que existe: para dar por bueno lo que el estudiante verá.
  */
 /* eslint-disable-next-line complexity -- switch exhaustivo sobre los trece
    tipos de pregunta: partirlo perdería la garantía de que TypeScript avise
    cuando se añada uno nuevo y nadie lo contemple aquí, que es justo el fallo
    que filtraría respuestas correctas al estudiante. */
-function stripSolution(type: QuestionType, payload: unknown): unknown {
+export function stripSolution(type: QuestionType, payload: unknown): unknown {
   const data = payload as Record<string, unknown>;
 
   switch (type) {

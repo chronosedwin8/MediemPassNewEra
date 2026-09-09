@@ -125,6 +125,28 @@ const routes: RouteRecordRaw[] = [
         },
       },
 
+      /*
+       * Previsualización e informe cuelgan de la evaluación, no de
+       * estadísticas: se llega a ellos desde la evaluación que se está
+       * mirando, y el itinerario del docente es «esta evaluación → cómo se ve»
+       * o «esta evaluación → cómo fue», no al revés.
+       */
+      {
+        path: 'assessments/:id/preview/:versionId',
+        name: 'assessment-preview',
+        component: () => import('@/modules/assessments/AssessmentPreviewView.vue'),
+        meta: { permissions: [PERMISSION.ASSESSMENT_READ], titleKey: 'preview.title' },
+      },
+      {
+        path: 'assessments/:id/report',
+        name: 'assessment-report',
+        component: () => import('@/modules/statistics/AssessmentReportView.vue'),
+        meta: {
+          permissions: [PERMISSION.STATS_READ_SCOPED, PERMISSION.STATS_READ_GLOBAL],
+          titleKey: 'report.title',
+        },
+      },
+
       // --- Capacitación docente ------------------------------------------
       {
         path: 'training',

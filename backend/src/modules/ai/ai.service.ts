@@ -228,6 +228,21 @@ async function materialiseDraft(
       });
     }
 
+    /*
+     * Los contadores de la versión se actualizan aquí.
+     *
+     * Sin esto, el borrador queda con `questionCount: 0` aunque tenga diez
+     * preguntas, y el listado de evaluaciones anuncia «0 preguntas». Quien lo
+     * ve concluye, razonablemente, que la generación no produjo nada, y ni
+     * siquiera entra a mirar. Al crear preguntas a mano se recalcula al
+     * publicar; aquí se crean en bloque y nadie pasaba por ese camino.
+     */
+    const totalPoints = response.questions.reduce((sum, question) => sum + question.points, 0);
+    await tx.assessmentVersion.update({
+      where: { id: version.id },
+      data: { questionCount: response.questions.length, totalPoints },
+    });
+
     return {
       assessmentId: assessment.id,
       versionId: version.id,

@@ -21,6 +21,7 @@ import {
   purgeAssessment,
   getAssessment,
   listAssessments,
+  previewVersion,
   publishVersion,
   updateVersion,
   updateVersionSchema,
@@ -142,6 +143,27 @@ assessmentsRouter.patch(
   validate({ params: uuidParam('versionId'), body: updateVersionSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await updateVersion(requireAuth(req), req.params['versionId']!, req.body));
+  }),
+);
+
+/**
+ * Previsualización de una versión.
+ *
+ * `withSolutions=false` devuelve exactamente lo que verá el estudiante,
+ * podado con la misma función que usa el motor. Con `true` añade, en un campo
+ * aparte, la solución y la retroalimentación para que el docente pueda
+ * revisarlas —sobre todo en lo que ha escrito la IA, que nadie ha leído aún—.
+ */
+assessmentsRouter.get(
+  '/versions/:versionId/preview',
+  requirePermission(PERMISSION.ASSESSMENT_READ),
+  validate({
+    params: z.object({ versionId: z.string().uuid() }),
+    query: z.object({ withSolutions: z.coerce.boolean().default(false) }),
+  }),
+  asyncHandler(async (req, res) => {
+    const { withSolutions } = getQuery<{ withSolutions: boolean }>(req);
+    ok(res, await previewVersion(requireAuth(req), req.params['versionId']!, withSolutions));
   }),
 );
 
