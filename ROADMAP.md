@@ -1,7 +1,19 @@
 # ROADMAP.md — Plan de implementación por etapas
 
 Plataforma de evaluación académica y competencias digitales KMK.
-Fecha: 2026-09-08 · Estado: propuesta pendiente de aprobación.
+Fecha: 2026-09-08 · Última actualización: 2026-09-09
+
+**Estado: etapas 0 a 6 completadas.** El recorrido de extremo a extremo
+funciona: un docente crea una evaluación, añade preguntas asociadas a
+competencias KMK, publica y asigna; un estudiante responde, recarga sin perder
+nada, finaliza y obtiene su nota en la escala alemana con estrellas
+accesibles, desglose por competencia y retroalimentación. Editar la evaluación
+después no altera ese resultado.
+
+Verificación en el estado actual: **lint limpio, tipos estrictos sin errores,
+138 pruebas automatizadas en verde** (42 unitarias de calificación y escala,
+96 de integración contra PostgreSQL real) y una prueba de humo del recorrido
+completo contra el servidor en ejecución.
 
 Documento hermano: [`PROJECT_ANALYSIS.md`](PROJECT_ANALYSIS.md) (análisis del entorno, inconsistencias detectadas y decisiones D-01…D-10).
 
@@ -64,19 +76,19 @@ Las cuatro reglas estructurales que sostienen todo lo demás:
 
 Correspondencia con las fases de la especificación: la sección 60 define FASE 1…9. Este plan las conserva y añade una Etapa 0 de cimientos, divide el motor de evaluación en backend y frontend (es demasiado grande para una sola etapa verificable), y adelanta la abstracción de Phidias para no bloquearse en el token.
 
-| Etapa | Nombre | FASE spec | Bloqueada por |
+| Etapa | Nombre | FASE spec | Estado |
 |---|---|---|---|
-| 0 | Cimientos del repositorio | — | — |
-| 1 | Arquitectura y modelo de datos | FASE 1 | — |
-| 2 | Backend base: auth, RBAC, plataforma | FASE 2 | 1 |
-| 3 | Dominio académico y administración | FASE 2 | 2 |
-| 4 | Integración Phidias | FASE 3 | 3 · token (P-01) para validación real |
-| 5 | Motor de evaluaciones (backend) | FASE 5 | 3 |
-| 6 | Frontend base + experiencia de evaluación | FASE 4 + 5 | 2, 5 |
-| 7 | Estadísticas KMK y planes de evaluación | FASE 6 | 5, 6 |
-| 8 | Capacitación KMK y evaluación docente | FASE 7 | 5, 6 |
-| 9 | Generación con IA | FASE 8 | 5 · proveedor (P-03) |
-| 10 | Endurecimiento y entrega | FASE 9 | todas |
+| 0 | Cimientos del repositorio | — | ✅ Completada |
+| 1 | Arquitectura y modelo de datos | FASE 1 | ✅ Completada |
+| 2 | Backend base: auth, RBAC, plataforma | FASE 2 | ✅ Completada |
+| 3 | Dominio académico y administración | FASE 2 | ✅ Completada |
+| 4 | Integración Phidias | FASE 3 | ✅ Completada y verificada contra la API real |
+| 5 | Motor de evaluaciones (backend) | FASE 5 | ✅ Completada |
+| 6 | Frontend base + experiencia de evaluación | FASE 4 + 5 | ✅ Completada — **hito de revisión** |
+| 7 | Estadísticas KMK y planes de evaluación | FASE 6 | Pendiente |
+| 8 | Capacitación KMK y evaluación docente | FASE 7 | Pendiente |
+| 9 | Generación con IA | FASE 8 | Pendiente · requiere clave de Google |
+| 10 | Endurecimiento y entrega | FASE 9 | Pendiente |
 
 ---
 
