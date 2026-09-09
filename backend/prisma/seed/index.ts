@@ -8,6 +8,7 @@ import {
   seedSystemSettings,
 } from './core.js';
 import { seedDemo } from './demo.js';
+import { seedDemoActivity } from './demo-activity.js';
 import { seedTrainingModules } from './training.js';
 
 /**
@@ -47,6 +48,7 @@ async function main(): Promise<void> {
   if (shouldSeedDemo()) {
     console.warn('\nSembrando datos de demostración…');
     await seedDemo(prisma);
+    await seedDemoActivity(prisma);
   } else {
     console.warn('\nDatos de demostración omitidos.');
   }

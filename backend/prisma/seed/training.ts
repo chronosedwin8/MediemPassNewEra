@@ -64,6 +64,34 @@ const MODULES: ModuleSeed[] = [
           'Pida a sus estudiantes una afirmación polémica y tres fuentes que la sostengan. La tarea no es decidir si es cierta, sino averiguar si las tres fuentes son independientes o si las tres copian a la misma. Es el ejercicio que mejor revela la diferencia entre repetición y verificación.',
         ),
       },
+      {
+        type: 'DOCUMENT',
+        title: {
+          es: 'Estrategia KMK: enseñar y aprender en el mundo digital (PDF)',
+          de: 'KMK-Strategie: Lehren und Lernen in der digitalen Welt (PDF)',
+          en: 'KMK strategy: teaching and learning in the digital world (PDF)',
+        },
+        body: {
+          es: 'El documento oficial de la Kultusministerkonferenz. Denso, pero es la fuente de la que sale el marco que esta plataforma mide. Merece la pena leer al menos el apartado de la primera competencia.',
+          de: 'Das offizielle Dokument der Kultusministerkonferenz. Dicht, aber es ist die Quelle des Rahmens, den diese Plattform misst. Mindestens der Abschnitt zur ersten Kompetenz lohnt sich.',
+          en: 'The official Kultusministerkonferenz document. Dense, but it is the source of the framework this platform measures. The section on the first competency is worth reading at least.',
+        },
+        url: 'https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_12_09-Lehren-und-Lernen-Digi.pdf',
+      },
+      {
+        type: 'LINK',
+        title: {
+          es: 'Internet-ABC: recursos prácticos para docentes',
+          de: 'Internet-ABC: Praxishilfen für Lehrkräfte',
+          en: 'Internet-ABC: practical resources for teachers',
+        },
+        body: {
+          es: 'Fichas listas para llevar al aula sobre búsqueda, evaluación de fuentes y uso responsable. Está pensado para primaria y primer ciclo de secundaria.',
+          de: 'Direkt einsetzbare Arbeitsblätter zu Recherche, Quellenbewertung und verantwortungsvoller Nutzung. Gedacht für Grundschule und Sekundarstufe I.',
+          en: 'Classroom-ready worksheets on searching, source evaluation and responsible use. Aimed at primary and lower secondary.',
+        },
+        url: 'https://www.internet-abc.de/lehrkraefte/',
+      },
     ],
   },
   {
@@ -94,6 +122,34 @@ const MODULES: ModuleSeed[] = [
         body: es(
           'Antes del primer trabajo en grupo digital, acuerde con la clase tres cosas: cómo se corrige el texto de otro, qué se comenta y qué se habla en persona, y qué pasa si alguien no participa. Acordarlo después de que surja el conflicto siempre llega tarde.',
         ),
+      },
+      {
+        type: 'LINK',
+        title: {
+          es: 'klicksafe: materiales de aula',
+          de: 'klicksafe: Unterrichtsmaterialien',
+          en: 'klicksafe: classroom materials',
+        },
+        body: {
+          es: 'La referencia alemana en comunicación digital segura. Todo el material es gratuito y está organizado por edad; para esta competencia interesan los módulos de convivencia en línea y trabajo colaborativo.',
+          de: 'Die deutsche Referenz für sichere digitale Kommunikation. Alle Materialien sind kostenlos und nach Alter geordnet; für diese Kompetenz sind die Module zu Online-Umgang und Zusammenarbeit relevant.',
+          en: 'The German reference for safe digital communication. All material is free and organised by age; for this competency the modules on online conduct and collaboration are the relevant ones.',
+        },
+        url: 'https://www.klicksafe.de/materialien',
+      },
+      {
+        type: 'LINK',
+        title: {
+          es: 'Cibermobbing: qué hacer cuando ocurre',
+          de: 'Cyber-Mobbing: was tun, wenn es passiert',
+          en: 'Cyberbullying: what to do when it happens',
+        },
+        body: {
+          es: 'Colaborar en línea también significa saber intervenir cuando algo se tuerce. Este material da un protocolo concreto, no consejos generales.',
+          de: 'Online zusammenzuarbeiten heißt auch, eingreifen zu können, wenn etwas schiefgeht. Dieses Material liefert ein konkretes Vorgehen statt allgemeiner Ratschläge.',
+          en: 'Collaborating online also means knowing how to step in when things go wrong. This material gives a concrete protocol, not general advice.',
+        },
+        url: 'https://www.digibits.de/materialien/klicksafe-cyber-mobbing/',
       },
     ],
   },
@@ -133,6 +189,34 @@ const MODULES: ModuleSeed[] = [
           'Un mismo contenido presentado como texto, como esquema y como audio breve. El objetivo es que descubran que el formato no es decoración: cambia qué se puede decir y qué se pierde.',
         ),
       },
+      {
+        type: 'VIDEO',
+        title: {
+          es: 'Vídeos explicativos en el aula: formatos y cómo producirlos (PDF con enlaces)',
+          de: 'Erklärvideos im Unterricht: Formate und Produktion (PDF mit Links)',
+          en: 'Explainer videos in class: formats and how to make them (PDF with links)',
+        },
+        body: {
+          es: 'Recorre tres formatos —explainity, how-to y estilo vlog— y explica cómo grabar con lo que ya hay en el colegio: una tableta o un móvil. Es el material más directamente aplicable de este módulo.',
+          de: 'Behandelt drei Formate – Explainity, How-to und Vlog-Stil – und zeigt, wie man mit dem aufnimmt, was die Schule schon hat: Tablet oder Smartphone. Das am unmittelbarsten anwendbare Material dieses Moduls.',
+          en: 'Covers three formats - explainity, how-to and vlog style - and shows how to record with what the school already has: a tablet or a phone. The most directly applicable material in this module.',
+        },
+        url: 'https://medienkompetenzrahmen.nrw/fileadmin/dokumente/user_upload/Erkl%C3%A4rvideos-im-Unterricht.pdf',
+      },
+      {
+        type: 'LINK',
+        title: {
+          es: 'Derechos de autor y de uso en la escuela',
+          de: 'Urheber- und Nutzungsrecht an Schule',
+          en: 'Copyright and usage rights at school',
+        },
+        body: {
+          es: 'Producir y presentar choca constantemente con el derecho de autor: qué imagen se puede usar, qué vídeo se puede proyectar, qué se puede subir. Esta guía lo responde caso por caso.',
+          de: 'Produzieren und Präsentieren stößt ständig auf das Urheberrecht: welches Bild darf verwendet, welches Video gezeigt, was hochgeladen werden. Dieser Leitfaden beantwortet das Fall für Fall.',
+          en: 'Producing and presenting constantly runs into copyright: which image may be used, which video shown, what may be uploaded. This guide answers case by case.',
+        },
+        url: 'https://www.medienberatung.schulministerium.nrw.de/de/themen/urheber__und_nutzungsrecht_an_schule/urheber-_und_nutzungsrecht_an_schule.html',
+      },
     ],
   },
   {
@@ -170,6 +254,20 @@ const MODULES: ModuleSeed[] = [
         body: es(
           'Urgencia, una petición de credenciales y un remitente que casi coincide con el institucional. Cuando se juntan las tres, no es casualidad. Ante la duda, escriba usted la dirección en el navegador en lugar de pulsar el enlace.',
         ),
+      },
+      {
+        type: 'LINK',
+        title: {
+          es: 'Derechos de autor en la escuela: guía práctica',
+          de: 'Urheberrecht in der Schule: Praxisleitfaden',
+          en: 'Copyright at school: practical guide',
+        },
+        body: {
+          es: 'Protegerse también es saber qué se puede y qué no. Escrito para docentes, con ejemplos del día a día en lugar de articulado legal.',
+          de: 'Sich zu schützen heißt auch zu wissen, was erlaubt ist. Für Lehrkräfte geschrieben, mit Alltagsbeispielen statt Gesetzestext.',
+          en: 'Protecting yourself also means knowing what is allowed. Written for teachers, with everyday examples instead of legal text.',
+        },
+        url: 'https://www.internet-abc.de/lehrkraefte/praxishilfen/urheberrecht-in-der-schule/',
       },
     ],
   },
@@ -209,6 +307,20 @@ const MODULES: ModuleSeed[] = [
           'Que escriban instrucciones para una tarea cotidiana y otro compañero las siga al pie de la letra, sin interpretar. Es la forma más rápida de que descubran cuánto damos por supuesto.',
         ),
       },
+      {
+        type: 'LINK',
+        title: {
+          es: 'Ciudadanía digital: currículo completo por edades',
+          de: 'Digital Citizenship: vollständiges Curriculum nach Altersstufen',
+          en: 'Digital Citizenship: full curriculum by age',
+        },
+        body: {
+          es: 'De Common Sense Education. Está en inglés, pero es el conjunto de lecciones más completo y probado que existe libremente, con planes de clase listos para usar.',
+          de: 'Von Common Sense Education. Auf Englisch, aber die vollständigste und am besten erprobte frei verfügbare Sammlung, mit fertigen Unterrichtsplänen.',
+          en: 'From Common Sense Education. The most complete and well-tested freely available set of lessons, with ready-made lesson plans.',
+        },
+        url: 'https://www.commonsense.org/education/digital-citizenship',
+      },
     ],
   },
   {
@@ -239,6 +351,34 @@ const MODULES: ModuleSeed[] = [
         body: es(
           'Lo que aparece en una red social no es lo que ocurre, sino lo que un sistema decidió mostrar. Hacer visible esa mediación es parte del trabajo: sin ella, el estudiante confunde su portada con el mundo.',
         ),
+      },
+      {
+        type: 'DOCUMENT',
+        title: {
+          es: 'Marco de Referencia de la Competencia Digital Docente (INTEF, PDF)',
+          de: 'Referenzrahmen für digitale Kompetenz von Lehrkräften (INTEF, PDF)',
+          en: 'Reference Framework for Teacher Digital Competence (INTEF, PDF)',
+        },
+        body: {
+          es: 'La adaptación española del marco europeo DigCompEdu. Sirve para situarse: describe seis niveles de progresión y qué se espera en cada uno, que es justo lo que permite saber dónde está uno.',
+          de: 'Die spanische Anpassung des europäischen DigCompEdu-Rahmens. Nützlich zur Selbsteinordnung: sechs Fortschrittsstufen und was auf jeder erwartet wird.',
+          en: 'The Spanish adaptation of the European DigCompEdu framework. Useful for self-placement: six progression levels and what is expected at each.',
+        },
+        url: 'https://intef.es/wp-content/uploads/2023/05/MRCDD_GTTA_2022.pdf',
+      },
+      {
+        type: 'LINK',
+        title: {
+          es: 'Marco común de competencia digital docente (Eduteka)',
+          de: 'Gemeinsamer Rahmen für digitale Lehrkompetenz (Eduteka)',
+          en: 'Common framework for teacher digital competence (Eduteka)',
+        },
+        body: {
+          es: 'Lectura en español desde el contexto latinoamericano, de la Universidad Icesi. Útil para contrastar el marco europeo con la realidad de la región.',
+          de: 'Spanischsprachige Lektüre aus lateinamerikanischer Perspektive, von der Universidad Icesi. Nützlich, um den europäischen Rahmen mit der Region abzugleichen.',
+          en: 'Spanish-language reading from a Latin American perspective, from Universidad Icesi. Useful for contrasting the European framework with the region.',
+        },
+        url: 'https://eduteka.icesi.edu.co/articulos/marco-comun-competencia-digital-docente',
       },
     ],
   },

@@ -17,7 +17,10 @@ import { buildPaginationMeta } from '../../shared/http/response.js';
 import { assertOwnership, isAdmin } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { getActiveScale } from '../settings/scales.service.js';
+import { createLogger } from '../../shared/logger.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
+
+const log = createLogger('assessments');
 
 /**
  * Evaluaciones y sus versiones.
@@ -560,4 +563,168 @@ export async function deleteAssessment(actor: Actor, id: string): Promise<void> 
     where: { id: assessment.id },
     data: { deletedAt: new Date() },
   });
+}
+
+/**
+ * Lo que se destruiría al borrar. Se consulta antes de confirmar.
+ *
+ * La interfaz necesita poder decir «esto borrará 84 intentos y sus notas» en
+ * lugar de un «¿seguro?» genérico. Una advertencia que no dice cuánto se
+ * pierde no es una advertencia: es un trámite que la gente aprende a saltarse.
+ */
+export interface AssessmentImpact {
+  assessmentId: string;
+  title: string;
+  versions: number;
+  questions: number;
+  assignments: number;
+  attempts: number;
+  answers: number;
+  /** Estudiantes distintos con al menos un intento registrado. */
+  students: number;
+}
+
+export async function getDeletionImpact(actor: Actor, id: string): Promise<AssessmentImpact> {
+  const assessment = await prisma.assessment.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true, title: true, createdById: true },
+  });
+  if (!assessment) throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { id });
+
+  assertOwnership(actor, assessment.createdById, { assessmentId: id });
+
+  const [versions, questions, assignments, attempts, answers, students] = await Promise.all([
+    prisma.assessmentVersion.count({ where: { assessmentId: id } }),
+    prisma.question.count({ where: { version: { assessmentId: id } } }),
+    prisma.assignment.count({ where: { version: { assessmentId: id } } }),
+    prisma.assessmentAttempt.count({ where: { version: { assessmentId: id } } }),
+    prisma.attemptAnswer.count({ where: { attempt: { version: { assessmentId: id } } } }),
+    prisma.assessmentAttempt
+      .findMany({
+        where: { version: { assessmentId: id } },
+        distinct: ['userId'],
+        select: { userId: true },
+      })
+      .then((rows) => rows.length),
+  ]);
+
+  return {
+    assessmentId: assessment.id,
+    title: assessment.title,
+    versions,
+    questions,
+    assignments,
+    attempts,
+    answers,
+    students,
+  };
+}
+
+/**
+ * Borrado definitivo, con todo lo asociado.
+ *
+ * Es la única operación del sistema que destruye historial académico sin
+ * vuelta atrás: desaparecen los intentos, las respuestas y las notas de
+ * estudiantes reales. Por eso lleva tres cerrojos y no uno:
+ *
+ *  1. **Solo un administrador.** Un docente puede borrar lo suyo mientras
+ *     nadie lo haya respondido; en cuanto hay notas de por medio, la decisión
+ *     deja de ser solo suya.
+ *  2. **Hay que escribir el título.** No para molestar, sino porque obliga a
+ *     mirar qué se está borrando. Un botón de confirmación se pulsa por
+ *     inercia; un título hay que leerlo.
+ *  3. **Queda en auditoría** con el recuento de lo destruido, que es lo único
+ *     que quedará si alguien pregunta meses después.
+ *
+ * El recorrido se hace **explícito y en orden**, no por cascada de la base.
+ * Intentos y asignaciones referencian la versión sin `onDelete: Cascade`, y es
+ * deliberado: si cascadearan, borrar una versión por error se llevaría por
+ * delante las notas de un curso sin que nadie lo pidiera. La restricción
+ * estricta obliga a que destruir historial sea siempre un acto voluntario, y
+ * este es el único sitio que lo hace.
+ */
+export async function purgeAssessment(
+  actor: Actor,
+  id: string,
+  confirmation: string,
+): Promise<AssessmentImpact> {
+  const impact = await getDeletionImpact(actor, id);
+
+  if (impact.attempts > 0 && !isAdmin(actor)) {
+    throw AppError.forbidden(ERROR_CODE.NOT_RESOURCE_OWNER, {
+      reason: 'Only an administrator can delete an assessment with recorded attempts',
+      attempts: impact.attempts,
+    });
+  }
+
+  if (confirmation.trim() !== impact.title.trim()) {
+    throw AppError.validation([
+      {
+        path: 'confirmation',
+        rule: 'title_mismatch',
+        message: 'Escribe el título exacto de la evaluación para confirmar',
+      },
+    ]);
+  }
+
+  // El registro se escribe ANTES de borrar: si la transacción falla a mitad,
+  // es preferible una entrada de auditoría de más que un borrado sin rastro.
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.DELETE_ASSESSMENT,
+    entityType: 'assessment',
+    entityId: id,
+    metadata: { ...impact },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    const versionIds = (
+      await tx.assessmentVersion.findMany({ where: { assessmentId: id }, select: { id: true } })
+    ).map((version) => version.id);
+
+    // De las hojas hacia la raíz. Las respuestas cuelgan del intento y los
+    // destinatarios de la asignación, ambos con cascada propia, pero se
+    // borran igualmente de forma explícita: el orden completo a la vista vale
+    // más que ahorrarse dos líneas.
+    await tx.attemptAnswer.deleteMany({
+      where: { attempt: { assessmentVersionId: { in: versionIds } } },
+    });
+    await tx.assessmentAttempt.deleteMany({
+      where: { assessmentVersionId: { in: versionIds } },
+    });
+    await tx.assignmentRecipient.deleteMany({
+      where: { assignment: { assessmentVersionId: { in: versionIds } } },
+    });
+    await tx.assignment.deleteMany({ where: { assessmentVersionId: { in: versionIds } } });
+
+    /*
+     * Estas tres referencias se desligan en lugar de borrarse: un ítem de plan,
+     * un módulo de capacitación o una solicitud de IA son registros con vida
+     * propia que *mencionan* la evaluación. Borrarlos convertiría «eliminé una
+     * evaluación» en «desapareció un módulo de capacitación entero».
+     */
+    await tx.aiGenerationRequest.updateMany({
+      where: { assessmentVersionId: { in: versionIds } },
+      data: { assessmentVersionId: null },
+    });
+    await tx.evaluationPlanItem.updateMany({
+      where: { assessmentId: id },
+      data: { assessmentId: null },
+    });
+    await tx.trainingModule.updateMany({
+      where: { assessmentId: id },
+      data: { assessmentId: null },
+    });
+
+    await tx.question.deleteMany({ where: { assessmentVersionId: { in: versionIds } } });
+    await tx.assessmentVersion.deleteMany({ where: { assessmentId: id } });
+    await tx.assessment.delete({ where: { id } });
+  });
+
+  log.warn(
+    { assessmentId: id, title: impact.title, attempts: impact.attempts, actorId: actor.userId },
+    'evaluación eliminada definitivamente con su historial',
+  );
+
+  return impact;
 }

@@ -7,6 +7,7 @@ import { requirePermission } from '../../middleware/authorize.js';
 import { getQuery, paginationQuery, uuidParam, validate } from '../../middleware/validate.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 import {
+  backfillInstitutionalEmails,
   createStudent,
   createStudentSchema,
   issueCredentials,
@@ -92,5 +93,22 @@ studentsRouter.post(
   validate({ body: issueCredentialsSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await issueCredentials(req.body, requireAuth(req).userId));
+  }),
+);
+
+/**
+ * Alinea los correos existentes con la regla institucional.
+ *
+ * `dryRun` por defecto: la llamada dice qué cambiaría sin tocar nada, y hay
+ * que pedir explícitamente que se aplique. Cambiar el usuario con el que
+ * entran mil estudiantes no es algo que deba ocurrir por explorar la API.
+ */
+studentsRouter.post(
+  '/backfill-emails',
+  requirePermission(PERMISSION.STUDENT_UPDATE),
+  validate({ body: z.object({ apply: z.boolean().default(false) }) }),
+  asyncHandler(async (req, res) => {
+    const { apply } = req.body as { apply: boolean };
+    ok(res, await backfillInstitutionalEmails(requireAuth(req), !apply));
   }),
 );

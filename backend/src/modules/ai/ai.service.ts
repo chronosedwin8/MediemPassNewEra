@@ -51,6 +51,16 @@ export const generateSchema = z.object({
   subjectId: z.string().uuid().nullable().optional(),
   gradeLevelId: z.string().uuid().nullable().optional(),
   topic: z.string().trim().min(3).max(200),
+  /**
+   * Indicaciones libres del docente.
+   *
+   * Es lo que separa una evaluación genérica sobre «fuentes digitales» de una
+   * que encaja en la clase concreta: qué se vio en el aula, con qué
+   * herramientas se trabaja, qué vocabulario se ha usado, qué evitar. El
+   * modelo lo recibe como contexto adicional, nunca como instrucciones sobre
+   * el formato de salida: la forma la fija el esquema y no se negocia.
+   */
+  context: z.string().trim().max(2000).nullable().optional(),
   difficulty: z
     .enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED])
     .default(DIFFICULTY.INTERMEDIATE),
@@ -129,6 +139,7 @@ async function buildParams(input: GenerateInput): Promise<GenerationParams> {
     subjectName: subject ? localized(subject.name) : 'General',
     gradeLabel: gradeLevel ? localized(gradeLevel.name) : null,
     topic: input.topic,
+    context: input.context ?? null,
     difficulty: input.difficulty,
     language: input.language,
     questionCount: input.questionCount,

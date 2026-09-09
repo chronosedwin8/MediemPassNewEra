@@ -223,5 +223,16 @@ export const AUDIT_ACTION = {
   UPDATE_SETTINGS: 'UPDATE_SETTINGS',
   UPDATE_GRADING_SCALE: 'UPDATE_GRADING_SCALE',
   SYNC_PHIDIAS: 'SYNC_PHIDIAS',
+  UPDATE_ROLE_PERMISSIONS: 'UPDATE_ROLE_PERMISSIONS',
+  /**
+   * Borrado definitivo de una evaluación con todo lo asociado.
+   *
+   * Tiene entrada propia, distinta de ARCHIVE_ASSESSMENT, porque es la única
+   * acción del sistema que destruye historial académico sin vuelta atrás. Si
+   * alguien pregunta un año después qué pasó con las notas de un curso, esta
+   * es la entrada que lo responde.
+   */
+  DELETE_ASSESSMENT: 'DELETE_ASSESSMENT',
+  ROLLOVER_ACADEMIC_YEAR: 'ROLLOVER_ACADEMIC_YEAR',
 } as const;
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

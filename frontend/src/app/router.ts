@@ -90,6 +90,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/modules/groups/GroupListView.vue'),
         meta: { permissions: [PERMISSION.GROUP_READ], titleKey: 'nav.groups' },
       },
+      {
+        path: 'groups/:id',
+        name: 'group-detail',
+        component: () => import('@/modules/groups/GroupDetailView.vue'),
+        meta: { permissions: [PERMISSION.GROUP_READ], titleKey: 'nav.groups' },
+      },
 
       // --- Estudiante ----------------------------------------------------
       {
@@ -117,6 +123,36 @@ const routes: RouteRecordRaw[] = [
           ],
           titleKey: 'nav.statistics',
         },
+      },
+
+      // --- Capacitación docente ------------------------------------------
+      {
+        path: 'training',
+        name: 'training',
+        component: () => import('@/modules/training/TrainingListView.vue'),
+        meta: { permissions: [PERMISSION.TRAINING_PARTICIPATE], titleKey: 'nav.training' },
+      },
+      {
+        path: 'training/:id',
+        name: 'training-module',
+        component: () => import('@/modules/training/TrainingDetailView.vue'),
+        meta: { permissions: [PERMISSION.TRAINING_PARTICIPATE], titleKey: 'nav.training' },
+      },
+
+      // --- Generación con IA ----------------------------------------------
+      {
+        path: 'ai/generate',
+        name: 'ai-generate',
+        component: () => import('@/modules/ai/AiGenerateView.vue'),
+        meta: { permissions: [PERMISSION.AI_GENERATE], titleKey: 'nav.aiGenerate' },
+      },
+
+      // --- Administración --------------------------------------------------
+      {
+        path: 'admin',
+        name: 'admin',
+        component: () => import('@/modules/admin/AdminView.vue'),
+        meta: { permissions: [PERMISSION.SETTINGS_MANAGE], titleKey: 'nav.admin' },
       },
 
       // --- Común ---------------------------------------------------------

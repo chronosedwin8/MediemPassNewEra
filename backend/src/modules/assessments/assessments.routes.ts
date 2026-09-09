@@ -17,6 +17,8 @@ import {
   createAssessmentSchema,
   createNewVersion,
   deleteAssessment,
+  getDeletionImpact,
+  purgeAssessment,
   getAssessment,
   listAssessments,
   publishVersion,
@@ -90,6 +92,36 @@ assessmentsRouter.delete(
   asyncHandler(async (req, res) => {
     await deleteAssessment(requireAuth(req), req.params['id']!);
     noContent(res);
+  }),
+);
+
+/** Qué se destruiría. Lo consulta el diálogo antes de pedir confirmación. */
+assessmentsRouter.get(
+  '/:id/deletion-impact',
+  requirePermission(PERMISSION.ASSESSMENT_DELETE),
+  validate({ params: uuidParam() }),
+  asyncHandler(async (req, res) => {
+    ok(res, await getDeletionImpact(requireAuth(req), req.params['id']!));
+  }),
+);
+
+/**
+ * Borrado definitivo con todo el historial.
+ *
+ * Ruta aparte de `DELETE /:id` a propósito: son operaciones distintas y no
+ * conviene que se diferencien por un parámetro fácil de pasar por error.
+ * `DELETE` archiva; esto destruye.
+ */
+assessmentsRouter.post(
+  '/:id/purge',
+  requirePermission(PERMISSION.ASSESSMENT_DELETE),
+  validate({
+    params: uuidParam(),
+    body: z.object({ confirmation: z.string().min(1) }),
+  }),
+  asyncHandler(async (req, res) => {
+    const { confirmation } = req.body as { confirmation: string };
+    ok(res, await purgeAssessment(requireAuth(req), req.params['id']!, confirmation));
   }),
 );
 

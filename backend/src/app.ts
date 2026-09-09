@@ -8,6 +8,7 @@ import { requestContext } from './middleware/request-context.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { generalRateLimit } from './middleware/rate-limit.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { rolesRouter } from './modules/roles/roles.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 import { kmkRouter } from './modules/kmk/kmk.routes.js';
 import { areasRouter, calendarRouter, subjectsRouter } from './modules/academic/academic.routes.js';
@@ -94,6 +95,7 @@ export function createApp(): Express {
 
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);
+  app.use('/api/roles', rolesRouter);
   app.use('/api/teachers', teachersRouter);
   app.use('/api/students', studentsRouter);
   app.use('/api/groups', groupsRouter);

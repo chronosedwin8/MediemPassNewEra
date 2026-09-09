@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import type { Question } from '../types';
 import {
   QUESTION_TYPE,
   localize,
@@ -33,8 +34,17 @@ interface Competency {
   subcompetencies: Array<{ id: string; code: string; name: LocalizedText }>;
 }
 
+/**
+ * Pregunta existente que se está editando.
+ *
+ * Cuando llega, el formulario se abre con sus valores; cuando es `null`, se
+ * abre vacío para una nueva. El componente padre fuerza el remontado con una
+ * `key`, así que basta con sembrar el estado una vez y no hace falta observar
+ * el prop.
+ */
 const props = defineProps<{
   competencies: Competency[];
+  question?: Question | null;
   saving?: boolean;
 }>();
 
@@ -53,6 +63,19 @@ const kmkSubcompetencyId = ref('');
 const feedbackCorrect = ref('');
 const feedbackIncorrect = ref('');
 const payload = ref<Record<string, unknown>>({ kind: QUESTION_TYPE.SINGLE_CHOICE, options: [] });
+
+// Prellenado al editar. Se hace aquí, en la creación del componente, porque el
+// padre lo remonta con una `key` distinta por pregunta.
+if (props.question) {
+  type.value = props.question.type;
+  statement.value = props.question.statement;
+  points.value = props.question.points;
+  kmkCompetencyId.value = props.question.kmkCompetency.id;
+  kmkSubcompetencyId.value = props.question.kmkSubcompetency?.id ?? '';
+  feedbackCorrect.value = props.question.feedbackCorrect ?? '';
+  feedbackIncorrect.value = props.question.feedbackIncorrect ?? '';
+  payload.value = { ...props.question.payload };
+}
 
 const CHOICE_FAMILY: QuestionType[] = [
   QUESTION_TYPE.SINGLE_CHOICE,

@@ -6,7 +6,9 @@ import {
   EVALUABLE_ENROLLMENT_STATUSES,
   LANGUAGE,
   ROLE,
+  SETTING_KEY,
   USER_STATUS,
+  institutionalEmail,
   type EnrollmentStatus,
   type LocalizedText,
   type Paginated,
@@ -18,7 +20,11 @@ import { buildPaginationMeta } from '../../shared/http/response.js';
 import { hashPassword } from '../../shared/security/password.js';
 import { isAdmin } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
+import { getSetting } from '../settings/settings.service.js';
+import { createLogger } from '../../shared/logger.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
+
+const log = createLogger('students');
 
 /**
  * Estudiantes.
@@ -421,4 +427,104 @@ export async function updateStudent(
   });
 
   return toView(updated as unknown as StudentRow);
+}
+
+// --- Correo institucional ----------------------------------------------------
+
+export interface EmailBackfillResult {
+  domain: string;
+  /** Estudiantes cuyo correo y usuario quedaron alineados con su código. */
+  updated: number;
+  /** Ya lo tenían correcto. */
+  unchanged: number;
+  /** Sin código: no hay de dónde derivar el correo. */
+  withoutCode: number;
+  /** El correo derivado ya pertenece a otra cuenta. */
+  conflicts: Array<{ studentId: string; code: string; email: string }>;
+}
+
+/**
+ * Alinea el correo de los estudiantes existentes con la regla institucional.
+ *
+ * La regla —correo igual a código más dominio— se aplica sola a lo que entra
+ * por sincronización, pero no reescribe lo que ya estaba. Este relleno existe
+ * para eso, y se ejecuta a petición y no automáticamente: cambia el nombre de
+ * usuario con el que la gente entra, y eso no debe ocurrir de improviso un
+ * lunes por la mañana.
+ *
+ * Los conflictos se devuelven en lugar de resolverse a la fuerza. Si dos
+ * estudiantes acaban con el mismo correo derivado es que hay códigos
+ * duplicados en la matrícula, y eso lo arregla quien la administra, no un
+ * proceso automático renombrando cuentas.
+ */
+export async function backfillInstitutionalEmails(
+  actor: Actor,
+  dryRun: boolean,
+): Promise<EmailBackfillResult> {
+  const domain = await getSetting(SETTING_KEY.STUDENT_EMAIL_DOMAIN);
+
+  const students = await prisma.student.findMany({
+    where: { user: { deletedAt: null } },
+    select: { id: true, code: true, user: { select: { id: true, email: true, username: true } } },
+  });
+
+  const result: EmailBackfillResult = {
+    domain,
+    updated: 0,
+    unchanged: 0,
+    withoutCode: 0,
+    conflicts: [],
+  };
+
+  for (const student of students) {
+    const expected = institutionalEmail(student.code, domain);
+    if (!expected) {
+      result.withoutCode += 1;
+      continue;
+    }
+
+    if (student.user.email === expected && student.user.username === expected) {
+      result.unchanged += 1;
+      continue;
+    }
+
+    const clash = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: expected }, { username: expected }],
+        NOT: { id: student.user.id },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (clash) {
+      result.conflicts.push({ studentId: student.id, code: student.code!, email: expected });
+      continue;
+    }
+
+    if (!dryRun) {
+      await prisma.user.update({
+        where: { id: student.user.id },
+        data: { email: expected, username: expected },
+      });
+    }
+    result.updated += 1;
+  }
+
+  if (!dryRun) {
+    await recordAudit({
+      userId: actor.userId,
+      action: AUDIT_ACTION.UPDATE_USER,
+      entityType: 'student',
+      metadata: {
+        operation: 'BACKFILL_INSTITUTIONAL_EMAIL',
+        domain,
+        updated: result.updated,
+        conflicts: result.conflicts.length,
+      },
+    });
+  }
+
+  log.info({ ...result, conflicts: result.conflicts.length, dryRun }, 'correos institucionales');
+  return result;
 }

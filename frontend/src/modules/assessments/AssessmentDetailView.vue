@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
   ASSESSMENT_VERSION_STATUS,
-  ASSIGNMENT_TARGET_TYPE,
   type LocalizedText,
-  type QuestionType,
 } from '@medienpass/shared';
 import { http, ApiError } from '@/services/http';
 import QuestionEditor from './editors/QuestionEditor.vue';
+import DeleteAssessmentDialog from './DeleteAssessmentDialog.vue';
+import VersionSettingsForm from './VersionSettingsForm.vue';
+import AssignPanel from './AssignPanel.vue';
+import QuestionList from './QuestionList.vue';
+import type { Question } from './types';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
-import EmptyState from '@/design-system/EmptyState.vue';
 import { useToast } from '@/composables/useToast';
 
 /**
@@ -30,6 +32,7 @@ interface Version {
   versionNumber: number;
   status: string;
   name: string;
+  instructions: string | null;
   questionCount: number;
   totalPoints: number;
   timeLimitMinutes: number | null;
@@ -41,15 +44,6 @@ interface Assessment {
   versions: Version[];
 }
 
-interface Question {
-  id: string;
-  type: QuestionType;
-  statement: string;
-  points: number;
-  position: number;
-  kmkCompetency: { code: string; name: LocalizedText; color: string };
-}
-
 interface Competency {
   id: string;
   code: string;
@@ -57,30 +51,26 @@ interface Competency {
   subcompetencies: Array<{ id: string; code: string; name: LocalizedText }>;
 }
 
-interface Group {
-  id: string;
-  code: string;
-  studentCount: number;
-}
-
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 
 const assessment = ref<Assessment | null>(null);
 const questions = ref<Question[]>([]);
 const competencies = ref<Competency[]>([]);
-const groups = ref<Group[]>([]);
 
 const loading = ref(true);
 const savingQuestion = ref(false);
 const publishing = ref(false);
-const assigning = ref(false);
 const showEditor = ref(false);
 const showAssignPanel = ref(false);
 
-const assignGroupId = ref('');
-const assignAttempts = ref(1);
+const showSettings = ref(false);
+
+const editingQuestion = ref<Question | null>(null);
+
+const showDeleteDialog = ref(false);
 
 const currentVersion = computed<Version | null>(() => assessment.value?.versions[0] ?? null);
 const isDraft = computed(() => currentVersion.value?.status === ASSESSMENT_VERSION_STATUS.DRAFT);
@@ -101,34 +91,13 @@ async function load(): Promise<void> {
     assessment.value = await http.get<Assessment>(`/assessments/${route.params.id}`);
     await loadQuestions();
 
-    const [competencyTree, groupList] = await Promise.all([
-      http.get<Competency[]>('/kmk/competencies'),
-      http.list<Group>('/groups', { pageSize: 100 }),
-    ]);
-    competencies.value = competencyTree;
-    groups.value = groupList.items;
+    competencies.value = await http.get<Competency[]>('/kmk/competencies');
   } finally {
     loading.value = false;
   }
 }
 
 onMounted(load);
-
-async function addQuestion(payload: Record<string, unknown>): Promise<void> {
-  if (!currentVersion.value) return;
-  savingQuestion.value = true;
-
-  try {
-    await http.post(`/assessments/versions/${currentVersion.value.id}/questions`, payload);
-    await loadQuestions();
-    showEditor.value = false;
-    toast.success(t('common.saved'));
-  } catch (error) {
-    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
-  } finally {
-    savingQuestion.value = false;
-  }
-}
 
 async function removeQuestion(questionId: string): Promise<void> {
   try {
@@ -165,26 +134,36 @@ async function createNewVersion(): Promise<void> {
   }
 }
 
-async function assign(): Promise<void> {
-  if (!currentVersion.value || !assignGroupId.value) return;
-  assigning.value = true;
+/** Guarda una pregunta: nueva si no se está editando ninguna, o la editada. */
+async function saveQuestion(payload: Record<string, unknown>): Promise<void> {
+  if (!currentVersion.value) return;
+  savingQuestion.value = true;
 
   try {
-    const result = await http.post<{ recipientCount: number }>('/assignments', {
-      assessmentVersionId: currentVersion.value.id,
-      targetType: ASSIGNMENT_TARGET_TYPE.GROUP,
-      groupId: assignGroupId.value,
-      startAt: new Date().toISOString(),
-      attemptsAllowed: assignAttempts.value,
-    });
-
-    showAssignPanel.value = false;
-    toast.success(`${t('assessment.assign')}: ${result.recipientCount}`);
+    if (editingQuestion.value) {
+      await http.patch(`/assessments/questions/${editingQuestion.value.id}`, payload);
+    } else {
+      await http.post(`/assessments/versions/${currentVersion.value.id}/questions`, payload);
+    }
+    await loadQuestions();
+    showEditor.value = false;
+    editingQuestion.value = null;
+    toast.success(t('common.saved'));
   } catch (error) {
     toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
   } finally {
-    assigning.value = false;
+    savingQuestion.value = false;
   }
+}
+
+function editQuestion(question: Question): void {
+  editingQuestion.value = question;
+  showEditor.value = true;
+}
+
+function newQuestion(): void {
+  editingQuestion.value = null;
+  showEditor.value = true;
 }
 
 const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
@@ -235,6 +214,10 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
         </div>
 
         <div class="flex shrink-0 flex-wrap gap-2">
+          <BaseButton v-if="isDraft" variant="secondary" @click="showSettings = !showSettings">
+            {{ t('common.edit') }}
+          </BaseButton>
+
           <BaseButton
             v-if="isDraft"
             :disabled="questions.length === 0"
@@ -252,6 +235,10 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
               {{ t('assessment.newVersion') }}
             </BaseButton>
           </template>
+
+          <BaseButton variant="danger" @click="showDeleteDialog = true">
+            {{ t('common.delete') }}
+          </BaseButton>
         </div>
       </div>
 
@@ -269,109 +256,55 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
       </p>
     </BaseCard>
 
-    <!-- Asignación a un grupo -->
-    <BaseCard v-if="showAssignPanel" :title="t('assessment.assign')">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div class="flex flex-1 flex-col gap-1.5">
-          <label class="text-sm font-medium" for="assign-group">{{ t('assignment.group') }}</label>
-          <select
-            id="assign-group"
-            v-model="assignGroupId"
-            class="h-10 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
-          >
-            <option value="">{{ t('common.none') }}</option>
-            <option v-for="group in groups" :key="group.id" :value="group.id">
-              {{ group.code }} · {{ t('group.studentCount', { count: group.studentCount }) }}
-            </option>
-          </select>
-        </div>
+    <VersionSettingsForm
+      v-if="showSettings && isDraft"
+      :version-id="currentVersion.id"
+      :name="currentVersion.name"
+      :instructions="currentVersion.instructions"
+      :time-limit-minutes="currentVersion.timeLimitMinutes"
+      @saved="
+        showSettings = false;
+        load();
+      "
+      @cancel="showSettings = false"
+    />
 
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium" for="assign-attempts">
-            {{ t('assignment.attemptsAllowed') }}
-          </label>
-          <input
-            id="assign-attempts"
-            v-model.number="assignAttempts"
-            type="number"
-            min="1"
-            max="20"
-            class="h-10 w-24 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
-          />
-        </div>
+    <DeleteAssessmentDialog
+      v-if="showDeleteDialog"
+      :assessment-id="String(route.params.id)"
+      @deleted="router.push('/assessments')"
+      @cancel="showDeleteDialog = false"
+    />
 
-        <BaseButton :disabled="!assignGroupId" :loading="assigning" @click="assign">
-          {{ t('assessment.assign') }}
-        </BaseButton>
-      </div>
-    </BaseCard>
+    <AssignPanel v-if="showAssignPanel" :version-id="currentVersion.id" />
 
     <!-- Preguntas -->
     <BaseCard :title="t('assessment.questions')">
       <template #actions>
-        <BaseButton v-if="isDraft && !showEditor" size="sm" @click="showEditor = true">
+        <BaseButton v-if="isDraft && !showEditor" size="sm" @click="newQuestion">
           {{ t('question.add') }}
         </BaseButton>
       </template>
 
-      <EmptyState v-if="questions.length === 0 && !showEditor" :title="t('question.empty')" />
-
-      <ol v-else class="flex flex-col gap-3">
-        <li
-          v-for="(question, index) in questions"
-          :key="question.id"
-          class="flex items-start gap-3 rounded-md border border-border p-3"
-        >
-          <span class="mt-0.5 w-6 shrink-0 text-center text-xs tabular-nums text-ink-subtle">
-            {{ index + 1 }}
-          </span>
-
-          <div class="min-w-0 flex-1">
-            <p class="text-sm">{{ question.statement }}</p>
-            <p class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
-              <span
-                class="rounded-full px-2 py-0.5 font-medium"
-                :style="{
-                  backgroundColor: `${question.kmkCompetency.color}1a`,
-                  color: question.kmkCompetency.color,
-                }"
-              >
-                KMK {{ question.kmkCompetency.code }}
-              </span>
-              <span class="text-ink-subtle">{{ t(`question.types.${question.type}`) }}</span>
-              <span class="text-ink-subtle">
-                {{ t('assessment.totalPoints', { points: question.points }) }}
-              </span>
-            </p>
-          </div>
-
-          <button
-            v-if="isDraft"
-            type="button"
-            class="shrink-0 rounded-md p-2 text-ink-subtle hover:bg-surface-muted hover:text-danger"
-            :aria-label="`${t('common.delete')}: ${question.statement}`"
-            @click="removeQuestion(question.id)"
-          >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </li>
-      </ol>
+      <QuestionList
+        :questions="questions"
+        :editable="isDraft"
+        :showing-editor="showEditor"
+        @edit="editQuestion"
+        @remove="removeQuestion"
+      />
 
       <div v-if="showEditor" class="mt-5 border-t border-border pt-5">
         <QuestionEditor
+          :key="editingQuestion?.id ?? 'new'"
           :competencies="competencies"
+          :question="editingQuestion"
           :saving="savingQuestion"
-          @save="addQuestion"
-          @cancel="showEditor = false"
+          @save="saveQuestion"
+          @cancel="
+            showEditor = false;
+            editingQuestion = null;
+          "
         />
       </div>
     </BaseCard>

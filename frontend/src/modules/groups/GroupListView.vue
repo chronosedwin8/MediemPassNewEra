@@ -38,8 +38,19 @@ onMounted(async () => {
   <EmptyState v-else-if="groups.length === 0" :title="t('group.empty')" />
 
   <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-    <BaseCard v-for="group in groups" :key="group.id">
-      <h3 class="text-lg font-semibold">{{ group.code }}</h3>
+    <BaseCard v-for="group in groups" :key="group.id" class="relative">
+      <!--
+        La tarjeta entera es el enlace, no solo el título: en una rejilla de
+        tarjetas la gente pulsa donde le viene, y obligar a acertar el texto
+        del encabezado es una molestia gratuita.
+      -->
+      <RouterLink
+        :to="`/groups/${group.id}`"
+        class="text-lg font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        <span class="absolute inset-0" aria-hidden="true" />
+        {{ group.code }}
+      </RouterLink>
       <p class="mt-1 text-sm text-ink-muted">
         {{ localize(group.gradeLevel.name, locale as never) }}
         <span v-if="group.subject"> · {{ group.subject.code }}</span>

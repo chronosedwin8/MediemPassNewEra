@@ -3,13 +3,13 @@ import { computed, ref } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  LANGUAGE,
   PERMISSION,
   SUPPORTED_LANGUAGES,
   type Language,
   type Permission,
 } from '@medienpass/shared';
 import { useAuthStore } from '@/stores/auth';
+import { LANGUAGE_NAMES } from '@/app/languages';
 import { setLanguage } from '@/app/i18n';
 import BaseButton from '@/design-system/BaseButton.vue';
 
@@ -56,12 +56,78 @@ const ICONS: Record<string, string> = {
     'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 005.4 8.322c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z',
 };
 
+/**
+ * Las entradas del menú, como tabla.
+ *
+ * Cada una declara qué permiso la habilita en lugar de resolverse dentro de una
+ * cadena de condicionales: añadir una sección es añadir una fila, y de un
+ * vistazo se ve quién ve qué. Con la cadena, cada entrada nueva hacía la
+ * función un poco más difícil de leer y un poco más fácil de romper.
+ */
+interface NavRule {
+  item: NavItem;
+  /** Basta con tener uno de estos permisos. */
+  permissions: Permission[];
+}
+
+const TEACHING_NAV: NavRule[] = [
+  {
+    item: { to: '/assessments', labelKey: 'nav.assessments', icon: 'assessment' },
+    permissions: [PERMISSION.ASSESSMENT_READ],
+  },
+  {
+    item: { to: '/groups', labelKey: 'nav.groups', icon: 'users' },
+    permissions: [PERMISSION.GROUP_READ],
+  },
+  {
+    item: { to: '/students', labelKey: 'nav.students', icon: 'users' },
+    permissions: [PERMISSION.STUDENT_READ],
+  },
+  {
+    item: { to: '/ai/generate', labelKey: 'nav.aiGenerate', icon: 'assessment' },
+    permissions: [PERMISSION.AI_GENERATE],
+  },
+];
+
+const REFERENCE_NAV: NavRule[] = [
+  {
+    item: { to: '/statistics', labelKey: 'nav.statistics', icon: 'chart' },
+    permissions: [PERMISSION.STATS_READ_SCOPED, PERMISSION.STATS_READ_GLOBAL],
+  },
+  {
+    item: { to: '/competencies', labelKey: 'nav.competencies', icon: 'competency' },
+    permissions: [PERMISSION.KMK_READ],
+  },
+  // La capacitación del profesorado usa el mismo motor de evaluación, así que
+  // su acceso vive junto al resto del material de referencia.
+  {
+    item: { to: '/training', labelKey: 'nav.training', icon: 'competency' },
+    permissions: [PERMISSION.TRAINING_PARTICIPATE],
+  },
+  {
+    item: { to: '/my-assessments', labelKey: 'nav.myAssessments', icon: 'assessment' },
+    permissions: [PERMISSION.ATTEMPT_TAKE],
+  },
+];
+
+const ADMIN_NAV: NavRule[] = [
+  {
+    item: { to: '/admin', labelKey: 'nav.admin', icon: 'settings' },
+    permissions: [PERMISSION.SETTINGS_MANAGE],
+  },
+];
+
+function allowed(rules: NavRule[]): NavItem[] {
+  return rules.filter((rule) => auth.canAny(...rule.permissions)).map((rule) => rule.item);
+}
+
 const sections = computed<NavSection[]>(() => {
   const result: NavSection[] = [
     { items: [{ to: '/', labelKey: 'nav.dashboard', icon: 'dashboard' }] },
   ];
 
-  // Estudiante: lo suyo es responder evaluaciones y ver su desempeño.
+  // Estudiante: lo suyo es responder evaluaciones y ver su desempeño. Se
+  // resuelve antes que nada porque su menú no es un subconjunto del docente.
   if (auth.can(PERMISSION.ATTEMPT_TAKE) && !auth.can(PERMISSION.ASSESSMENT_CREATE)) {
     result.push({
       items: [
@@ -73,40 +139,17 @@ const sections = computed<NavSection[]>(() => {
     return result;
   }
 
-  const teaching: NavItem[] = [];
-  if (auth.can(PERMISSION.ASSESSMENT_READ)) {
-    teaching.push({ to: '/assessments', labelKey: 'nav.assessments', icon: 'assessment' });
-  }
-  if (auth.can(PERMISSION.GROUP_READ)) {
-    teaching.push({ to: '/groups', labelKey: 'nav.groups', icon: 'users' });
-  }
-  if (auth.can(PERMISSION.STUDENT_READ)) {
-    teaching.push({ to: '/students', labelKey: 'nav.students', icon: 'users' });
-  }
+  const teaching = allowed(TEACHING_NAV);
   if (teaching.length > 0) result.push({ labelKey: 'nav.assessments', items: teaching });
 
-  const reference: NavItem[] = [];
-  if (auth.canAny(PERMISSION.STATS_READ_SCOPED, PERMISSION.STATS_READ_GLOBAL)) {
-    reference.push({ to: '/statistics', labelKey: 'nav.statistics', icon: 'chart' });
-  }
-  if (auth.can(PERMISSION.KMK_READ)) {
-    reference.push({ to: '/competencies', labelKey: 'nav.competencies', icon: 'competency' });
-  }
-  // El docente también puede tener evaluaciones asignadas: la capacitación KMK
-  // usa el mismo motor, así que su acceso vive en el mismo sitio.
-  if (auth.can(PERMISSION.ATTEMPT_TAKE)) {
-    reference.push({ to: '/my-assessments', labelKey: 'nav.myAssessments', icon: 'assessment' });
-  }
+  const reference = allowed(REFERENCE_NAV);
   if (reference.length > 0) result.push({ labelKey: 'nav.competencies', items: reference });
+
+  const admin = allowed(ADMIN_NAV);
+  if (admin.length > 0) result.push({ labelKey: 'nav.admin', items: admin });
 
   return result;
 });
-
-const languageNames: Record<Language, string> = {
-  [LANGUAGE.ES]: 'Español',
-  [LANGUAGE.DE]: 'Deutsch',
-  [LANGUAGE.EN]: 'English',
-};
 
 function changeLanguage(event: Event): void {
   setLanguage((event.target as HTMLSelectElement).value as Language);
@@ -227,7 +270,7 @@ function isActive(path: string): boolean {
           @change="changeLanguage"
         >
           <option v-for="code in SUPPORTED_LANGUAGES" :key="code" :value="code">
-            {{ languageNames[code] }}
+            {{ LANGUAGE_NAMES[code] }}
           </option>
         </select>
 

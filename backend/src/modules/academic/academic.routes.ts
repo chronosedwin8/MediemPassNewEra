@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, noContent, ok, paginated } from '../../shared/http/response.js';
-import { authenticate } from '../../middleware/authenticate.js';
+import { authenticate, requireAuth } from '../../middleware/authenticate.js';
 import { requirePermission } from '../../middleware/authorize.js';
 import { getQuery, paginationQuery, uuidParam, validate } from '../../middleware/validate.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
+import { previewRollover, rolloverAcademicYear, rolloverSchema } from './rollover.service.js';
 import {
   createArea,
   createAreaSchema,
@@ -170,5 +171,32 @@ calendarRouter.get(
   requirePermission(PERMISSION.ACADEMIC_YEAR_READ),
   asyncHandler(async (_req, res) => {
     ok(res, await listGradeLevels());
+  }),
+);
+
+// --- Reinicio de año lectivo -------------------------------------------------
+
+/**
+ * Qué haría el reinicio, sin hacerlo.
+ *
+ * La consulta el panel para poder decir «se crearán 14 grupos vacíos» antes de
+ * que nadie confirme nada.
+ */
+calendarRouter.get(
+  '/rollover/preview',
+  requirePermission(PERMISSION.ACADEMIC_YEAR_MANAGE),
+  validate({ query: z.object({ sourceYearId: z.string().uuid().optional() }) }),
+  asyncHandler(async (req, res) => {
+    const query = getQuery<{ sourceYearId?: string }>(req);
+    ok(res, await previewRollover(query.sourceYearId));
+  }),
+);
+
+calendarRouter.post(
+  '/rollover',
+  requirePermission(PERMISSION.ACADEMIC_YEAR_MANAGE),
+  validate({ body: rolloverSchema }),
+  asyncHandler(async (req, res) => {
+    created(res, await rolloverAcademicYear(requireAuth(req), req.body));
   }),
 );

@@ -19,6 +19,14 @@ export const SETTING_KEY = {
   PLATFORM_NAME: 'platform.name',
   PLATFORM_LOGO_URL: 'platform.logo_url',
   PLATFORM_DEFAULT_LANGUAGE: 'platform.default_language',
+  /**
+   * Dominio del correo institucional de los estudiantes.
+   *
+   * El correo de un estudiante es su código seguido de este dominio. Es un
+   * ajuste y no una constante porque un cambio de dominio institucional no
+   * debería exigir un despliegue.
+   */
+  STUDENT_EMAIL_DOMAIN: 'platform.student_email_domain',
 
   ASSESSMENT_DEFAULT_TIME_LIMIT: 'assessment.default_time_limit_minutes',
   ASSESSMENT_DEFAULT_ATTEMPTS: 'assessment.default_attempts_allowed',
@@ -70,6 +78,16 @@ export const SETTING_DEFINITIONS = {
     z.enum([LANGUAGE.ES, LANGUAGE.DE, LANGUAGE.EN]),
     LANGUAGE.ES,
     'Idioma por defecto para cuentas nuevas',
+  ),
+
+  [SETTING_KEY.STUDENT_EMAIL_DOMAIN]: define(
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, 'Debe ser un dominio válido, sin arroba'),
+    'colegioaleman.edu.co',
+    'Dominio del correo institucional de los estudiantes',
   ),
 
   [SETTING_KEY.ASSESSMENT_DEFAULT_TIME_LIMIT]: define(

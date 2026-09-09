@@ -3,12 +3,15 @@ import {
   ENROLLMENT_STATUS,
   EXTERNAL_SOURCE,
   ROLE,
+  SETTING_KEY,
   SYNC_STATUS,
   USER_STATUS,
+  institutionalEmail,
 } from '@medienpass/shared';
 import { prisma } from '../../../infrastructure/database/prisma.js';
 import { createLogger } from '../../../shared/logger.js';
 import { recordAudit } from '../../audit/audit.service.js';
+import { getSetting } from '../../settings/settings.service.js';
 import { hashPassword } from '../../../shared/security/password.js';
 import { getPhidiasService } from '../../../infrastructure/external/phidias/phidias.service.js';
 import type {
@@ -112,33 +115,45 @@ function resolveGradeCode(courseName: string): string | null {
 /**
  * Decide qué correo se asigna.
  *
- * En la matrícula real hay correos compartidos por dos personas. Se conserva
- * en quien ya lo tenía y el segundo se queda sin correo, con la incidencia
- * anotada: es preferible a rechazar al estudiante o a romper la unicidad.
+ * Manda el **correo institucional derivado del código**, no el que venga en
+ * Phidias. La razón es concreta: de los 1.177 estudiantes matriculados, 20 no
+ * tienen correo registrado y 74 tienen cuentas personales de gmail, hotmail o
+ * yahoo. Usar ese campo dejaba a 94 sin poder entrar y ataba la identidad de
+ * los demás a una cuenta que el colegio no controla. El código, en cambio, lo
+ * tiene todo el mundo y no cambia.
+ *
+ * El correo de Phidias solo se usa como último recurso, cuando no hay código.
+ *
+ * Si el correo resultante ya pertenece a otra cuenta se deja sin correo y se
+ * anota la incidencia: es preferible a rechazar al estudiante o a romper la
+ * unicidad. En la matrícula real esto ocurre con correos compartidos entre
+ * hermanos.
  */
 async function resolveEmail(
   student: NormalizedStudent,
   existingUserId: string | null,
   issues: SyncIssue[],
 ): Promise<string | null> {
-  if (!student.email) return null;
+  const domain = await getSetting(SETTING_KEY.STUDENT_EMAIL_DOMAIN);
+  const candidate = institutionalEmail(student.code, domain) ?? student.email;
+  if (!candidate) return null;
 
   const clash = await prisma.user.findFirst({
     where: {
-      email: student.email,
+      email: candidate,
       deletedAt: null,
       ...(existingUserId ? { NOT: { id: existingUserId } } : {}),
     },
     select: { id: true },
   });
 
-  if (!clash) return student.email;
+  if (!clash) return candidate;
 
   issues.push({
     externalId: student.externalId,
     username: student.username,
     reason: 'EMAIL_ALREADY_IN_USE',
-    detail: 'El correo ya pertenece a otra cuenta; se deja sin correo.',
+    detail: `El correo ${candidate} ya pertenece a otra cuenta; se deja sin correo.`,
   });
   return null;
 }
@@ -146,18 +161,28 @@ async function resolveEmail(
 /**
  * Decide el nombre de usuario.
  *
+ * Se prefiere el correo institucional, porque es con lo que el estudiante va a
+ * entrar: pedirle que recuerde un nombre de usuario distinto de su correo es
+ * una fuente de soporte innecesaria.
+ *
  * Si está ocupado se le añade el identificador externo, que es único por
  * definición. Perder al estudiante por un choque de nombre sería absurdo.
  */
-async function resolveUsername(student: NormalizedStudent, issues: SyncIssue[]): Promise<string> {
+async function resolveUsername(
+  student: NormalizedStudent,
+  email: string | null,
+  issues: SyncIssue[],
+): Promise<string> {
+  const preferred = email ?? student.username;
+
   const taken = await prisma.user.findFirst({
-    where: { username: student.username },
+    where: { username: preferred },
     select: { id: true },
   });
 
-  if (!taken) return student.username;
+  if (!taken) return preferred;
 
-  const username = `${student.username}.${student.externalId}`;
+  const username = `${student.externalId}.${preferred}`;
   issues.push({
     externalId: student.externalId,
     username: student.username,
@@ -232,7 +257,7 @@ async function createStudentAccount(
   gradeLevelId: string,
   context: SyncContext,
 ): Promise<string | null> {
-  const username = await resolveUsername(student, context.issues);
+  const username = await resolveUsername(student, email, context.issues);
 
   try {
     const created = await prisma.$transaction(async (tx) => {

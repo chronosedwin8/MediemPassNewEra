@@ -70,3 +70,22 @@ export function normalizeLanguage(
   const base = value.toLowerCase().replace('_', '-').split('-')[0];
   return isSupportedLanguage(base) ? base : fallback;
 }
+
+/**
+ * Correo institucional de un estudiante a partir de su código.
+ *
+ * El colegio identifica a cada estudiante por un código, y su correo es ese
+ * código seguido del dominio institucional. Tenerlo como función pura y en un
+ * único sitio evita que la sincronización, la creación manual y el relleno
+ * masivo lleguen cada uno a una variante distinta —con mayúsculas, con
+ * espacios o con el punto de más— y acaben creando dos cuentas para la misma
+ * persona.
+ *
+ * Devuelve `null` sin código: inventar un correo a partir de la nada crearía
+ * identidades que no corresponden a nadie.
+ */
+export function institutionalEmail(code: string | null | undefined, domain: string): string | null {
+  const normalized = (code ?? '').trim().toLowerCase();
+  if (!normalized) return null;
+  return `${normalized}@${domain.trim().toLowerCase().replace(/^@/, '')}`;
+}
