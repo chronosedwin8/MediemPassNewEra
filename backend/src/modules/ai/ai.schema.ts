@@ -31,6 +31,20 @@ import {
  * reales: pedírselo produciría preguntas rotas que el docente tendría que
  * rehacer enteras. Estos seis se generan bien y cubren la mayor parte del uso.
  */
+/**
+ * Quita el adorno de un código de competencia.
+ *
+ * «KMK 1», «kmk-1», «KMK 2.3» y « 1 » son todos el mismo código para quien
+ * escribió la respuesta. Se conserva el punto porque separa competencia de
+ * subcompetencia y sí es significativo.
+ */
+export function normaliseCompetencyCode(value: string): string {
+  return value
+    .trim()
+    .replace(/^kmk[\s._-]*/i, '')
+    .trim();
+}
+
 export const AI_SUPPORTED_TYPES = [
   QUESTION_TYPE.SINGLE_CHOICE,
   QUESTION_TYPE.MULTIPLE_CHOICE,
@@ -53,8 +67,26 @@ const aiQuestionSchema = z.object({
   points: z.number().min(0.25).max(20),
   difficulty: z.enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED]),
   /** Código de la competencia (1..6), no su identificador interno. */
-  competencyCode: z.string().trim().min(1).max(10),
-  subcompetencyCode: z.string().trim().max(10).nullable().optional(),
+  /**
+   * Código de la competencia, normalizado al entrar.
+   *
+   * El modelo devuelve «KMK 1» tantas veces como «1», y es comprensible: en el
+   * prompt las competencias se listan con esa etiqueta delante. Rechazar la
+   * respuesta entera por el prefijo sería descartar cinco preguntas buenas por
+   * una diferencia de formato, así que se limpia aquí, una vez, y todo lo que
+   * viene después trabaja ya con el código limpio.
+   *
+   * Lo que **no** hace es adivinar: si el código no existe en el marco, la
+   * validación semántica lo rechaza igual. Esto solo quita el adorno.
+   */
+  competencyCode: z.string().trim().min(1).max(20).transform(normaliseCompetencyCode),
+  subcompetencyCode: z
+    .string()
+    .trim()
+    .max(20)
+    .nullable()
+    .optional()
+    .transform((value) => (value ? normaliseCompetencyCode(value) : value)),
   feedbackCorrect: z.string().trim().max(1000),
   feedbackIncorrect: z.string().trim().max(1000),
   explanation: z.string().trim().max(1500).optional(),

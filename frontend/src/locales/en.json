@@ -471,7 +471,7 @@
     "questionTypes": "Question types",
     "questionTypesHint": "Only the types the model can reliably generate are offered.",
     "generate": "Generate draft",
-    "generatingHint": "This can take up to two minutes.",
+    "generatingHint": "Writing thirty good questions takes a while: up to a couple of minutes. Do not close this page.",
     "generated": "Draft created with {count} questions.",
     "rejected": "The response failed validation and was discarded",
     "questionNumber": "Question {number}",

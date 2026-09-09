@@ -135,8 +135,10 @@ REGLAS
   1. Todo el contenido —enunciados, opciones y retroalimentación— debe estar
      escrito en ${params.language}.
   2. Cada pregunta debe declarar en "competencyCode" la competencia que
-     realmente ejercita, elegida entre las listadas arriba. No etiquetes por
-     etiquetar: si una pregunta no ejercita ninguna, reformúlala hasta que sí.
+     realmente ejercita, elegida entre las listadas arriba. Copia el valor
+     exacto que aparece entre comillas —solo el número, sin el prefijo "KMK"—.
+     No etiquetes por etiquetar: si una pregunta no ejercita ninguna,
+     reformúlala hasta que sí.
   3. Reparte las preguntas entre las competencias indicadas.
   4. La retroalimentación correcta explica por qué lo es; la incorrecta orienta
      hacia dónde repasar. Ninguna de las dos es "¡Bien hecho!".

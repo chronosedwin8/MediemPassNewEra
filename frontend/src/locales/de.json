@@ -471,7 +471,7 @@
     "questionTypes": "Fragetypen",
     "questionTypesHint": "Es werden nur Typen angeboten, die das Modell zuverlässig erzeugt.",
     "generate": "Entwurf erzeugen",
-    "generatingHint": "Kann bis zu zwei Minuten dauern.",
+    "generatingHint": "Dreißig gute Fragen zu schreiben dauert: bis zu zwei Minuten. Bitte schließe diese Seite nicht.",
     "generated": "Entwurf mit {count} Fragen erstellt.",
     "rejected": "Die Antwort hat die Validierung nicht bestanden und wurde verworfen",
     "questionNumber": "Frage {number}",

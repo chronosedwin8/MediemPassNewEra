@@ -92,11 +92,59 @@ export interface GenerationResult {
 }
 
 /** Cuota diaria por persona: protege el presupuesto, no solo la CPU. */
+/**
+ * Cierra las solicitudes que quedaron a medias.
+ *
+ * Una fila se queda en `IN_PROGRESS` para siempre cuando el proceso muere
+ * mientras el modelo respondía: un reinicio, un despliegue, una recarga del
+ * servidor en desarrollo. Nadie va a volver a tocarla, pero seguía contando
+ * para el cupo diario, así que un docente podía quedarse sin generaciones por
+ * culpa de un reinicio del servidor.
+ *
+ * Se recuperan aquí, al comprobar el cupo, en lugar de con una tarea aparte:
+ * es el único momento en que a alguien le importa el recuento, y una tarea
+ * programada para esto sería más maquinaria de la que el problema merece.
+ *
+ * El margen es el doble del tiempo máximo de una llamada: si a estas alturas
+ * sigue en curso, no lo está.
+ */
+async function reclaimStaleRequests(userId: string): Promise<void> {
+  const deadline = new Date(Date.now() - env.AI_TIMEOUT_MS * 2);
+
+  const { count } = await prisma.aiGenerationRequest.updateMany({
+    where: {
+      requestedById: userId,
+      status: AI_GENERATION_STATUS.IN_PROGRESS,
+      createdAt: { lt: deadline },
+    },
+    data: {
+      status: AI_GENERATION_STATUS.FAILED,
+      errorMessage: 'La solicitud quedó interrumpida y no se pudo completar',
+      completedAt: new Date(),
+    },
+  });
+
+  if (count > 0) log.warn({ userId, count }, 'solicitudes interrumpidas recuperadas');
+}
+
 async function assertWithinQuota(userId: string): Promise<void> {
+  await reclaimStaleRequests(userId);
+
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
+  /*
+   * Las fallidas no gastan cupo.
+   *
+   * El límite existe para repartir un presupuesto entre docentes, y una
+   * generación que falló no consumió nada del proveedor —o consumió sin
+   * entregar—. Cobrarla sería castigar a quien tuvo mala suerte con la red.
+   */
   const used = await prisma.aiGenerationRequest.count({
-    where: { requestedById: userId, createdAt: { gte: since } },
+    where: {
+      requestedById: userId,
+      createdAt: { gte: since },
+      status: { not: AI_GENERATION_STATUS.FAILED },
+    },
   });
 
   if (used >= env.AI_RATE_LIMIT_PER_USER_PER_DAY) {

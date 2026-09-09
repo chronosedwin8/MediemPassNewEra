@@ -471,7 +471,7 @@
     "questionTypes": "Tipos de pregunta",
     "questionTypesHint": "Solo se ofrecen los que el modelo sabe generar bien.",
     "generate": "Generar borrador",
-    "generatingHint": "Puede tardar hasta dos minutos.",
+    "generatingHint": "Escribir treinta preguntas buenas lleva su tiempo: hasta un par de minutos. No cierres esta página.",
     "generated": "Borrador creado con {count} preguntas.",
     "rejected": "La respuesta no pasó la validación y se descartó",
     "questionNumber": "Pregunta {number}",
