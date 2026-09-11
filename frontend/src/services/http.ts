@@ -251,6 +251,50 @@ async function executePaginated<T>(
   return { items: payload.data, meta: payload.meta };
 }
 
+/**
+ * Descarga un archivo que sirve la propia API.
+ *
+ * No se puede resolver con un enlace: la API se autentica con la cabecera
+ * `Authorization`, no con una cookie, así que una navegación directa a la
+ * dirección llegaría sin identificar. Se pide con `fetch`, se recoge como
+ * blob y quien llama decide qué hacer con él.
+ *
+ * Se reintenta una vez tras renovar la sesión, igual que el resto: un diploma
+ * se descarga justo después de mirar el resultado, que es cuando el token
+ * lleva ya un rato.
+ */
+export async function downloadFile(
+  path: string,
+  isRetry = false,
+): Promise<{ blob: Blob; filename: string | null }> {
+  const headers: Record<string, string> = {};
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const csrf = currentCsrfToken();
+  if (csrf) headers['x-csrf-token'] = csrf;
+
+  const response = await fetch(buildUrl(path), {
+    method: 'GET',
+    headers,
+    credentials: 'include',
+  });
+
+  if (response.status === 401 && !isRetry) {
+    const renewed = await refreshSession();
+    if (renewed) return downloadFile(path, true);
+
+    accessToken = null;
+    onSessionLost?.();
+  }
+
+  if (!response.ok) throw await parseError(response);
+
+  // El nombre lo pone el servidor; sin él, quien llama pone el suyo.
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const match = disposition.match(/filename="([^"]+)"/);
+
+  return { blob: await response.blob(), filename: match?.[1] ?? null };
+}
+
 export const http = {
   get: <T>(path: string, query?: RequestOptions['query'], signal?: AbortSignal): Promise<T> =>
     execute<T>(path, { method: 'GET', query, signal }),
@@ -270,4 +314,6 @@ export const http = {
     execute<T>(path, { method: 'PATCH', body }),
 
   delete: <T>(path: string): Promise<T> => execute<T>(path, { method: 'DELETE' }),
+
+  download: downloadFile,
 };

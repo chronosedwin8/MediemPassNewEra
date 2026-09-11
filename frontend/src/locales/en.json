@@ -211,7 +211,11 @@
     "deleteConfirmHint": "Type \"{title}\" to confirm.",
     "deleteAction": "Delete permanently",
     "deleteFiles": "{count} attached files ({size})",
-    "backToDetail": "Back to the assessment"
+    "backToDetail": "Back to the assessment",
+    "certificate": "Competence certificate",
+    "certificateEnable": "Issue a certificate to those who pass",
+    "certificateHint": "Anyone who passes can download a PDF certifying the KMK competences they demonstrated. You can switch this on even after publishing.",
+    "certificateThreshold": "Only competences scoring at least 70% on the questions that measure them are certified."
   },
   "question": {
     "add": "Add question",
@@ -301,7 +305,11 @@
     "moveUp": "Move up",
     "moveDown": "Move down",
     "expired": "Time is up",
-    "expiredHint": "Your answers have been saved and submitted automatically."
+    "expiredHint": "Your answers have been saved and submitted automatically.",
+    "saveForLater": "Save and continue later",
+    "savedForLater": "Saved. You can pick it up whenever you want.",
+    "resumableHint": "This assessment has no time limit: you can save it and continue later.",
+    "oneSittingHint": "This assessment is timed: the clock runs even if you close the page, so it is best finished in one sitting."
   },
   "result": {
     "title": "Result",
@@ -321,7 +329,9 @@
     "teacherFeedback": "Teacher's comment",
     "correct": "Correct",
     "incorrect": "Incorrect",
-    "partial": "Partially correct"
+    "partial": "Partially correct",
+    "downloadCertificate": "Download certificate",
+    "certificateHint": "Certifies the KMK competences you demonstrated in this assessment."
   },
   "grade": {
     "notAvailable": "No grade yet",
@@ -448,7 +458,10 @@
     "AI_RESPONSE_INVALID": "The AI returned a response that could not be validated.",
     "UNSUPPORTED_LANGUAGE": "That language is not available.",
     "SSO_STATE_MISMATCH": "The sign-in could not be verified. Please start again from the login page.",
-    "ATTEMPT_ALREADY_IN_PROGRESS": "You already have an attempt in progress. Continue with that one."
+    "ATTEMPT_ALREADY_IN_PROGRESS": "You already have an attempt in progress. Continue with that one.",
+    "CERTIFICATE_NOT_ENABLED": "This assessment does not issue certificates.",
+    "CERTIFICATE_NOT_READY": "The certificate will be available once the assessment is fully marked.",
+    "CERTIFICATE_NOT_EARNED": "This attempt does not qualify for a certificate."
   },
   "validation": {
     "required": "This field is required",

@@ -433,6 +433,11 @@ export const en: PublicContent = {
             tip: 'If your browser closes or the connection drops, sign in again and carry on. The attempt is waiting with everything you had written.',
           },
           {
+            title: 'Save and continue later, when the assessment allows it',
+            body: 'When an assessment has no time limit, it says so at the top and "Save and continue later" appears at the bottom. You can close it and come back whenever you like: the attempt waits with everything you wrote.',
+            tip: 'If the assessment is timed, that button is not there and you see the clock instead. The limit runs from the moment you open it even if you close the page, so it is best finished in one sitting.',
+          },
+          {
             title: 'Attach evidence when asked',
             body: 'Some questions let you attach a photo, a document or audio. When evidence is required, the question says so and you cannot submit without it.',
             tip: 'Upload the file as soon as you have it, not at the end. Five uploads in the final minute compete for the same school connection.',
@@ -519,6 +524,16 @@ export const en: PublicContent = {
             title: 'Preview before publishing',
             body: '"Preview" shows the assessment exactly as the class will see it, and you can answer it as a test without anything being saved. "Show solutions" additionally lets you check that the marked answer is the right one.',
             tip: 'With AI-generated questions this step is not optional. A question can be impeccably written and have the wrong option marked as correct; no automatic check catches that, a person does.',
+          },
+          {
+            title: 'Decide whether it is timed, and with that whether it can be paused',
+            body: 'In the version settings you can set a duration in minutes. Zero means no limit. The two go together: with no time limit students can save and continue later; with one they cannot, because the clock runs from the moment they open the attempt even with the page closed.',
+            tip: 'Set a time when speed is part of what you are assessing. If what you want is for them to search, compare and write carefully, leaving it open measures that better.',
+          },
+          {
+            title: 'Turn on the certificate if you want to certify',
+            body: 'With the certificate on, anyone who passes can download a PDF certifying the KMK competences they demonstrated. You can switch it on even after publishing, which is usually when it occurs to you.',
+            tip: 'Only competences scoring at least 70% on the questions that measure them are certified, and the document states how many were assessed without reaching it. A certificate that claimed more would be worth nothing.',
           },
           {
             title: 'Publish and assign',

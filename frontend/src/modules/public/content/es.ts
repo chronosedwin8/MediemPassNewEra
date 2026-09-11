@@ -437,6 +437,11 @@ export const es: PublicContent = {
             tip: 'Si se te cierra el navegador o se va la conexión, vuelve a entrar y sigue donde estabas. El intento te espera con todo lo que habías escrito.',
           },
           {
+            title: 'Guarda y sigue después, si la evaluación lo permite',
+            body: 'Cuando la evaluación no tiene tiempo, arriba lo dice y abajo aparece «Guardar y seguir después». Puedes cerrar y volver cuando quieras: el intento te espera con todo lo escrito.',
+            tip: 'Si la evaluación sí tiene tiempo, ese botón no está y en su lugar ves el reloj. El plazo corre desde que la abres aunque cierres la página, así que conviene terminarla de una sentada.',
+          },
+          {
             title: 'Adjunta evidencia cuando te la pidan',
             body: 'Algunas preguntas admiten fotos, documentos o audio. Si la evidencia es obligatoria, la pregunta lo dice y no podrás finalizar hasta adjuntarla.',
             tip: 'Sube el archivo en cuanto lo tengas, no al final. Si dejas cinco subidas para el último minuto, competirán entre sí por la conexión del colegio.',
@@ -524,6 +529,16 @@ export const es: PublicContent = {
             title: 'Previsualiza antes de publicar',
             body: 'Desde el botón «Previsualizar» ves la evaluación exactamente como la verá tu clase, y puedes responderla para probarla sin que se guarde nada. Con el interruptor «Ver las respuestas» compruebas además que la solución marcada es la correcta.',
             tip: 'Este paso es imprescindible si usaste la IA. Una pregunta generada puede ser impecable de forma y tener marcada la opción equivocada; ninguna validación automática detecta eso, y una persona leyéndola sí.',
+          },
+          {
+            title: 'Decide si lleva tiempo, y con ello si se puede pausar',
+            body: 'En los ajustes de la versión puedes poner una duración en minutos. Cero significa sin límite. Las dos cosas van unidas: sin tiempo, el estudiante puede guardar y seguir después; con tiempo, no, porque el plazo corre desde que abre el intento aunque cierre la página.',
+            tip: 'Pon tiempo cuando la prisa forme parte de lo que evalúas. Si lo que quieres es que busquen, comparen y escriban con calma, dejarlo sin límite mide mejor eso mismo.',
+          },
+          {
+            title: 'Activa el diploma si quieres certificar',
+            body: 'Con el diploma activado, quien apruebe puede descargar un PDF que certifica las competencias KMK que demostró. Puedes activarlo también con la evaluación ya publicada, que es cuando uno suele acordarse.',
+            tip: 'Solo se certifican las competencias con al menos un 70 % en las preguntas que las miden, y el documento dice cuántas se evaluaron sin alcanzarlo. Un diploma que afirmara de más no serviría para nada.',
           },
           {
             title: 'Publica y asigna',

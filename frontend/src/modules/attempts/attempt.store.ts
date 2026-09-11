@@ -40,6 +40,8 @@ export interface AttemptData {
   startedAt: string;
   deadlineAt: string | null;
   remainingSeconds: number | null;
+  /** Lo decide el servidor: va unido a que no haya cronómetro. */
+  canSaveForLater: boolean;
   assessment: {
     id: string;
     versionId: string;
@@ -80,6 +82,15 @@ export const useAttemptStore = defineStore('attempt', () => {
   const progressPercentage = computed(() =>
     total.value > 0 ? (answeredCount.value / total.value) * 100 : 0,
   );
+
+  /**
+   * Si se puede dejar a medias y volver.
+   *
+   * Se toma del servidor tal cual y no se deduce aquí de si hay cronómetro:
+   * la regla vive en un sitio, y el día que cambie no habrá que acordarse de
+   * esta pantalla.
+   */
+  const canSaveForLater = computed(() => attempt.value?.canSaveForLater ?? false);
 
   function isAnswered(questionId: string): boolean {
     const answer = answers.value.get(questionId);
@@ -233,6 +244,7 @@ export const useAttemptStore = defineStore('attempt', () => {
     answeredCount,
     unansweredCount,
     progressPercentage,
+    canSaveForLater,
     isAnswered,
     load,
     setAnswer,

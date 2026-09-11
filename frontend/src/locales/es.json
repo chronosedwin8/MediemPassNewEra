@@ -211,7 +211,11 @@
     "deleteConfirmHint": "Escribe «{title}» para confirmar.",
     "deleteAction": "Eliminar definitivamente",
     "deleteFiles": "{count} archivos adjuntos ({size})",
-    "backToDetail": "Volver a la evaluación"
+    "backToDetail": "Volver a la evaluación",
+    "certificate": "Diploma de competencias",
+    "certificateEnable": "Emitir diploma a quien apruebe",
+    "certificateHint": "Quien apruebe podrá descargar un PDF que certifica las competencias KMK que demostró. Puedes activarlo también con la evaluación ya publicada.",
+    "certificateThreshold": "Solo se certifican las competencias con al menos un 70 % en las preguntas que las miden."
   },
   "question": {
     "add": "Añadir pregunta",
@@ -301,7 +305,11 @@
     "moveUp": "Mover arriba",
     "moveDown": "Mover abajo",
     "expired": "El tiempo ha terminado",
-    "expiredHint": "Tus respuestas se han guardado y enviado automáticamente."
+    "expiredHint": "Tus respuestas se han guardado y enviado automáticamente.",
+    "saveForLater": "Guardar y seguir después",
+    "savedForLater": "Guardado. Puedes retomarla cuando quieras.",
+    "resumableHint": "Esta evaluación no tiene tiempo: puedes guardarla y seguir en otro momento.",
+    "oneSittingHint": "Esta evaluación tiene tiempo: el reloj corre aunque cierres la página, así que conviene terminarla de una vez."
   },
   "result": {
     "title": "Resultado",
@@ -321,7 +329,9 @@
     "teacherFeedback": "Comentario del profesor",
     "correct": "Correcta",
     "incorrect": "Incorrecta",
-    "partial": "Parcialmente correcta"
+    "partial": "Parcialmente correcta",
+    "downloadCertificate": "Descargar diploma",
+    "certificateHint": "Certifica las competencias KMK que demostraste en esta evaluación."
   },
   "grade": {
     "notAvailable": "Sin nota todavía",
@@ -448,7 +458,10 @@
     "AI_RESPONSE_INVALID": "La IA devolvió una respuesta que no se pudo validar.",
     "UNSUPPORTED_LANGUAGE": "Ese idioma no está disponible.",
     "SSO_STATE_MISMATCH": "El inicio de sesión no se pudo verificar. Vuelve a intentarlo desde la pantalla de acceso.",
-    "ATTEMPT_ALREADY_IN_PROGRESS": "Ya tienes un intento empezado. Continúa con ese."
+    "ATTEMPT_ALREADY_IN_PROGRESS": "Ya tienes un intento empezado. Continúa con ese.",
+    "CERTIFICATE_NOT_ENABLED": "Esta evaluación no emite diplomas.",
+    "CERTIFICATE_NOT_READY": "El diploma estará disponible cuando la evaluación esté corregida del todo.",
+    "CERTIFICATE_NOT_EARNED": "Este intento no da derecho a diploma."
   },
   "validation": {
     "required": "Este campo es obligatorio",

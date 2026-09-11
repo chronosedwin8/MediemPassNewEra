@@ -11,6 +11,7 @@ import {
 } from '@medienpass/shared';
 import { createApp } from '../../src/app.js';
 import { prisma } from '../../src/infrastructure/database/prisma.js';
+import { buildCertificateData } from '../../src/modules/certificates/certificate.service.js';
 import {
   TEST_PASSWORD,
   createAdmin,
@@ -747,6 +748,312 @@ describe('respuestas abiertas y calificación manual', () => {
       .send({ points: 5 });
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe('guardar para después', () => {
+  it('una evaluación sin tiempo se puede dejar a medias y retomar', async () => {
+    const { versionId, questionIds } = await createPublishedAssessment(fixture);
+    await assignToGroup(fixture, versionId);
+
+    const { attempt } = await startAttempt(fixture);
+    expect(attempt.body.data.canSaveForLater).toBe(true);
+
+    await request(app)
+      .put(`/api/attempts/${attempt.body.data.id}/answers/${questionIds[0]}`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({ response: { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'b' } })
+      .expect(200);
+
+    // Vuelve más tarde: el intento sigue abierto con lo que había escrito.
+    const assigned = await request(app)
+      .get('/api/attempts/assigned')
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(assigned.body.data[0].resumableAttemptId).toBe(attempt.body.data.id);
+
+    const resumed = await request(app)
+      .get(`/api/attempts/${attempt.body.data.id}`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(resumed.status).toBe(200);
+    expect(resumed.body.data.status).toBe('IN_PROGRESS');
+    expect(resumed.body.data.answers).toHaveLength(1);
+    expect(resumed.body.data.canSaveForLater).toBe(true);
+  });
+
+  it('una evaluación con tiempo no ofrece guardar para después', async () => {
+    const { versionId } = await createPublishedAssessment(fixture, { timeLimitMinutes: 30 });
+    await assignToGroup(fixture, versionId);
+
+    const { attempt } = await startAttempt(fixture);
+
+    /*
+     * Va unido al cronómetro a propósito. El plazo corre desde que se abre el
+     * intento, esté el estudiante delante o no, así que un «sigo luego» sería
+     * prometer algo que el reloj no respeta.
+     */
+    expect(attempt.body.data.canSaveForLater).toBe(false);
+    expect(attempt.body.data.deadlineAt).not.toBeNull();
+    expect(attempt.body.data.remainingSeconds).toBeGreaterThan(0);
+  });
+
+  it('retomar una evaluación con tiempo no regala minutos', async () => {
+    const { versionId } = await createPublishedAssessment(fixture, { timeLimitMinutes: 30 });
+    await assignToGroup(fixture, versionId);
+
+    const { attempt } = await startAttempt(fixture);
+    const firstDeadline = attempt.body.data.deadlineAt;
+
+    const resumed = await request(app)
+      .get(`/api/attempts/${attempt.body.data.id}`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    // El plazo se fijó al empezar y se persistió: volver a abrirlo no lo mueve.
+    expect(resumed.body.data.deadlineAt).toBe(firstDeadline);
+  });
+});
+
+describe('diploma de competencias KMK', () => {
+  /** Responde bien a todo y entrega, que es lo que da derecho a diploma. */
+  async function passAssessment(versionId: string, questionIds: string[]): Promise<string> {
+    const { attempt } = await startAttempt(fixture);
+
+    for (const questionId of questionIds) {
+      await request(app)
+        .put(`/api/attempts/${attempt.body.data.id}/answers/${questionId}`)
+        .set('Authorization', `Bearer ${fixture.studentToken}`)
+        .send({ response: { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'b' } });
+    }
+
+    await request(app)
+      .post(`/api/attempts/${attempt.body.data.id}/submit`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .expect(200);
+
+    return attempt.body.data.id as string;
+  }
+
+  async function enableCertificate(versionId: string): Promise<void> {
+    await request(app)
+      .patch(`/api/assessments/versions/${versionId}/certificate`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ enabled: true })
+      .expect(200);
+  }
+
+  it('está apagado por defecto', async () => {
+    const { versionId, questionIds } = await createPublishedAssessment(fixture);
+    await assignToGroup(fixture, versionId);
+    const attemptId = await passAssessment(versionId, questionIds);
+
+    const result = await request(app)
+      .get(`/api/attempts/${attemptId}/result`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(result.body.data.certificateAvailable).toBe(false);
+
+    const download = await request(app)
+      .get(`/api/attempts/${attemptId}/certificate`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(download.status).toBe(409);
+    expect(download.body.error.code).toBe('CERTIFICATE_NOT_ENABLED');
+  });
+
+  it('el docente lo activa y el estudiante descarga un PDF', async () => {
+    const assessment = await createPublishedAssessment(fixture);
+    await enableCertificate(assessment.versionId);
+    await assignToGroup(fixture, assessment.versionId);
+    const attemptId = await passAssessment(assessment.versionId, assessment.questionIds);
+
+    const result = await request(app)
+      .get(`/api/attempts/${attemptId}/result`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(result.body.data.certificateAvailable).toBe(true);
+
+    const download = await request(app)
+      .get(`/api/attempts/${attemptId}/certificate`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(download.status).toBe(200);
+    expect(download.headers['content-type']).toBe('application/pdf');
+    expect(download.headers['content-disposition']).toContain('attachment');
+    // Un PDF de verdad empieza por su firma; que responda 200 no basta.
+    expect(download.body.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(download.body.length).toBeGreaterThan(1000);
+  });
+
+  it('se puede activar con la versión ya publicada', async () => {
+    /*
+     * Es el caso que de verdad ocurre: uno se acuerda del diploma al ver las
+     * notas, no antes de publicar. Es la única excepción a la inmutabilidad de
+     * una versión publicada, y se sostiene porque emitir diploma no cambia
+     * ninguna nota ni ningún desglose.
+     */
+    const assessment = await createPublishedAssessment(fixture);
+    await assignToGroup(fixture, assessment.versionId);
+    const attemptId = await passAssessment(assessment.versionId, assessment.questionIds);
+
+    const before = await request(app)
+      .get(`/api/attempts/${attemptId}/result`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+    expect(before.body.data.certificateAvailable).toBe(false);
+
+    await enableCertificate(assessment.versionId);
+
+    const after = await request(app)
+      .get(`/api/attempts/${attemptId}/result`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+    expect(after.body.data.certificateAvailable).toBe(true);
+  });
+
+  it('un docente ajeno no puede activarlo', async () => {
+    const assessment = await createPublishedAssessment(fixture);
+    await createTeacher({ username: 'docente.diploma.ajeno' });
+
+    const response = await request(app)
+      .patch(`/api/assessments/versions/${assessment.versionId}/certificate`)
+      .set('Authorization', `Bearer ${await tokenFor('docente.diploma.ajeno')}`)
+      .send({ enabled: true });
+
+    expect(response.status).toBe(403);
+  });
+
+  it('no se emite si no se aprobó', async () => {
+    const assessment = await createPublishedAssessment(fixture);
+    await enableCertificate(assessment.versionId);
+    await assignToGroup(fixture, assessment.versionId);
+
+    const { attempt } = await startAttempt(fixture);
+    // Responde mal a todo.
+    for (const questionId of assessment.questionIds) {
+      await request(app)
+        .put(`/api/attempts/${attempt.body.data.id}/answers/${questionId}`)
+        .set('Authorization', `Bearer ${fixture.studentToken}`)
+        .send({ response: { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'a' } });
+    }
+    await request(app)
+      .post(`/api/attempts/${attempt.body.data.id}/submit`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    const download = await request(app)
+      .get(`/api/attempts/${attempt.body.data.id}/certificate`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(download.status).toBe(409);
+    expect(download.body.error.code).toBe('CERTIFICATE_NOT_EARNED');
+  });
+
+  it('certifica solo las competencias realmente logradas', async () => {
+    /*
+     * El diploma dice «logró estas competencias». Si un intento aprueba en
+     * conjunto pero deja una competencia por los suelos, imprimirla como
+     * lograda sería falso, y esta es la prueba que lo impide.
+     *
+     * Hacen falta cuatro preguntas de una competencia y una de otra: con una
+     * de cada, fallar una baja al 50 % y el intento ni siquiera aprueba, así
+     * que no habría diploma del que hablar.
+     */
+    const created = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Diploma desigual', subjectId: fixture.subjectId });
+
+    const versionId = created.body.data.versionId as string;
+    const layout = [0, 0, 0, 0, 1];
+    const questionIds: string[] = [];
+
+    for (const [index, competencyIndex] of layout.entries()) {
+      const question = await request(app)
+        .post(`/api/assessments/versions/${versionId}/questions`)
+        .set('Authorization', `Bearer ${fixture.teacherToken}`)
+        .send({
+          type: QUESTION_TYPE.SINGLE_CHOICE,
+          statement: `Pregunta ${index + 1}`,
+          points: 5,
+          kmkCompetencyId: fixture.competencyIds[competencyIndex],
+          payload: {
+            kind: QUESTION_TYPE.SINGLE_CHOICE,
+            options: [
+              { id: 'a', text: 'Mal', correct: false },
+              { id: 'b', text: 'Bien', correct: true },
+            ],
+          },
+        });
+      questionIds.push(question.body.data.id);
+    }
+
+    await request(app)
+      .post(`/api/assessments/versions/${versionId}/publish`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+    await enableCertificate(versionId);
+    await assignToGroup(fixture, versionId);
+
+    const { attempt } = await startAttempt(fixture);
+
+    // Acierta las cuatro de la primera competencia y falla la única de la otra:
+    // 80 % en total, que aprueba, con la segunda competencia a cero.
+    for (const [index, questionId] of questionIds.entries()) {
+      await request(app)
+        .put(`/api/attempts/${attempt.body.data.id}/answers/${questionId}`)
+        .set('Authorization', `Bearer ${fixture.studentToken}`)
+        .send({
+          response: {
+            kind: QUESTION_TYPE.SINGLE_CHOICE,
+            optionId: layout[index] === 0 ? 'b' : 'a',
+          },
+        });
+    }
+    await request(app)
+      .post(`/api/attempts/${attempt.body.data.id}/submit`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .expect(200);
+
+    const data = await buildCertificateData(attempt.body.data.id as string, 'es');
+
+    expect(data.achieved).toHaveLength(1);
+    expect(data.achieved[0]!.percentage).toBe(100);
+    expect(data.notAchievedCount).toBe(1);
+    expect(data.student.fullName).toContain(' ');
+    // La referencia va por bloques de cuatro para poder dictarla por teléfono.
+    expect(data.serial).toMatch(/^[0-9A-F]{4}(-[0-9A-F]{4}){3}$/);
+  });
+
+  it('un estudiante no descarga el diploma de otro', async () => {
+    const assessment = await createPublishedAssessment(fixture);
+    await enableCertificate(assessment.versionId);
+    await assignToGroup(fixture, assessment.versionId);
+    const attemptId = await passAssessment(assessment.versionId, assessment.questionIds);
+
+    const intruder = await createStudent({ username: 'alumno.curioso' });
+    const intruderToken = await tokenFor(intruder.username);
+
+    const download = await request(app)
+      .get(`/api/attempts/${attemptId}/certificate`)
+      .set('Authorization', `Bearer ${intruderToken}`);
+
+    /*
+     * «No existe» y no «no puedes»: con un 403, quien prueba identificadores
+     * al azar aprende cuáles corresponden a un intento real, y eso ya es
+     * información sobre el alumnado.
+     */
+    expect(download.status).toBe(404);
+  });
+
+  it('el docente responsable sí puede descargarlo para imprimirlo', async () => {
+    const assessment = await createPublishedAssessment(fixture);
+    await enableCertificate(assessment.versionId);
+    await assignToGroup(fixture, assessment.versionId);
+    const attemptId = await passAssessment(assessment.versionId, assessment.questionIds);
+
+    const download = await request(app)
+      .get(`/api/attempts/${attemptId}/certificate`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(download.status).toBe(200);
+    expect(download.body.subarray(0, 5).toString()).toBe('%PDF-');
   });
 });
 

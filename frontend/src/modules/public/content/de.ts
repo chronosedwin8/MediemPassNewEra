@@ -437,6 +437,11 @@ export const de: PublicContent = {
             tip: 'Wenn der Browser schließt oder die Verbindung abbricht: neu anmelden und weitermachen. Der Versuch wartet mit allem, was du geschrieben hattest.',
           },
           {
+            title: 'Speichere und mach später weiter, wenn es erlaubt ist',
+            body: 'Hat die Prüfung kein Zeitlimit, steht das oben und unten erscheint «Speichern und später weitermachen». Du kannst schließen und zurückkommen, wann du willst: der Versuch wartet mit allem Geschriebenen.',
+            tip: 'Hat sie ein Zeitlimit, gibt es diesen Knopf nicht und stattdessen läuft die Uhr. Die Frist läuft ab dem Öffnen weiter, auch wenn du die Seite schließt – beende sie besser in einem Zug.',
+          },
+          {
             title: 'Hänge Nachweise an, wenn verlangt',
             body: 'Manche Fragen erlauben Fotos, Dokumente oder Audio. Ist der Nachweis Pflicht, steht es an der Frage und ohne ihn kannst du nicht abgeben.',
             tip: 'Lade die Datei hoch, sobald du sie hast, nicht am Schluss. Fünf Uploads in der letzten Minute konkurrieren um dieselbe Schulverbindung.',
@@ -523,6 +528,16 @@ export const de: PublicContent = {
             title: 'Vorschau vor dem Veröffentlichen',
             body: 'Über «Vorschau» siehst du die Prüfung genau so, wie die Klasse sie sieht, und kannst sie testweise beantworten, ohne dass etwas gespeichert wird. Mit «Lösungen anzeigen» prüfst du zusätzlich, ob die markierte Antwort stimmt.',
             tip: 'Bei KI-erzeugten Fragen ist dieser Schritt unverzichtbar. Eine Frage kann formal einwandfrei sein und die falsche Option als richtig markiert haben; keine automatische Prüfung erkennt das, ein Mensch schon.',
+          },
+          {
+            title: 'Entscheide über die Zeit – und damit über das Pausieren',
+            body: 'In den Versionseinstellungen kannst du eine Dauer in Minuten setzen. Null heißt ohne Limit. Beides hängt zusammen: ohne Zeit kann die Klasse speichern und später weitermachen, mit Zeit nicht, weil die Frist ab dem Öffnen läuft, auch bei geschlossener Seite.',
+            tip: 'Setz eine Zeit, wenn das Tempo Teil dessen ist, was du prüfst. Sollen sie in Ruhe suchen, vergleichen und schreiben, misst ein offenes Zeitfenster genau das besser.',
+          },
+          {
+            title: 'Schalte das Zeugnis ein, wenn du zertifizieren willst',
+            body: 'Mit eingeschaltetem Zeugnis kann jede Person, die besteht, ein PDF herunterladen, das die nachgewiesenen KMK-Kompetenzen bescheinigt. Es lässt sich auch bei bereits veröffentlichter Prüfung einschalten – dann fällt es einem ja meist ein.',
+            tip: 'Bescheinigt werden nur Kompetenzen mit mindestens 70 % in den sie messenden Fragen, und das Dokument nennt, wie viele geprüft wurden, ohne das zu erreichen. Ein Zeugnis, das zu viel behauptet, nützt niemandem.',
           },
           {
             title: 'Veröffentlichen und zuweisen',

@@ -7,6 +7,7 @@ import { http, ApiError } from '@/services/http';
 import QuestionEditor from './editors/QuestionEditor.vue';
 import DeleteAssessmentDialog from './DeleteAssessmentDialog.vue';
 import VersionSettingsForm from './VersionSettingsForm.vue';
+import CertificateToggle from './CertificateToggle.vue';
 import AssignPanel from './AssignPanel.vue';
 import QuestionList from './QuestionList.vue';
 import type { Question } from './types';
@@ -33,6 +34,7 @@ interface Version {
   questionCount: number;
   totalPoints: number;
   timeLimitMinutes: number | null;
+  certificateEnabled: boolean;
 }
 
 interface Assessment {
@@ -282,6 +284,16 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
         load();
       "
       @cancel="showSettings = false"
+    />
+
+    <!--
+      El diploma se puede activar también con la versión publicada, así que no
+      va dentro del formulario de ajustes, que solo existe en borrador.
+    -->
+    <CertificateToggle
+      :version-id="currentVersion.id"
+      :enabled="currentVersion.certificateEnabled"
+      @changed="load"
     />
 
     <DeleteAssessmentDialog

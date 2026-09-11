@@ -91,6 +91,19 @@ export interface AttemptView {
   deadlineAt: Date | null;
   /** Segundos restantes según el reloj del servidor. */
   remainingSeconds: number | null;
+  /**
+   * Si se puede guardar y continuar en otro momento.
+   *
+   * Va unido al cronómetro y no es un ajuste aparte: una evaluación con tiempo
+   * se resuelve de una sentada por definición —el plazo corre desde que se
+   * abre, esté el estudiante delante o no—, y ofrecer ahí un botón de «sigo
+   * luego» sería prometer algo que el reloj no va a respetar.
+   *
+   * Sin tiempo, en cambio, lo escrito espera indefinidamente: las respuestas
+   * ya se guardan solas y el intento sigue abierto hasta que se entrega o
+   * cierra la asignación.
+   */
+  canSaveForLater: boolean;
   assessment: {
     id: string;
     versionId: string;
@@ -116,6 +129,15 @@ export interface AttemptResult {
   requiresManualGrading: boolean;
   submittedAt: Date | null;
   durationSeconds: number | null;
+  /**
+   * Si este intento da derecho a diploma y se puede descargar ya.
+   *
+   * Lo decide el servidor y no la pantalla: las condiciones —que la evaluación
+   * emita diplomas, que esté aprobada, que no quede nada por corregir y que
+   * alguna competencia se haya consolidado— son las mismas que aplica el
+   * generador, y calcularlas dos veces las haría divergir.
+   */
+  certificateAvailable: boolean;
   competencyBreakdown: Array<{
     competencyId: string;
     code: string;
@@ -470,6 +492,9 @@ export async function getAttempt(userId: string, attemptId: string): Promise<Att
     startedAt: attempt.startedAt,
     deadlineAt: attempt.deadlineAt,
     remainingSeconds,
+    // Se deriva del plazo y no de un ajuste propio: así no puede existir una
+    // evaluación cronometrada que además diga que se puede continuar después.
+    canSaveForLater: attempt.deadlineAt === null,
     assessment: {
       id: attempt.version.assessment.id,
       versionId: attempt.version.id,
@@ -1074,6 +1099,29 @@ function buildFeedback(
   }));
 }
 
+/**
+ * Umbral a partir del cual una competencia se considera demostrada.
+ *
+ * El mismo que usa la estadística para hablar de «consolidado». Tenerlo aquí
+ * duplicado sería el camino más corto a que un diploma diga que se logró algo
+ * que el informe de la misma persona muestra como pendiente.
+ */
+const CERTIFIABLE_PERCENTAGE = 70;
+
+function isCertificateAvailable(
+  enabled: boolean,
+  status: AttemptStatus,
+  passed: boolean,
+  requiresManualGrading: boolean,
+  breakdown: AttemptResult['competencyBreakdown'],
+): boolean {
+  if (!enabled || !passed || requiresManualGrading) return false;
+  if (status !== ATTEMPT_STATUS.GRADED) return false;
+
+  // Aprobar el conjunto no basta: tiene que haber algo concreto que certificar.
+  return breakdown.some((entry) => entry.percentage >= CERTIFIABLE_PERCENTAGE);
+}
+
 export async function getResult(userId: string, attemptId: string): Promise<AttemptResult> {
   const attempt = await prisma.assessmentAttempt.findFirst({
     where: { id: attemptId, userId },
@@ -1083,6 +1131,7 @@ export async function getResult(userId: string, attemptId: string): Promise<Atte
           showCorrectAnswers: true,
           showFeedback: true,
           showResultsImmediately: true,
+          certificateEnabled: true,
         },
       },
       answers: {
@@ -1111,6 +1160,7 @@ export async function getResult(userId: string, attemptId: string): Promise<Atte
   // las copias que la calificación dejó en cada respuesta.
   const showFeedback = attempt.version.showFeedback;
   const showCorrect = attempt.version.showCorrectAnswers;
+  const breakdown = buildCompetencyBreakdown(attempt.answers as unknown as AnswerForResult[]);
 
   return {
     attemptId: attempt.id,
@@ -1130,7 +1180,14 @@ export async function getResult(userId: string, attemptId: string): Promise<Atte
     requiresManualGrading: attempt.requiresManualGrading,
     submittedAt: attempt.submittedAt,
     durationSeconds: attempt.durationSeconds,
-    competencyBreakdown: buildCompetencyBreakdown(attempt.answers as unknown as AnswerForResult[]),
+    certificateAvailable: isCertificateAvailable(
+      attempt.version.certificateEnabled,
+      attempt.status as AttemptStatus,
+      attempt.passed,
+      attempt.requiresManualGrading,
+      breakdown,
+    ),
+    competencyBreakdown: breakdown,
     feedback: buildFeedback(
       attempt.answers as unknown as AnswerForResult[],
       showFeedback,

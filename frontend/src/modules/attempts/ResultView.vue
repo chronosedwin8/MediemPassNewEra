@@ -3,12 +3,14 @@ import { onMounted, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { localize, type LocalizedText } from '@medienpass/shared';
-import { http } from '@/services/http';
+import { http, ApiError } from '@/services/http';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import ProgressBar from '@/design-system/ProgressBar.vue';
+import BaseButton from '@/design-system/BaseButton.vue';
 import StarRating from '@/design-system/StarRating.vue';
+import { useToast } from '@/composables/useToast';
 
 /**
  * Resultado de un intento.
@@ -42,6 +44,8 @@ interface AttemptResult {
   stars: { filled: number; total: number } | null;
   requiresManualGrading: boolean;
   durationSeconds: number | null;
+  /** Lo decide el servidor: la evaluación emite diploma y este intento lo ganó. */
+  certificateAvailable: boolean;
   competencyBreakdown: CompetencyBreakdown[];
   feedback: Array<{
     questionId: string;
@@ -57,6 +61,39 @@ interface AttemptResult {
 
 const route = useRoute();
 const { t, n, locale } = useI18n();
+const toast = useToast();
+
+const downloading = ref(false);
+
+/**
+ * Descarga del diploma.
+ *
+ * Se pide con la sesión puesta y se guarda desde un blob en lugar de abrir la
+ * dirección en una pestaña: la API se autentica con la cabecera, no con una
+ * cookie, así que un enlace directo llegaría sin identificar y el servidor
+ * respondería que no existe.
+ */
+async function downloadCertificate(): Promise<void> {
+  if (!result.value) return;
+
+  downloading.value = true;
+  try {
+    const { blob, filename } = await http.download(
+      `/attempts/${result.value.attemptId}/certificate`,
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename ?? 'diploma.pdf';
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
+  } finally {
+    downloading.value = false;
+  }
+}
 
 const result = ref<AttemptResult | null>(null);
 const loading = ref(true);
@@ -92,6 +129,18 @@ const localizedLabel = (text: LocalizedText | null): string =>
             <BaseBadge :tone="result.passed ? 'success' : 'danger'">
               {{ result.passed ? t('result.passed') : t('result.notPassed') }}
             </BaseBadge>
+          </div>
+
+          <!--
+            El diploma solo aparece cuando de verdad se puede descargar. Un
+            botón que al pulsarlo explica por qué no se puede es peor que no
+            tener botón: promete algo y luego lo niega.
+          -->
+          <div v-if="result.certificateAvailable" class="flex flex-col gap-1">
+            <BaseButton class="w-fit" :loading="downloading" @click="downloadCertificate">
+              {{ t('result.downloadCertificate') }}
+            </BaseButton>
+            <span class="text-xs text-ink-subtle">{{ t('result.certificateHint') }}</span>
           </div>
 
           <dl class="flex flex-wrap gap-x-8 gap-y-2 text-sm">

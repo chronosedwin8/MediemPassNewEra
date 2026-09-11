@@ -3,8 +3,11 @@ import { z } from 'zod';
 import { PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, ok } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
-import { requirePermission } from '../../middleware/authorize.js';
+import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
 import { uuidParam, validate } from '../../middleware/validate.js';
+import { buildCertificateData } from '../certificates/certificate.service.js';
+import { renderCertificate } from '../certificates/certificate.pdf.js';
+import { assertCanDownloadCertificate } from '../certificates/certificate.access.js';
 import {
   getAttempt,
   getResult,
@@ -88,6 +91,48 @@ attemptsRouter.get(
   validate({ params: uuidParam() }),
   asyncHandler(async (req, res) => {
     ok(res, await getResult(requireAuth(req).userId, req.params['id']!));
+  }),
+);
+
+/**
+ * Diploma de competencias KMK en PDF.
+ *
+ * Se compone al vuelo desde el intento. No se guarda: un PDF archivado sería
+ * una copia que puede quedar obsoleta si la nota cambia tras una reclamación,
+ * y este documento debe seguir diciendo la verdad el día que se enseñe.
+ *
+ * El permiso es el de leer el resultado propio; el servicio comprueba además
+ * que el intento sea de quien lo pide. Al profesorado y a la administración se
+ * les permite descargarlo porque son quienes lo imprimen y lo firman.
+ */
+attemptsRouter.get(
+  '/:id/certificate',
+  requireAnyPermission(
+    PERMISSION.RESULT_READ_OWN,
+    PERMISSION.RESULT_READ_SCOPED,
+    PERMISSION.RESULT_READ_ALL,
+  ),
+  validate({ params: uuidParam() }),
+  asyncHandler(async (req, res) => {
+    const auth = requireAuth(req);
+    const attemptId = req.params['id']!;
+
+    await assertCanDownloadCertificate(auth, attemptId);
+
+    const data = await buildCertificateData(attemptId, auth.language);
+    const pdf = await renderCertificate(data);
+
+    /*
+     * `attachment` y no `inline`: el diploma se guarda y se imprime, no se
+     * ojea. El nombre lleva el apellido y la referencia para que treinta
+     * descargas de una clase no acaben siendo treinta «documento.pdf».
+     */
+    const filename = `diploma-${data.student.fullName.replace(/[^\p{L}\p{N}]+/gu, '-')}-${data.serial}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', String(pdf.length));
+    res.end(pdf);
   }),
 );
 

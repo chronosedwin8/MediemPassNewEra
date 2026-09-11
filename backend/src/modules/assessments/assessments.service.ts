@@ -74,6 +74,23 @@ export const updateVersionSchema = z.object({
   shuffleOptions: z.boolean().optional(),
 });
 
+/**
+ * La emisión de diplomas se cambia por su cuenta, y también ya publicada.
+ *
+ * Es la única excepción a la inmutabilidad de una versión publicada, y es
+ * deliberada. Esa inmutabilidad existe para que un resultado de marzo siga
+ * significando lo mismo en noviembre: protege las preguntas, los puntos y la
+ * escala. Emitir diploma no toca nada de eso —no cambia ninguna nota ni ningún
+ * desglose—, solo decide si de ese resultado se puede imprimir un documento.
+ *
+ * Sin esta excepción, el docente que se acuerda del diploma al ver las notas
+ * —que es cuando uno se acuerda— tendría que crear una versión nueva y volver
+ * a asignarla, y quienes ya respondieron se quedarían sin él para siempre.
+ */
+export const certificateSettingSchema = z.object({
+  enabled: z.boolean(),
+});
+
 export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
 export type UpdateVersionInput = z.infer<typeof updateVersionSchema>;
 
@@ -369,6 +386,42 @@ export async function updateVersion(actor: Actor, versionId: string, input: Upda
 }
 
 /**
+ * Activa o desactiva el diploma de una versión, publicada o no.
+ *
+ * Deja constancia en la auditoría porque certificar es una afirmación sobre
+ * personas: quién la habilitó y cuándo debe poder consultarse.
+ */
+export async function setCertificateEnabled(
+  actor: Actor,
+  versionId: string,
+  enabled: boolean,
+): Promise<{ versionId: string; certificateEnabled: boolean }> {
+  const version = await prisma.assessmentVersion.findUnique({
+    where: { id: versionId },
+    select: { id: true, assessment: { select: { createdById: true } } },
+  });
+  if (!version) throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { versionId });
+
+  assertOwnership(actor, version.assessment.createdById, { versionId });
+
+  const updated = await prisma.assessmentVersion.update({
+    where: { id: versionId },
+    data: { certificateEnabled: enabled },
+    select: { id: true, certificateEnabled: true },
+  });
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.UPDATE_ASSESSMENT,
+    entityType: 'assessment_version',
+    entityId: versionId,
+    metadata: { certificateEnabled: enabled },
+  });
+
+  return { versionId: updated.id, certificateEnabled: updated.certificateEnabled };
+}
+
+/**
  * Publica una versión.
  *
  * A partir de aquí la versión no se puede tocar. Se materializan el total de
@@ -478,6 +531,7 @@ export async function createNewVersion(actor: Actor, assessmentId: string) {
         showFeedback: latest.showFeedback,
         shuffleQuestions: latest.shuffleQuestions,
         shuffleOptions: latest.shuffleOptions,
+        certificateEnabled: latest.certificateEnabled,
       },
     });
 

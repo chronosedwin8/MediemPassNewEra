@@ -211,7 +211,11 @@
     "deleteConfirmHint": "Gib «{title}» ein, um zu bestätigen.",
     "deleteAction": "Endgültig löschen",
     "deleteFiles": "{count} angehängte Dateien ({size})",
-    "backToDetail": "Zurück zur Prüfung"
+    "backToDetail": "Zurück zur Prüfung",
+    "certificate": "Kompetenzzeugnis",
+    "certificateEnable": "Zeugnis bei Bestehen ausstellen",
+    "certificateHint": "Wer besteht, kann ein PDF herunterladen, das die nachgewiesenen KMK-Kompetenzen bescheinigt. Lässt sich auch bei bereits veröffentlichter Prüfung einschalten.",
+    "certificateThreshold": "Bescheinigt werden nur Kompetenzen mit mindestens 70 % in den sie messenden Fragen."
   },
   "question": {
     "add": "Aufgabe hinzufügen",
@@ -301,7 +305,11 @@
     "moveUp": "Nach oben",
     "moveDown": "Nach unten",
     "expired": "Die Zeit ist abgelaufen",
-    "expiredHint": "Deine Antworten wurden automatisch gespeichert und abgegeben."
+    "expiredHint": "Deine Antworten wurden automatisch gespeichert und abgegeben.",
+    "saveForLater": "Speichern und später weitermachen",
+    "savedForLater": "Gespeichert. Du kannst jederzeit weitermachen.",
+    "resumableHint": "Diese Prüfung hat kein Zeitlimit: du kannst speichern und später weitermachen.",
+    "oneSittingHint": "Diese Prüfung hat ein Zeitlimit: die Uhr läuft auch, wenn du die Seite schließt – beende sie am besten in einem Zug."
   },
   "result": {
     "title": "Ergebnis",
@@ -321,7 +329,9 @@
     "teacherFeedback": "Kommentar der Lehrkraft",
     "correct": "Richtig",
     "incorrect": "Falsch",
-    "partial": "Teilweise richtig"
+    "partial": "Teilweise richtig",
+    "downloadCertificate": "Zeugnis herunterladen",
+    "certificateHint": "Bescheinigt die KMK-Kompetenzen, die du in dieser Prüfung nachgewiesen hast."
   },
   "grade": {
     "notAvailable": "Noch keine Note",
@@ -448,7 +458,10 @@
     "AI_RESPONSE_INVALID": "Die KI lieferte eine Antwort, die nicht validiert werden konnte.",
     "UNSUPPORTED_LANGUAGE": "Diese Sprache ist nicht verfügbar.",
     "SSO_STATE_MISMATCH": "Die Anmeldung konnte nicht überprüft werden. Bitte starte sie erneut auf der Anmeldeseite.",
-    "ATTEMPT_ALREADY_IN_PROGRESS": "Du hast bereits einen Versuch begonnen. Setze diesen fort."
+    "ATTEMPT_ALREADY_IN_PROGRESS": "Du hast bereits einen Versuch begonnen. Setze diesen fort.",
+    "CERTIFICATE_NOT_ENABLED": "Diese Prüfung stellt keine Zeugnisse aus.",
+    "CERTIFICATE_NOT_READY": "Das Zeugnis gibt es, sobald die Prüfung vollständig korrigiert ist.",
+    "CERTIFICATE_NOT_EARNED": "Dieser Versuch berechtigt nicht zu einem Zeugnis."
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich",

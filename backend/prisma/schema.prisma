@@ -861,6 +861,10 @@ model AssessmentVersion {
   shuffleQuestions       Boolean @default(false) @map("shuffle_questions")
   shuffleOptions         Boolean @default(false) @map("shuffle_options")
 
+  /// Emite diploma en PDF a quien aprueba. Apagado por defecto: certificar es
+  /// una afirmación sobre una persona y debe decidirse, no heredarse.
+  certificateEnabled Boolean @default(false) @map("certificate_enabled")
+
   /// Materializados al publicar para no recalcularlos en cada listado.
   totalPoints   Decimal @default(0) @map("total_points") @db.Decimal(8, 2)
   questionCount Int     @default(0) @map("question_count")

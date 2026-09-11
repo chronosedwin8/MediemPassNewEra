@@ -24,6 +24,8 @@ import {
   previewVersion,
   publishVersion,
   updateVersion,
+  setCertificateEnabled,
+  certificateSettingSchema,
   updateVersionSchema,
 } from './assessments.service.js';
 import {
@@ -143,6 +145,26 @@ assessmentsRouter.patch(
   validate({ params: uuidParam('versionId'), body: updateVersionSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await updateVersion(requireAuth(req), req.params['versionId']!, req.body));
+  }),
+);
+
+/**
+ * Emisión de diplomas.
+ *
+ * Ruta propia y no parte de la actualización general porque, a diferencia del
+ * resto de los ajustes, este también se puede cambiar con la versión ya
+ * publicada. La inmutabilidad protege lo que determina una nota; esto solo
+ * decide si de un resultado se puede imprimir un documento.
+ */
+assessmentsRouter.patch(
+  '/versions/:versionId/certificate',
+  requirePermission(PERMISSION.ASSESSMENT_UPDATE),
+  validate({ params: uuidParam('versionId'), body: certificateSettingSchema }),
+  asyncHandler(async (req, res) => {
+    ok(
+      res,
+      await setCertificateEnabled(requireAuth(req), req.params['versionId']!, req.body.enabled),
+    );
   }),
 );
 

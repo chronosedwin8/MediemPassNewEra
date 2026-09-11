@@ -10,6 +10,7 @@ import RichTextView from '@/design-system/RichTextView.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import ProgressBar from '@/design-system/ProgressBar.vue';
+import FinishDialog from './FinishDialog.vue';
 import { useToast } from '@/composables/useToast';
 
 /**
@@ -27,7 +28,6 @@ const store = useAttemptStore();
 const toast = useToast();
 
 const showFinishDialog = ref(false);
-const finishDialogRef = ref<HTMLElement | null>(null);
 
 const attemptId = computed(() => route.params.attemptId as string);
 
@@ -61,6 +61,34 @@ onBeforeRouteLeave(async () => {
   await store.flush().catch(() => undefined);
   return true;
 });
+
+/**
+ * Guardar y continuar en otro momento.
+ *
+ * Las respuestas ya se guardan solas mientras se escribe, así que esto no
+ * guarda nada que no estuviera guardado: vacía la cola pendiente y sale sin
+ * entregar. Existe porque «está guardado» no es algo que se pueda pedir a
+ * nadie que dé por supuesto delante de un examen a medio hacer; la duda hace
+ * que la gente se quede mirando la pantalla o entregue por si acaso.
+ *
+ * Solo aparece sin cronómetro: con tiempo, el plazo corre igual desde que se
+ * abrió el intento, y ofrecer un botón de «sigo luego» prometería algo que el
+ * reloj no va a respetar.
+ */
+const saving = ref(false);
+
+async function saveAndLeave(): Promise<void> {
+  saving.value = true;
+  try {
+    await store.flush();
+    toast.success(t('attempt.savedForLater'));
+    await router.push({ name: 'my-assessments' });
+  } catch {
+    toast.error(t('attempt.saveFailed'));
+  } finally {
+    saving.value = false;
+  }
+}
 
 const timeDisplay = computed(() => {
   const seconds = store.remainingSeconds;
@@ -109,14 +137,6 @@ async function confirmFinish(): Promise<void> {
     toast.error(error instanceof Error ? error.message : t('errors.generic'));
   }
 }
-
-// El diálogo recibe el foco al abrirse, para que el teclado no quede detrás.
-watch(showFinishDialog, async (open) => {
-  if (open) {
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    finishDialogRef.value?.focus();
-  }
-});
 </script>
 
 <template>
@@ -187,6 +207,14 @@ watch(showFinishDialog, async (open) => {
         role="alert"
       >
         {{ t('attempt.timeAlmostUp') }}
+      </p>
+
+      <!--
+        Se dice desde el principio en qué clase de evaluación se está. Saberlo
+        al final, cuando ya no se puede hacer nada, no sirve de nada.
+      -->
+      <p v-else class="bg-surface-muted py-2 text-center text-xs text-ink-muted">
+        {{ store.canSaveForLater ? t('attempt.resumableHint') : t('attempt.oneSittingHint') }}
       </p>
 
       <main class="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6">
@@ -276,13 +304,22 @@ watch(showFinishDialog, async (open) => {
             </button>
           </nav>
 
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <BaseButton
               variant="secondary"
               :disabled="store.currentIndex === 0"
               @click="store.goPrevious"
             >
               {{ t('common.previous') }}
+            </BaseButton>
+
+            <BaseButton
+              v-if="store.canSaveForLater"
+              variant="ghost"
+              :loading="saving"
+              @click="saveAndLeave"
+            >
+              {{ t('attempt.saveForLater') }}
             </BaseButton>
 
             <BaseButton v-if="store.currentIndex < store.total - 1" @click="store.goNext">
@@ -296,41 +333,13 @@ watch(showFinishDialog, async (open) => {
         </div>
       </footer>
 
-      <!-- Confirmación antes de finalizar. -->
-      <div
+      <FinishDialog
         v-if="showFinishDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
-        @click.self="showFinishDialog = false"
-      >
-        <div
-          ref="finishDialogRef"
-          tabindex="-1"
-          class="w-full max-w-md rounded-lg border border-border bg-surface p-6 shadow-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="finish-title"
-          @keydown.esc="showFinishDialog = false"
-        >
-          <h2 id="finish-title" class="text-lg font-semibold">{{ t('attempt.finishTitle') }}</h2>
-          <p class="mt-2 text-sm text-ink-muted">{{ t('attempt.finishWarning') }}</p>
-
-          <p
-            v-if="store.unansweredCount > 0"
-            class="mt-3 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm text-warning"
-          >
-            {{ t('attempt.finishWithUnanswered', { count: store.unansweredCount }) }}
-          </p>
-
-          <div class="mt-6 flex justify-end gap-2">
-            <BaseButton variant="secondary" @click="showFinishDialog = false">
-              {{ t('common.cancel') }}
-            </BaseButton>
-            <BaseButton :loading="store.submitting" @click="confirmFinish">
-              {{ t('attempt.finishConfirm') }}
-            </BaseButton>
-          </div>
-        </div>
-      </div>
+        :unanswered-count="store.unansweredCount"
+        :submitting="store.submitting"
+        @confirm="confirmFinish"
+        @cancel="showFinishDialog = false"
+      />
     </template>
   </div>
 </template>

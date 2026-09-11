@@ -61,6 +61,7 @@ function attemptData(overrides: Partial<AttemptData> = {}): AttemptData {
     startedAt: new Date().toISOString(),
     deadlineAt: null,
     remainingSeconds: null,
+    canSaveForLater: true,
     assessment: {
       id: 'a1',
       versionId: 'v1',
