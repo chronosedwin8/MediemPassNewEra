@@ -31,6 +31,41 @@ export function setCsrfToken(token: string | null): void {
   csrfToken = token;
 }
 
+/** Nombre de la cookie CSRF que emite el servidor, legible a propósito. */
+const CSRF_COOKIE = 'mp_csrf';
+
+/**
+ * Token CSRF vigente.
+ *
+ * En memoria mientras dura la página y, si no lo hay, leído de la cookie. Esa
+ * segunda parte no es un adorno: al recargar se pierde la memoria pero no la
+ * cookie, y la primera petición tras una recarga es justo la renovación de
+ * sesión. Sin la cabecera, el servidor la rechaza —hace bien, es su defensa
+ * antifalsificación— y el usuario aparece desconectado cada vez que pulsa F5
+ * o abre un enlace de la plataforma en otra pestaña.
+ *
+ * El servidor emite esta cookie sin `httpOnly` exactamente para esto: el
+ * patrón de doble envío exige que el cliente pueda leerla y reenviarla.
+ */
+function currentCsrfToken(): string | null {
+  if (csrfToken) return csrfToken;
+
+  // Se recorre en lugar de usar una expresión regular: el nombre de la cookie
+  // se interpola, y una regular construida con interpolación es justo donde se
+  // cuelan los fallos de escapado que nadie ve hasta que algo deja de casar.
+  for (const entry of document.cookie.split(';')) {
+    const separator = entry.indexOf('=');
+    if (separator === -1) continue;
+
+    if (entry.slice(0, separator).trim() === CSRF_COOKIE) {
+      const value = entry.slice(separator + 1).trim();
+      return value ? decodeURIComponent(value) : null;
+    }
+  }
+
+  return null;
+}
+
 export function onSessionExpired(handler: () => void): void {
   onSessionLost = handler;
 }
@@ -86,10 +121,11 @@ let refreshInFlight: Promise<boolean> | null = null;
 async function refreshSession(): Promise<boolean> {
   refreshInFlight ??= (async () => {
     try {
+      const token = currentCsrfToken();
       const response = await fetch(`${BASE_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+        headers: token ? { 'x-csrf-token': token } : {},
       });
 
       if (!response.ok) return false;
@@ -142,6 +178,20 @@ async function execute<T>(path: string, options: RequestOptions, isRetry = false
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  /*
+   * El token CSRF viaja siempre que se tenga.
+   *
+   * Hoy solo lo exige `/auth/refresh`, que es la única ruta autenticada por
+   * cookie, y esa es precisamente la que llama la restauración de sesión al
+   * arrancar la aplicación. Poner la cabecera solo en la renovación
+   * automática dejaba fuera ese camino: al recargar, la restauración salía sin
+   * cabecera, el servidor la rechazaba y el usuario acababa en la pantalla de
+   * acceso. Mandarla en todas es inocuo —quien no la comprueba la ignora— y
+   * evita que el próximo endpoint que la exija repita el mismo fallo.
+   */
+  const csrf = currentCsrfToken();
+  if (csrf) headers['x-csrf-token'] = csrf;
 
   let response: Response;
   try {

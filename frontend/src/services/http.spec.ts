@@ -206,6 +206,46 @@ describe('renovación de sesión', () => {
     expect(refreshes).toHaveLength(1);
   });
 
+  /**
+   * Al recargar la página, la memoria se pierde y la cookie no.
+   *
+   * Este era el fallo: la renovación salía sin cabecera CSRF, el servidor la
+   * rechazaba —con razón— y el usuario aparecía desconectado cada vez que
+   * pulsaba F5. El servidor emite esa cookie sin `httpOnly` justo para que el
+   * cliente pueda reenviarla, y aquí se comprueba que lo hace.
+   */
+  it('recupera el token CSRF de la cookie cuando no lo tiene en memoria', async () => {
+    setCsrfToken(null);
+    document.cookie = 'mp_csrf=csrf-de-la-cookie';
+
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'TOKEN_EXPIRED' } }, 401))
+      .mockResolvedValueOnce(jsonResponse({ data: { accessToken: 'n', csrfToken: 'c' } }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }));
+
+    await http.get('/cualquier-cosa');
+
+    expect(headersOf(fetchMock.mock.calls[1]!)['x-csrf-token']).toBe('csrf-de-la-cookie');
+
+    document.cookie = 'mp_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
+  it('prefiere el de memoria al de la cookie, que puede estar rancio', async () => {
+    document.cookie = 'mp_csrf=viejo';
+    setCsrfToken('recien-emitido');
+
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'TOKEN_EXPIRED' } }, 401))
+      .mockResolvedValueOnce(jsonResponse({ data: { accessToken: 'n', csrfToken: 'c' } }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }));
+
+    await http.get('/cualquier-cosa');
+
+    expect(headersOf(fetchMock.mock.calls[1]!)['x-csrf-token']).toBe('recien-emitido');
+
+    document.cookie = 'mp_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
   it('manda el token CSRF al renovar', async () => {
     setCsrfToken('csrf-actual');
     fetchMock
