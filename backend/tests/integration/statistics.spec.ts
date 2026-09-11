@@ -527,6 +527,201 @@ describe('desglose por materia, grupo y estudiante', () => {
   });
 });
 
+describe('panel del estudiante', () => {
+  async function panel(token: string, userId?: string) {
+    return request(app)
+      .get(`/api/statistics/panel/student${userId ? `/${userId}` : ''}`)
+      .set('Authorization', `Bearer ${token}`);
+  }
+
+  it('cuenta lo hecho, lo pendiente y lo que venció', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.students[0]!.token);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.assignments).toMatchObject({
+      total: 1,
+      completed: 1,
+      inProgress: 0,
+      notStarted: 0,
+      expired: 0,
+      completionRate: 100,
+    });
+  });
+
+  it('da la media sobre los intentos, no sobre lo que traiga una lista', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.students[0]!.token);
+
+    // Una de dos preguntas acertada, cinco puntos de diez.
+    expect(response.body.data.attempts).toMatchObject({ submitted: 1, averagePercentage: 50 });
+  });
+
+  it('mide el tiempo dedicado a responder', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.students[0]!.token);
+
+    const time = response.body.data.time;
+    expect(time.measuredAttempts).toBe(1);
+    expect(time.totalSeconds).toBeGreaterThanOrEqual(0);
+    expect(time.averageSecondsPerAttempt).not.toBeNull();
+  });
+
+  it('sitúa al estudiante en su grupo sin enseñar a los demás', async () => {
+    // El primero acierta una de dos; el segundo, las dos. El puesto debe
+    // reflejarlo y el segundo debe quedar por delante.
+    await seedResults(fixture, [
+      [true, false],
+      [true, true],
+    ]);
+
+    const first = await panel(fixture.students[0]!.token);
+    const second = await panel(fixture.students[1]!.token);
+
+    expect(first.body.data.standing).toMatchObject({
+      groupCode: 'K8A',
+      groupSize: 2,
+      rankedStudents: 2,
+      position: 2,
+      studentAverage: 50,
+      groupAverage: 75,
+    });
+    expect(second.body.data.standing).toMatchObject({ position: 1, studentAverage: 100 });
+
+    /*
+     * Lo importante de esta prueba: el panel dice en qué puesto va, y no quién
+     * está delante ni con qué nota. Son menores, y esto orienta a cada uno
+     * sobre sí mismo; no es un tablón de clasificación.
+     */
+    const serialized = JSON.stringify(first.body.data.standing);
+    expect(serialized).not.toContain(fixture.students[1]!.user.username);
+    expect(serialized).not.toContain(fixture.students[1]!.profileId);
+  });
+
+  it('comparte puesto cuando hay empate', async () => {
+    // Ambos responden igual: nadie va por delante del otro.
+    await seedResults(fixture);
+
+    const first = await panel(fixture.students[0]!.token);
+    const second = await panel(fixture.students[1]!.token);
+
+    expect(first.body.data.standing.position).toBe(1);
+    expect(second.body.data.standing.position).toBe(1);
+  });
+
+  it('incluye el desglose por competencia del propio estudiante', async () => {
+    await seedResults(fixture, [
+      [true, false],
+      [true, true],
+    ]);
+
+    const response = await panel(fixture.students[0]!.token);
+
+    const byCode = new Map(
+      response.body.data.competencies.map((entry: { code: string }) => [entry.code, entry]),
+    );
+    expect(byCode.get('1')).toMatchObject({ percentage: 100 });
+    expect(byCode.get('5')).toMatchObject({ percentage: 0 });
+  });
+
+  it('un estudiante no consulta el panel de otro cambiando la URL', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.students[0]!.token, fixture.students[1]!.user.id);
+
+    // No es un error: simplemente se le devuelve el suyo.
+    expect(response.status).toBe(200);
+    expect(response.body.data.attempts.submitted).toBe(1);
+    expect(response.body.data.standing.groupCode).toBe('K8A');
+  });
+
+  it('el docente titular sí puede consultar el de un alumno suyo', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.teacherToken, fixture.students[0]!.user.id);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.assignments.completed).toBe(1);
+  });
+});
+
+describe('panel del docente', () => {
+  async function panel(token: string, userId?: string) {
+    return request(app)
+      .get(`/api/statistics/panel/teacher${userId ? `/${userId}` : ''}`)
+      .set('Authorization', `Bearer ${token}`);
+  }
+
+  it('cuenta lo que ha escrito y qué competencias llega a cubrir', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.teacherToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.authoring).toMatchObject({
+      assessmentsCreated: 1,
+      published: 1,
+      questionsWritten: 2,
+      competenciesCovered: 2,
+      competenciesTotal: 2,
+    });
+  });
+
+  it('cuenta a cuánta gente llegó y cuántos no empezaron', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.teacherToken);
+
+    expect(response.body.data.delivery).toMatchObject({
+      assignmentsIssued: 1,
+      studentsReached: 2,
+      attemptsReceived: 2,
+      notStarted: 0,
+      completionRate: 100,
+    });
+  });
+
+  it('desglosa los resultados curso a curso', async () => {
+    await seedResults(fixture);
+
+    const response = await panel(fixture.teacherToken);
+
+    expect(response.body.data.outcomes.byGroup).toHaveLength(1);
+    expect(response.body.data.outcomes.byGroup[0]).toMatchObject({
+      code: 'K8A',
+      attempts: 2,
+      averagePercentage: 50,
+    });
+  });
+
+  it('incluye su propia capacitación, que es su evaluación', async () => {
+    const response = await panel(fixture.teacherToken);
+
+    expect(response.body.data.training).toHaveProperty('totalModules');
+    expect(response.body.data.training).toHaveProperty('certifiedModules');
+    expect(response.body.data.training).toHaveProperty('averageAssessmentPercentage');
+  });
+
+  it('un docente no consulta el panel de otro cambiando la URL', async () => {
+    const other = await createTeacher({ username: 'docente.panel.ajeno' });
+    await seedResults(fixture);
+
+    const response = await panel(fixture.teacherToken, other.id);
+
+    // Se le devuelve el suyo, con sus propias cifras.
+    expect(response.body.data.authoring.assessmentsCreated).toBe(1);
+  });
+
+  it('un estudiante no accede al panel docente', async () => {
+    const response = await panel(fixture.students[0]!.token);
+
+    expect(response.status).toBe(403);
+  });
+});
+
 describe('alcance de las estadísticas', () => {
   it('un docente no ve los datos de los grupos de otro', async () => {
     await seedResults(fixture);

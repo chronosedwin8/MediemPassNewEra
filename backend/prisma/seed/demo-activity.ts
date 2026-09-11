@@ -299,6 +299,7 @@ export async function seedDemoActivity(prisma: PrismaClient): Promise<void> {
       // en la pantalla del docente.
       if (index % 6 !== 5) {
         await submitAttempt(recipient.userId, attempt.id);
+        await backdateDuration(prisma, attempt.id, index, questions.length);
       }
       attemptCount += 1;
     }
@@ -307,4 +308,39 @@ export async function seedDemoActivity(prisma: PrismaClient): Promise<void> {
   console.warn(
     `  demo: ${assignmentCount} asignaciones · ${attemptCount} intentos generados con el motor real`,
   );
+}
+
+/**
+ * Da a cada intento una duración verosímil.
+ *
+ * El motor calcula la duración restando el inicio de la entrega, y la semilla
+ * hace las dos cosas en el mismo milisegundo: todos los intentos quedarían a
+ * cero y el panel del estudiante mostraría un guion donde debería haber un
+ * tiempo. No es un fallo del panel, pero sí hace que no se pueda ver lo que
+ * hace, así que se retrasa el inicio después de entregar.
+ *
+ * Determinista, como el resto de la semilla: entre minuto y medio y unos
+ * veinte minutos, según cuántas preguntas tenía y quién respondía.
+ */
+async function backdateDuration(
+  prisma: PrismaClient,
+  attemptId: string,
+  index: number,
+  questionCount: number,
+): Promise<void> {
+  const seconds = 90 + questionCount * 45 + (index % 7) * 60;
+
+  const attempt = await prisma.assessmentAttempt.findUniqueOrThrow({
+    where: { id: attemptId },
+    select: { submittedAt: true },
+  });
+  const submittedAt = attempt.submittedAt ?? new Date();
+
+  await prisma.assessmentAttempt.update({
+    where: { id: attemptId },
+    data: {
+      startedAt: new Date(submittedAt.getTime() - seconds * 1000),
+      durationSeconds: seconds,
+    },
+  });
 }

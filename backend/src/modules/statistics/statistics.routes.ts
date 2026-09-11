@@ -7,6 +7,8 @@ import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
 import { statisticsFiltersSchema, type StatisticsFilters } from './filters.js';
 import { getAssessmentReport } from './assessment-report.service.js';
 import { breakdownQuerySchema, getKmkBreakdown } from './kmk-breakdown.service.js';
+import { getStudentPanel } from './student-panel.service.js';
+import { getTeacherPanel } from './teacher-panel.service.js';
 import {
   getGroupStatistics,
   getKmkReport,
@@ -67,6 +69,53 @@ statisticsRouter.get(
   validate({ query: statisticsFiltersSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await getOverview(requireAuth(req), getQuery<StatisticsFilters>(req)));
+  }),
+);
+
+/**
+ * Panel del estudiante: lo suyo, todo junto.
+ *
+ * Sin identificador, el del usuario actual. Con identificador hace falta el
+ * permiso de ver resultados ajenos, igual que en el progreso: el puesto dentro
+ * del grupo y la nota media de un compañero no se consultan cambiando un
+ * número en la dirección.
+ */
+statisticsRouter.get(
+  '/panel/student/:userId?',
+  requireAnyPermission(...ANY_STATS_PERMISSION),
+  validate({ query: statisticsFiltersSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = requireAuth(req);
+    const requested = req.params['userId'];
+
+    const canReadOthers = hasAnyPermission(auth.permissions, [
+      PERMISSION.RESULT_READ_SCOPED,
+      PERMISSION.RESULT_READ_ALL,
+    ]);
+
+    const targetUserId = requested && canReadOthers ? requested : auth.userId;
+
+    ok(res, await getStudentPanel(auth, targetUserId, getQuery<StatisticsFilters>(req)));
+  }),
+);
+
+/**
+ * Panel del docente: lo que enseña y lo que aprende.
+ *
+ * El de otra persona solo con el alcance global. Un docente ve el suyo, y eso
+ * incluye su capacitación, que es información sobre él mismo: que la vea la
+ * coordinación es razonable, que la vea el compañero de al lado no.
+ */
+statisticsRouter.get(
+  '/panel/teacher/:userId?',
+  requireAnyPermission(PERMISSION.STATS_READ_SCOPED, PERMISSION.STATS_READ_GLOBAL),
+  validate({ query: statisticsFiltersSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = requireAuth(req);
+    const canReadOthers = hasAnyPermission(auth.permissions, [PERMISSION.STATS_READ_GLOBAL]);
+    const targetUserId = req.params['userId'] && canReadOthers ? req.params['userId'] : auth.userId;
+
+    ok(res, await getTeacherPanel(auth, targetUserId, getQuery<StatisticsFilters>(req)));
   }),
 );
 

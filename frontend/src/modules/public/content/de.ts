@@ -489,6 +489,11 @@ export const de: PublicContent = {
             body: 'Fünf Sterne bedeuten 1,0, die beste Note. Das ist umgekehrt wie in einem Shop, und deshalb zeigt die Plattform sie nie allein: immer mit Zahl und Wort.',
           },
           {
+            title: 'Schau auf dein Dashboard für das Gesamtbild',
+            body: 'Die Startseite fasst alles Deine zusammen: wie viele Prüfungen du erledigt hast und wie viele fehlen, deinen Notendurchschnitt, wie lange sie dich im Schnitt kosten und auf welchem Platz du in deiner Klasse stehst.',
+            tip: 'Der Platz zählt über den Schnitt all deiner Prüfungen und nur unter denen, die schon ein Ergebnis haben. «Platz 6 von 6» in einer Klasse von zweiunddreißig heißt nicht, dass du Letzter bist: es heißt, dass erst sechs etwas abgegeben haben.',
+          },
+          {
             title: 'Lies die Rückmeldung',
             body: 'Zu jeder Frage steht, warum die richtige Antwort richtig ist. Das ist der Teil, der wirklich etwas lehrt; die Note fasst nur zusammen.',
           },
@@ -613,6 +618,11 @@ export const de: PublicContent = {
           {
             title: 'Sieh dir die am häufigsten verfehlten Fragen an',
             body: 'Sortiert nach beobachteter Schwierigkeit, nicht nach der beim Schreiben angegebenen. Weichen beide ab, liegt es meist an der Formulierung.',
+          },
+          {
+            title: 'Fang bei deinem Dashboard an',
+            body: 'Die Startseite bündelt, was du erstellt hast, wie viele du erreicht hast, was unbegonnen liegt und was du noch korrigieren musst. Die Zahl «abgedeckte Kompetenzen» verändert die Praxis am meisten: sie zeigt sofort, ob du das Jahr über nur zwei von sechs misst.',
+            tip: 'Am Ende steht deine eigene KMK-Fortbildung, bewusst vom Rest getrennt. Der Schnitt einer Klasse kann vieles bedeuten, und fast nichts davon ist ein Urteil über die Lehrkraft.',
           },
           {
             title: 'Geh in die Aufschlüsselung, wenn der Schnitt nicht reicht',

@@ -485,6 +485,11 @@ export const en: PublicContent = {
             body: 'Five stars mean 1.0, the best grade. That is the opposite of a shopping site, which is why the platform never shows them alone: always with the number and the word.',
           },
           {
+            title: 'Check your dashboard for the whole picture',
+            body: 'The home screen gathers everything of yours: how many assessments you have done and how many are left, your grade average, how long they take you on average, and where you stand in your class.',
+            tip: 'The position is based on your average across all assessments and only among classmates who already have a result. "Position 6 of 6" in a class of thirty-two does not mean you are last: it means only six have submitted anything yet.',
+          },
+          {
             title: 'Read the feedback',
             body: 'Each question explains why the correct answer is correct. That is the part that actually teaches something; the grade only summarises.',
           },
@@ -609,6 +614,11 @@ export const en: PublicContent = {
           {
             title: 'Look at the most-missed questions',
             body: 'Ordered by observed difficulty, not by the difficulty declared when writing them. When the two disagree, the wording is usually the reason.',
+          },
+          {
+            title: 'Start from your dashboard',
+            body: 'The home screen brings together what you have created, how many people it reached, what is still unstarted and what you have left to mark. The "competences covered" figure is the one that changes practice most: it shows at a glance whether you have spent the year measuring only two of the six.',
+            tip: 'At the end sits your own KMK training, deliberately separate from the rest. A class average can mean many things, and almost none of them is a judgement about the teacher.',
           },
           {
             title: 'Go into the breakdown when the average is not enough',

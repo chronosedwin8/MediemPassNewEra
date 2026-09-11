@@ -490,6 +490,11 @@ export const es: PublicContent = {
             body: 'Cinco estrellas significan un 1,0, la mejor nota. Es al revés de como funcionan en una tienda, y por eso la plataforma nunca las muestra solas: siempre van con el número y con la palabra.',
           },
           {
+            title: 'Mira tu panel para ver el conjunto',
+            body: 'La pantalla de inicio resume todo lo tuyo: cuántas evaluaciones llevas hechas y cuántas te faltan, tu nota media, cuánto tiempo te llevan de media y en qué puesto vas dentro de tu grupo.',
+            tip: 'El puesto se calcula sobre la media de todas tus evaluaciones y solo entre quienes ya tienen algún resultado. «Puesto 6 de 6» en un curso de treinta y dos no quiere decir que seas el último: quiere decir que solo seis han entregado algo todavía.',
+          },
+          {
             title: 'Lee la retroalimentación',
             body: 'Cada pregunta trae una explicación de por qué la respuesta correcta lo es. Es la parte que de verdad enseña algo; la nota solo resume.',
           },
@@ -618,6 +623,11 @@ export const es: PublicContent = {
           {
             title: 'Revisa las preguntas más falladas',
             body: 'Están ordenadas por la dificultad observada, no por la que declaraste al escribirlas. Cuando no coinciden, el problema suele estar en el enunciado y no en el grupo.',
+          },
+          {
+            title: 'Empieza por tu panel',
+            body: 'La pantalla de inicio reúne lo que has creado, a cuánta gente llegó, qué queda sin empezar y qué tienes por corregir. La cifra de «competencias cubiertas» es la que más cambia la práctica: enseña de un vistazo si llevas el año midiendo solo dos de las seis.',
+            tip: 'Al final del panel está tu propia capacitación KMK, separada a propósito del resto. La media de un curso puede decir muchas cosas y casi ninguna es un juicio sobre quien lo enseña.',
           },
           {
             title: 'Baja al desglose cuando el promedio no basta',
