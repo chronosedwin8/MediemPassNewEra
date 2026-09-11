@@ -689,5 +689,27 @@
     "hardestHint": "Sortiert nach der beobachteten Schwierigkeit, nicht nach der angegebenen. Wenn beide auseinandergehen, liegt es meist an der Formulierung.",
     "correctRate": "Trefferquote",
     "answered": "Antworten"
+  },
+  "public": {
+    "audience": "Für",
+    "backToTop": "Nach oben",
+    "closeMenu": "Menü schließen",
+    "faq": "Häufige Fragen",
+    "filterBy": "Nach Profil filtern",
+    "footer": "Plattform der Schule für akademische Bewertung und digitale Kompetenzen.",
+    "home": "Start",
+    "openMenu": "Menü öffnen",
+    "privacyNote": "Arbeiten und Noten der Lernenden sehen nur die, die einen Grund dazu haben.",
+    "readWiki": "Anleitung lesen",
+    "school": "Deutsche Schule Barranquilla",
+    "screen": "Schema des Bildschirms",
+    "screenNote": "Eine Skizze der Bildschirmbereiche, kein Screenshot.",
+    "sections": "Inhalt",
+    "seeFrameworks": "Die Rahmen ansehen",
+    "signIn": "Anmelden",
+    "source": "Quelle",
+    "step": "Schritt {number}",
+    "tip": "Empfehlung",
+    "wiki": "Anleitung"
   }
 }

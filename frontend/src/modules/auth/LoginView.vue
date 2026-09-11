@@ -54,7 +54,9 @@ onMounted(async () => {
 });
 
 function redirectTarget(): string {
-  return typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+  // Sin destino guardado se va al panel: la raíz es ahora la portada pública,
+  // y devolver ahí a quien acaba de identificarse parecería que no ha entrado.
+  return typeof route.query.redirect === 'string' ? route.query.redirect : '/panel';
 }
 
 /**

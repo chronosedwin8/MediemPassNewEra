@@ -689,5 +689,27 @@
     "hardestHint": "Ordenadas por la dificultad observada, no por la que se declaró al escribirlas. Cuando no coinciden, el problema suele estar en el enunciado.",
     "correctRate": "Acierto",
     "answered": "Respuestas"
+  },
+  "public": {
+    "audience": "Para",
+    "backToTop": "Volver arriba",
+    "closeMenu": "Cerrar el menú",
+    "faq": "Preguntas frecuentes",
+    "filterBy": "Filtrar por perfil",
+    "footer": "Plataforma de evaluación académica y competencias digitales del colegio.",
+    "home": "Inicio",
+    "openMenu": "Abrir el menú",
+    "privacyNote": "Los trabajos y las notas del alumnado solo son visibles para quien tiene motivo para verlos.",
+    "readWiki": "Leer la guía de uso",
+    "school": "Colegio Alemán de Barranquilla",
+    "screen": "Esquema de la pantalla",
+    "screenNote": "Es un boceto de las zonas de la pantalla, no una captura.",
+    "sections": "Contenido",
+    "seeFrameworks": "Ver los marcos",
+    "signIn": "Entrar",
+    "source": "Fuente",
+    "step": "Paso {number}",
+    "tip": "Recomendación",
+    "wiki": "Guía de uso"
   }
 }

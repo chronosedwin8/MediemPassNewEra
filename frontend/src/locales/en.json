@@ -689,5 +689,27 @@
     "hardestHint": "Sorted by observed difficulty, not the declared one. When they disagree, the problem is usually the wording.",
     "correctRate": "Correct",
     "answered": "Answers"
+  },
+  "public": {
+    "audience": "For",
+    "backToTop": "Back to top",
+    "closeMenu": "Close menu",
+    "faq": "Frequently asked questions",
+    "filterBy": "Filter by profile",
+    "footer": "The school platform for academic assessment and digital competence.",
+    "home": "Home",
+    "openMenu": "Open menu",
+    "privacyNote": "Student work and grades are visible only to those with a reason to see them.",
+    "readWiki": "Read the user guide",
+    "school": "German School of Barranquilla",
+    "screen": "Screen layout",
+    "screenNote": "A sketch of the screen regions, not a screenshot.",
+    "sections": "Contents",
+    "seeFrameworks": "See the frameworks",
+    "signIn": "Sign in",
+    "source": "Source",
+    "step": "Step {number}",
+    "tip": "Recommendation",
+    "wiki": "User guide"
   }
 }

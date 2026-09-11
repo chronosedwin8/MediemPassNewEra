@@ -7,6 +7,7 @@ import {
 } from 'vue-router';
 import { PERMISSION, type Permission } from '@medienpass/shared';
 import { useAuthStore } from '@/stores/auth';
+import { i18n } from '@/app/i18n';
 
 /**
  * Rutas y guardas.
@@ -48,8 +49,37 @@ const routes: RouteRecordRaw[] = [
     meta: { titleKey: 'auth.changePassword' },
   },
 
+  /*
+   * Portada y guía: lo único que se ve sin sesión.
+   *
+   * Ocupan la raíz porque son la cara pública del proyecto, y el panel se
+   * desplaza a `/panel`. El resto de rutas de la aplicación declaran su ruta
+   * **absoluta** aunque cuelguen de este layout: así `/assessments` sigue
+   * siendo `/assessments` y ningún enlace de la aplicación cambia por haber
+   * movido la portada.
+   */
   {
     path: '/',
+    component: () => import('@/modules/public/PublicLayout.vue'),
+    meta: { requiresAuth: false },
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: () => import('@/modules/public/HomeView.vue'),
+        meta: { requiresAuth: false },
+      },
+      {
+        path: 'wiki',
+        name: 'wiki',
+        component: () => import('@/modules/public/WikiView.vue'),
+        meta: { requiresAuth: false, titleKey: 'public.wiki' },
+      },
+    ],
+  },
+
+  {
+    path: '/panel',
     component: () => import('@/layouts/AppLayout.vue'),
     children: [
       {
@@ -61,37 +91,37 @@ const routes: RouteRecordRaw[] = [
 
       // --- Docente -------------------------------------------------------
       {
-        path: 'assessments',
+        path: '/assessments',
         name: 'assessments',
         component: () => import('@/modules/assessments/AssessmentListView.vue'),
         meta: { permissions: [PERMISSION.ASSESSMENT_READ], titleKey: 'nav.assessments' },
       },
       {
-        path: 'assessments/new',
+        path: '/assessments/new',
         name: 'assessment-create',
         component: () => import('@/modules/assessments/AssessmentCreateView.vue'),
         meta: { permissions: [PERMISSION.ASSESSMENT_CREATE], titleKey: 'nav.createAssessment' },
       },
       {
-        path: 'assessments/:id',
+        path: '/assessments/:id',
         name: 'assessment-detail',
         component: () => import('@/modules/assessments/AssessmentDetailView.vue'),
         meta: { permissions: [PERMISSION.ASSESSMENT_READ], titleKey: 'assessment.title' },
       },
       {
-        path: 'students',
+        path: '/students',
         name: 'students',
         component: () => import('@/modules/students/StudentListView.vue'),
         meta: { permissions: [PERMISSION.STUDENT_READ], titleKey: 'nav.students' },
       },
       {
-        path: 'groups',
+        path: '/groups',
         name: 'groups',
         component: () => import('@/modules/groups/GroupListView.vue'),
         meta: { permissions: [PERMISSION.GROUP_READ], titleKey: 'nav.groups' },
       },
       {
-        path: 'groups/:id',
+        path: '/groups/:id',
         name: 'group-detail',
         component: () => import('@/modules/groups/GroupDetailView.vue'),
         meta: { permissions: [PERMISSION.GROUP_READ], titleKey: 'nav.groups' },
@@ -99,20 +129,20 @@ const routes: RouteRecordRaw[] = [
 
       // --- Estudiante ----------------------------------------------------
       {
-        path: 'my-assessments',
+        path: '/my-assessments',
         name: 'my-assessments',
         component: () => import('@/modules/attempts/AssignedListView.vue'),
         meta: { permissions: [PERMISSION.ATTEMPT_TAKE], titleKey: 'nav.myAssessments' },
       },
       {
-        path: 'results/:attemptId',
+        path: '/results/:attemptId',
         name: 'attempt-result',
         component: () => import('@/modules/attempts/ResultView.vue'),
         meta: { permissions: [PERMISSION.RESULT_READ_OWN], titleKey: 'result.title' },
       },
 
       {
-        path: 'statistics',
+        path: '/statistics',
         name: 'statistics',
         component: () => import('@/modules/statistics/StatisticsView.vue'),
         meta: {
@@ -132,13 +162,13 @@ const routes: RouteRecordRaw[] = [
        * o «esta evaluación → cómo fue», no al revés.
        */
       {
-        path: 'assessments/:id/preview/:versionId',
+        path: '/assessments/:id/preview/:versionId',
         name: 'assessment-preview',
         component: () => import('@/modules/assessments/AssessmentPreviewView.vue'),
         meta: { permissions: [PERMISSION.ASSESSMENT_READ], titleKey: 'preview.title' },
       },
       {
-        path: 'assessments/:id/report',
+        path: '/assessments/:id/report',
         name: 'assessment-report',
         component: () => import('@/modules/statistics/AssessmentReportView.vue'),
         meta: {
@@ -149,13 +179,13 @@ const routes: RouteRecordRaw[] = [
 
       // --- Capacitación docente ------------------------------------------
       {
-        path: 'training',
+        path: '/training',
         name: 'training',
         component: () => import('@/modules/training/TrainingListView.vue'),
         meta: { permissions: [PERMISSION.TRAINING_PARTICIPATE], titleKey: 'nav.training' },
       },
       {
-        path: 'training/:id',
+        path: '/training/:id',
         name: 'training-module',
         component: () => import('@/modules/training/TrainingDetailView.vue'),
         meta: { permissions: [PERMISSION.TRAINING_PARTICIPATE], titleKey: 'nav.training' },
@@ -163,7 +193,7 @@ const routes: RouteRecordRaw[] = [
 
       // --- Generación con IA ----------------------------------------------
       {
-        path: 'ai/generate',
+        path: '/ai/generate',
         name: 'ai-generate',
         component: () => import('@/modules/ai/AiGenerateView.vue'),
         meta: { permissions: [PERMISSION.AI_GENERATE], titleKey: 'nav.aiGenerate' },
@@ -171,13 +201,13 @@ const routes: RouteRecordRaw[] = [
 
       // --- Redacción de capacitaciones --------------------------------------
       {
-        path: 'admin/training',
+        path: '/admin/training',
         name: 'training-admin',
         component: () => import('@/modules/training/admin/TrainingAdminView.vue'),
         meta: { permissions: [PERMISSION.TRAINING_MANAGE], titleKey: 'training.admin.title' },
       },
       {
-        path: 'admin/training/:id',
+        path: '/admin/training/:id',
         name: 'training-admin-module',
         component: () => import('@/modules/training/admin/TrainingModuleEditor.vue'),
         meta: { permissions: [PERMISSION.TRAINING_MANAGE], titleKey: 'training.admin.title' },
@@ -185,7 +215,7 @@ const routes: RouteRecordRaw[] = [
 
       // --- Administración --------------------------------------------------
       {
-        path: 'admin',
+        path: '/admin',
         name: 'admin',
         component: () => import('@/modules/admin/AdminView.vue'),
         meta: { permissions: [PERMISSION.SETTINGS_MANAGE], titleKey: 'nav.admin' },
@@ -193,7 +223,7 @@ const routes: RouteRecordRaw[] = [
 
       // --- Común ---------------------------------------------------------
       {
-        path: 'competencies',
+        path: '/competencies',
         name: 'competencies',
         component: () => import('@/modules/kmk/CompetencyListView.vue'),
         meta: { permissions: [PERMISSION.KMK_READ], titleKey: 'nav.competencies' },
@@ -223,7 +253,18 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior: (_to, _from, saved) => saved ?? { top: 0 },
+  /*
+   * Al volver atrás se recupera la posición; con un ancla se va al elemento.
+   *
+   * Lo segundo hace falta desde que hay páginas públicas: alguien comparte
+   * `/wiki#docente-ia` y, sin esto, el navegador intenta saltar al elemento
+   * antes de que exista —la vista se carga de forma diferida— y quien abre el
+   * enlace aterriza arriba del todo sin saber qué le querían enseñar.
+   */
+  scrollBehavior: (to, _from, saved) => {
+    if (to.hash) return { el: to.hash, top: 80 };
+    return saved ?? { top: 0 };
+  },
 });
 
 type AuthStore = ReturnType<typeof useAuthStore>;
@@ -254,10 +295,17 @@ const NAVIGATION_GUARDS: NavigationGuard[] = [
   /*
    * Una contraseña emitida por administración ha pasado por manos ajenas: se
    * dicta en clase, se imprime en un listado. Hasta cambiarla, la sesión solo
-   * puede ir a esa pantalla.
+   * puede entrar en la aplicación por esa pantalla.
+   *
+   * Las páginas públicas quedan fuera: el objetivo es proteger los datos del
+   * colegio, no impedir que alguien con el cambio pendiente lea la guía de uso
+   * —que es, precisamente, donde se explica por qué se le está pidiendo.
    */
   (to, auth) =>
-    auth.isAuthenticated && auth.user?.mustChangePassword && to.name !== 'change-password'
+    to.meta.requiresAuth !== false &&
+    auth.isAuthenticated &&
+    auth.user?.mustChangePassword &&
+    to.name !== 'change-password'
       ? { name: 'change-password' }
       : null,
 
@@ -271,6 +319,20 @@ const NAVIGATION_GUARDS: NavigationGuard[] = [
     return required?.length && !auth.canAny(...required) ? { name: 'dashboard' } : null;
   },
 ];
+
+/*
+ * El título de la pestaña.
+ *
+ * Importa sobre todo desde que la raíz es pública: la portada es lo que la
+ * gente marca, comparte y encuentra en el historial, y «Medienpass» a secas
+ * en diez pestañas abiertas no distingue la guía de la evaluación que se
+ * estaba corrigiendo.
+ */
+router.afterEach((to) => {
+  const { t } = i18n.global;
+  const name = t('app.name');
+  document.title = to.meta.titleKey ? `${t(to.meta.titleKey)} · ${name}` : name;
+});
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
