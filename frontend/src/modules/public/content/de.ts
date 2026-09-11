@@ -7,46 +7,39 @@ export const de: PublicContent = {
       eyebrow: 'Deutsche Schule Barranquilla',
       title: 'Medienpass',
       lead: 'Digitale Kompetenzen wirklich bewerten, nicht nur nutzen.',
-      body:
-        'Fast jeder Unterricht nutzt heute digitale Medien. Nur wenige können sagen, welche konkrete digitale Kompetenz eine Schülerin am Dienstag geübt hat oder wie sich das übers Jahr verändert hat. Medienpass schließt diese Lücke: Jede Frage in der Plattform ist einer Kompetenz des KMK-Rahmens zugeordnet, und daraus entsteht ein Bild des Fortschritts – pro Schüler, pro Klasse und pro Kompetenz.',
+      body: 'Fast jeder Unterricht nutzt heute digitale Medien. Nur wenige können sagen, welche konkrete digitale Kompetenz eine Schülerin am Dienstag geübt hat oder wie sich das übers Jahr verändert hat. Medienpass schließt diese Lücke: Jede Frage in der Plattform ist einer Kompetenz des KMK-Rahmens zugeordnet, und daraus entsteht ein Bild des Fortschritts – pro Schüler, pro Klasse und pro Kompetenz.',
     },
 
     why: {
       title: 'Warum digitale Medien bewertet und nicht nur eingesetzt werden müssen',
-      lead:
-        'Technik in den Unterricht zu bringen ist einfach. Zu wissen, ob sie etwas lehrt, ist etwas anderes – und ohne das Zweite wird das Erste zur Dekoration.',
+      lead: 'Technik in den Unterricht zu bringen ist einfach. Zu wissen, ob sie etwas lehrt, ist etwas anderes – und ohne das Zweite wird das Erste zur Dekoration.',
       points: [
         {
           tag: 'Das Problem',
           title: 'Nutzen ist nicht Verstehen',
-          body:
-            'Wer das erste Suchergebnis abschreibt, hat ein digitales Werkzeug benutzt und keine Kompetenz gezeigt. Den Unterschied sieht man nicht, indem man über die Schulter schaut: Man muss fragen, und zwar so, dass Wiederholen von Überprüfen unterscheidbar wird.',
+          body: 'Wer das erste Suchergebnis abschreibt, hat ein digitales Werkzeug benutzt und keine Kompetenz gezeigt. Den Unterschied sieht man nicht, indem man über die Schulter schaut: Man muss fragen, und zwar so, dass Wiederholen von Überprüfen unterscheidbar wird.',
         },
         {
           tag: 'Die Folge',
           title: 'Was nicht gemessen wird, wird vermutet',
-          body:
-            'Ohne Daten bildet sich jede Lehrkraft einen eigenen Eindruck davon, wie ihre Gruppe bei digitalen Kompetenzen steht – und diese Eindrücke lassen sich weder addieren noch vergleichen. Das Ergebnis ist eine Schule, die in Technik investiert und nicht sagen kann, was sie dafür bekommen hat.',
+          body: 'Ohne Daten bildet sich jede Lehrkraft einen eigenen Eindruck davon, wie ihre Gruppe bei digitalen Kompetenzen steht – und diese Eindrücke lassen sich weder addieren noch vergleichen. Das Ergebnis ist eine Schule, die in Technik investiert und nicht sagen kann, was sie dafür bekommen hat.',
         },
         {
           tag: 'Der Ansatz',
           title: 'Eine Kompetenz pro Frage',
-          body:
-            'Hier existiert keine Frage, ohne zu erklären, welche KMK-Kompetenz sie übt. Das ist keine Bürokratie: Es macht aus einer Prüfung einen Wert, der sich zwischen Fächern, Klassen und Jahren vergleichen lässt – und erlaubt die Erkenntnis, dass das Problem der 10. Klasse nicht «das Digitale» ist, sondern konkret die Bewertung von Quellen.',
+          body: 'Hier existiert keine Frage, ohne zu erklären, welche KMK-Kompetenz sie übt. Das ist keine Bürokratie: Es macht aus einer Prüfung einen Wert, der sich zwischen Fächern, Klassen und Jahren vergleichen lässt – und erlaubt die Erkenntnis, dass das Problem der 10. Klasse nicht «das Digitale» ist, sondern konkret die Bewertung von Quellen.',
         },
         {
           tag: 'Die Grenze',
           title: 'Daten orientieren, sie entscheiden nicht',
-          body:
-            'Ein Prozentwert sagt, wohin man schauen soll, nicht was zu tun ist. Die Plattform bewertet nicht, was eine Lehrkraft von Hand korrigieren muss, veröffentlicht nichts ungelesen und reduziert niemanden auf eine Zahl: Jedes Ergebnis kommt mit der Aufschlüsselung nach Kompetenz und der Rückmeldung, die es erklärt.',
+          body: 'Ein Prozentwert sagt, wohin man schauen soll, nicht was zu tun ist. Die Plattform bewertet nicht, was eine Lehrkraft von Hand korrigieren muss, veröffentlicht nichts ungelesen und reduziert niemanden auf eine Zahl: Jedes Ergebnis kommt mit der Aufschlüsselung nach Kompetenz und der Rückmeldung, die es erklärt.',
         },
       ],
     },
 
     frameworks: {
       title: 'Drei Rahmen, eine Aufgabe',
-      lead:
-        'Die Schule bewegt sich zwischen drei Bezugssystemen, die meist getrennt präsentiert werden: dem KMK-Rahmen, den ISTE-Standards und der IB-Bildung. Sie konkurrieren nicht. Sie beschreiben dieselbe Kompetenz aus drei Blickwinkeln – was man kann, wie man es lehrt und welcher Mensch dabei entsteht.',
+      lead: 'Die Schule bewegt sich zwischen drei Bezugssystemen, die meist getrennt präsentiert werden: dem KMK-Rahmen, den ISTE-Standards und der IB-Bildung. Sie konkurrieren nicht. Sie beschreiben dieselbe Kompetenz aus drei Blickwinkeln – was man kann, wie man es lehrt und welcher Mensch dabei entsteht.',
 
       kmk: {
         name: 'KMK-Rahmen',
@@ -57,38 +50,32 @@ export const de: PublicContent = {
           {
             tag: 'KMK 1',
             title: 'Suchen, Verarbeiten und Aufbewahren',
-            body:
-              'Die Frage formulieren, bevor man sucht; sinnvoll eingrenzen; prüfen, wer verantwortet, was erscheint; und so aufbewahren, dass es wiederfindbar und zitierbar bleibt.',
+            body: 'Die Frage formulieren, bevor man sucht; sinnvoll eingrenzen; prüfen, wer verantwortet, was erscheint; und so aufbewahren, dass es wiederfindbar und zitierbar bleibt.',
           },
           {
             tag: 'KMK 2',
             title: 'Kommunizieren und Kooperieren',
-            body:
-              'Mit anderen in geteilten Werkzeugen arbeiten, Umgangsregeln vereinbaren und eingreifen können, wenn etwas schiefgeht.',
+            body: 'Mit anderen in geteilten Werkzeugen arbeiten, Umgangsregeln vereinbaren und eingreifen können, wenn etwas schiefgeht.',
           },
           {
             tag: 'KMK 3',
             title: 'Produzieren und Präsentieren',
-            body:
-              'Von der Collage zur eigenen Produktion: das Format nach der Aussage wählen und das Urheberrecht achten.',
+            body: 'Von der Collage zur eigenen Produktion: das Format nach der Aussage wählen und das Urheberrecht achten.',
           },
           {
             tag: 'KMK 4',
             title: 'Schützen und sicher Agieren',
-            body:
-              'Persönliche Daten schützen, Täuschung erkennen und wissen, was dann zu tun ist; Sicherheit als Praxis verstehen, nicht als Einstellung.',
+            body: 'Persönliche Daten schützen, Täuschung erkennen und wissen, was dann zu tun ist; Sicherheit als Praxis verstehen, nicht als Einstellung.',
           },
           {
             tag: 'KMK 5',
             title: 'Problemlösen und Handeln',
-            body:
-              'Das passende Werkzeug wählen, sich behelfen, wenn es versagt, und genug von der Funktionsweise verstehen, um nicht auf fremde Hilfe angewiesen zu sein.',
+            body: 'Das passende Werkzeug wählen, sich behelfen, wenn es versagt, und genug von der Funktionsweise verstehen, um nicht auf fremde Hilfe angewiesen zu sein.',
           },
           {
             tag: 'KMK 6',
             title: 'Analysieren und Reflektieren',
-            body:
-              'Das Medium sehen und nicht nur die Botschaft: wer es produziert, mit welcher Absicht, was ausgelassen wird und wie das wirkt.',
+            body: 'Das Medium sehen und nicht nur die Botschaft: wer es produziert, mit welcher Absicht, was ausgelassen wird und wie das wirkt.',
           },
         ],
         source: {
@@ -103,15 +90,46 @@ export const de: PublicContent = {
         intro:
           'Wo die KMK Kompetenzen beschreibt, beschreibt ISTE Rollen, die Lernende einnehmen. Das hilft beim Aufgabenentwurf: Es sagt, was sie tun sollen, nicht nur was sie wissen sollen.',
         items: [
-          { tag: '1.1', title: 'Empowered Learner', body: 'Gestaltet die eigenen Lernziele aktiv mit und weist sie nach.' },
-          { tag: '1.2', title: 'Digital Citizen', body: 'Verwaltet die digitale Identität, handelt sicher und ethisch, achtet geistiges Eigentum.' },
-          { tag: '1.3', title: 'Knowledge Constructor', body: 'Baut Wissen aus Quellen auf, die er finden und bewerten konnte.' },
-          { tag: '1.4', title: 'Innovative Designer', body: 'Entwirft Lösungen für echte Probleme und hält aus, dass der erste Versuch scheitert.' },
-          { tag: '1.5', title: 'Computational Thinker', body: 'Zerlegt Probleme, erkennt Muster und prüft Annahmen mit Daten.' },
-          { tag: '1.6', title: 'Creative Communicator', body: 'Wählt Medium und Format passend zum Gegenüber.' },
-          { tag: '1.7', title: 'Global Collaborator', body: 'Erweitert die Perspektive durch Arbeit mit Menschen anderer Kontexte.' },
+          {
+            tag: '1.1',
+            title: 'Empowered Learner',
+            body: 'Gestaltet die eigenen Lernziele aktiv mit und weist sie nach.',
+          },
+          {
+            tag: '1.2',
+            title: 'Digital Citizen',
+            body: 'Verwaltet die digitale Identität, handelt sicher und ethisch, achtet geistiges Eigentum.',
+          },
+          {
+            tag: '1.3',
+            title: 'Knowledge Constructor',
+            body: 'Baut Wissen aus Quellen auf, die er finden und bewerten konnte.',
+          },
+          {
+            tag: '1.4',
+            title: 'Innovative Designer',
+            body: 'Entwirft Lösungen für echte Probleme und hält aus, dass der erste Versuch scheitert.',
+          },
+          {
+            tag: '1.5',
+            title: 'Computational Thinker',
+            body: 'Zerlegt Probleme, erkennt Muster und prüft Annahmen mit Daten.',
+          },
+          {
+            tag: '1.6',
+            title: 'Creative Communicator',
+            body: 'Wählt Medium und Format passend zum Gegenüber.',
+          },
+          {
+            tag: '1.7',
+            title: 'Global Collaborator',
+            body: 'Erweitert die Perspektive durch Arbeit mit Menschen anderer Kontexte.',
+          },
         ],
-        source: { label: 'ISTE Standards for Students', url: 'https://iste.org/standards/students' },
+        source: {
+          label: 'ISTE Standards for Students',
+          url: 'https://iste.org/standards/students',
+        },
       },
 
       isteEducators: {
@@ -120,20 +138,46 @@ export const de: PublicContent = {
         intro:
           'Das Gegenstück zum vorigen Rahmen. Es beschreibt, was die Lehrkraft tut, damit das Obige geschieht, und ist die Referenz der Fortbildungsmodule dieser Plattform.',
         items: [
-          { tag: '2.1', title: 'Learner', body: 'Bildet sich weiter: setzt eigene Ziele und gleicht die Praxis mit anderen ab.' },
-          { tag: '2.2', title: 'Leader', body: 'Treibt eine gemeinsame Vision des Lernens mit Technik in der Schule voran.' },
-          { tag: '2.3', title: 'Citizen', body: 'Lebt verantwortliche digitale Teilhabe vor und lehrt sie durch Beispiel.' },
-          { tag: '2.4', title: 'Collaborator', body: 'Nimmt sich Zeit für Zusammenarbeit mit Kollegium und Lernenden.' },
-          { tag: '2.5', title: 'Designer', body: 'Entwirft authentische Aufgaben, die Unterschiede zwischen Lernenden anerkennen.' },
-          { tag: '2.6', title: 'Facilitator', body: 'Begleitet Lernen mit Technik, statt es durch sie zu ersetzen.' },
+          {
+            tag: '2.1',
+            title: 'Learner',
+            body: 'Bildet sich weiter: setzt eigene Ziele und gleicht die Praxis mit anderen ab.',
+          },
+          {
+            tag: '2.2',
+            title: 'Leader',
+            body: 'Treibt eine gemeinsame Vision des Lernens mit Technik in der Schule voran.',
+          },
+          {
+            tag: '2.3',
+            title: 'Citizen',
+            body: 'Lebt verantwortliche digitale Teilhabe vor und lehrt sie durch Beispiel.',
+          },
+          {
+            tag: '2.4',
+            title: 'Collaborator',
+            body: 'Nimmt sich Zeit für Zusammenarbeit mit Kollegium und Lernenden.',
+          },
+          {
+            tag: '2.5',
+            title: 'Designer',
+            body: 'Entwirft authentische Aufgaben, die Unterschiede zwischen Lernenden anerkennen.',
+          },
+          {
+            tag: '2.6',
+            title: 'Facilitator',
+            body: 'Begleitet Lernen mit Technik, statt es durch sie zu ersetzen.',
+          },
           {
             tag: '2.7',
             title: 'Analyst',
-            body:
-              'Nutzt Daten, um Fortschritt zu verstehen und den Unterricht anzupassen. Genau dieser Rolle dient die Statistik von Medienpass.',
+            body: 'Nutzt Daten, um Fortschritt zu verstehen und den Unterricht anzupassen. Genau dieser Rolle dient die Statistik von Medienpass.',
           },
         ],
-        source: { label: 'ISTE Standards for Educators', url: 'https://iste.org/standards/educators' },
+        source: {
+          label: 'ISTE Standards for Educators',
+          url: 'https://iste.org/standards/educators',
+        },
       },
 
       ib: {
@@ -142,25 +186,67 @@ export const de: PublicContent = {
         intro:
           'Das IB beschreibt keine digitalen Kompetenzen, sondern welcher Mensch gebildet wird. Deshalb konkurriert es nicht mit den anderen beiden Rahmen – es gibt ihnen den Sinn. Eine Kompetenz ohne die tragende Haltung ist eine Fertigkeit ohne Maßstab.',
         items: [
-          { tag: 'Forschend', title: 'Inquirers', body: 'Pflegen Neugier und können selbstständig recherchieren.' },
-          { tag: 'Wissbegierig', title: 'Knowledgeable', body: 'Erkunden Ideen von lokaler und globaler Bedeutung.' },
-          { tag: 'Denkend', title: 'Thinkers', body: 'Analysieren kritisch und entscheiden begründet und ethisch.' },
-          { tag: 'Kommunikativ', title: 'Communicators', body: 'Drücken sich klar aus und hören andere Sichtweisen an.' },
-          { tag: 'Integer', title: 'Principled', body: 'Handeln ehrlich und stehen zu den Folgen ihres Tuns.' },
-          { tag: 'Aufgeschlossen', title: 'Open-minded', body: 'Schätzen die eigene Kultur und öffnen sich für andere.' },
-          { tag: 'Fürsorglich', title: 'Caring', body: 'Zeigen Empathie und engagieren sich für andere.' },
-          { tag: 'Wagemutig', title: 'Risk-takers', body: 'Begegnen Unbekanntem mit Umsicht und ohne Angst vor Fehlern.' },
-          { tag: 'Ausgewogen', title: 'Balanced', body: 'Achten auf die Balance von Geist, Körper und Gefühl.' },
-          { tag: 'Reflektierend', title: 'Reflective', body: 'Bewerten das eigene Lernen und erkennen ihre Grenzen.' },
+          {
+            tag: 'Forschend',
+            title: 'Inquirers',
+            body: 'Pflegen Neugier und können selbstständig recherchieren.',
+          },
+          {
+            tag: 'Wissbegierig',
+            title: 'Knowledgeable',
+            body: 'Erkunden Ideen von lokaler und globaler Bedeutung.',
+          },
+          {
+            tag: 'Denkend',
+            title: 'Thinkers',
+            body: 'Analysieren kritisch und entscheiden begründet und ethisch.',
+          },
+          {
+            tag: 'Kommunikativ',
+            title: 'Communicators',
+            body: 'Drücken sich klar aus und hören andere Sichtweisen an.',
+          },
+          {
+            tag: 'Integer',
+            title: 'Principled',
+            body: 'Handeln ehrlich und stehen zu den Folgen ihres Tuns.',
+          },
+          {
+            tag: 'Aufgeschlossen',
+            title: 'Open-minded',
+            body: 'Schätzen die eigene Kultur und öffnen sich für andere.',
+          },
+          {
+            tag: 'Fürsorglich',
+            title: 'Caring',
+            body: 'Zeigen Empathie und engagieren sich für andere.',
+          },
+          {
+            tag: 'Wagemutig',
+            title: 'Risk-takers',
+            body: 'Begegnen Unbekanntem mit Umsicht und ohne Angst vor Fehlern.',
+          },
+          {
+            tag: 'Ausgewogen',
+            title: 'Balanced',
+            body: 'Achten auf die Balance von Geist, Körper und Gefühl.',
+          },
+          {
+            tag: 'Reflektierend',
+            title: 'Reflective',
+            body: 'Bewerten das eigene Lernen und erkennen ihre Grenzen.',
+          },
         ],
-        source: { label: 'IB learner profile (PDF)', url: 'https://www.ibo.org/globalassets/new-structure/digital-toolkit/pdfs/learner-profile-2017-en.pdf' },
+        source: {
+          label: 'IB learner profile (PDF)',
+          url: 'https://www.ibo.org/globalassets/new-structure/digital-toolkit/pdfs/learner-profile-2017-en.pdf',
+        },
       },
     },
 
     crosswalk: {
       title: 'Wie sich die drei Rahmen überschneiden',
-      lead:
-        'Die Tabelle behauptet keine exakten Entsprechungen. Sie zeigt, dass eine gut entworfene digitale Aufgabe alle drei Rahmen zugleich bedient – auch wenn man nur an einen gedacht hat.',
+      lead: 'Die Tabelle behauptet keine exakten Entsprechungen. Sie zeigt, dass eine gut entworfene digitale Aufgabe alle drei Rahmen zugleich bedient – auch wenn man nur an einen gedacht hat.',
       caveat:
         'Die Zuordnungen sind Orientierung und stammen von der Schule, nicht von den Organisationen, die die Rahmen veröffentlichen. Keiner der drei definiert sich über die anderen.',
       columns: {
@@ -217,46 +303,39 @@ export const de: PublicContent = {
 
     ibLevels: {
       title: 'In jeder IB-Stufe',
-      lead:
-        'Die Eigenschaften des Lernprofils sind von vier bis achtzehn dieselben; was sich ändert, ist, was es heißt, sie zu leben. Digitale Kompetenz begleitet diesen Weg, statt plötzlich in der Sekundarstufe aufzutauchen.',
+      lead: 'Die Eigenschaften des Lernprofils sind von vier bis achtzehn dieselben; was sich ändert, ist, was es heißt, sie zu leben. Digitale Kompetenz begleitet diesen Weg, statt plötzlich in der Sekundarstufe aufzutauchen.',
       levels: [
         {
           tag: 'PYP',
           title: 'Primary Years Programme',
-          body:
-            'Forschen beginnt vor dem flüssigen Lesen. Digitale Kompetenz ist hier vor allem Gewohnheit: fragen, woher ein Bild stammt, verstehen, dass Veröffentlichtes bleibt, und anfangen zu produzieren statt nur zu konsumieren.',
+          body: 'Forschen beginnt vor dem flüssigen Lesen. Digitale Kompetenz ist hier vor allem Gewohnheit: fragen, woher ein Bild stammt, verstehen, dass Veröffentlichtes bleibt, und anfangen zu produzieren statt nur zu konsumieren.',
         },
         {
           tag: 'MYP',
           title: 'Middle Years Programme',
-          body:
-            'Das Urteil kommt hinzu. Es wird nicht nur gesucht: Quellen werden verglichen, Absichten erkannt und Folgen des Teilens übernommen. In dieser Stufe lassen sich die sechs KMK-Kompetenzen am klarsten prüfen.',
+          body: 'Das Urteil kommt hinzu. Es wird nicht nur gesucht: Quellen werden verglichen, Absichten erkannt und Folgen des Teilens übernommen. In dieser Stufe lassen sich die sechs KMK-Kompetenzen am klarsten prüfen.',
         },
         {
           tag: 'DP',
           title: 'Diploma Programme',
-          body:
-            'Der Anspruch wird akademisch. Richtig zu zitieren ist keine Schulregel mehr, sondern intellektuelle Redlichkeit; Extended Essay und Theory of Knowledge prüfen genau das, was die Kompetenzen 1 und 6 messen.',
+          body: 'Der Anspruch wird akademisch. Richtig zu zitieren ist keine Schulregel mehr, sondern intellektuelle Redlichkeit; Extended Essay und Theory of Knowledge prüfen genau das, was die Kompetenzen 1 und 6 messen.',
         },
         {
           tag: 'CP',
           title: 'Career-related Programme',
-          body:
-            'Das Ziel ist die Arbeitswelt, in der digitale Kompetenz danach beurteilt wird, was man kann, nicht was man studiert hat. Produzieren, Kooperieren und Problemlösen wiegen schwerer als Auswendiglernen.',
+          body: 'Das Ziel ist die Arbeitswelt, in der digitale Kompetenz danach beurteilt wird, was man kann, nicht was man studiert hat. Produzieren, Kooperieren und Problemlösen wiegen schwerer als Auswendiglernen.',
         },
       ],
     },
 
     access: {
       title: 'Zur Plattform',
-      lead:
-        'Der Zugang ist für alle gleich – mit der schulischen E-Mail. Was sich unterscheidet, ist, was drinnen wartet. Wenn du unsicher bist: einfach anmelden, die Plattform bringt dich an die richtige Stelle.',
+      lead: 'Der Zugang ist für alle gleich – mit der schulischen E-Mail. Was sich unterscheidet, ist, was drinnen wartet. Wenn du unsicher bist: einfach anmelden, die Plattform bringt dich an die richtige Stelle.',
       roles: [
         {
           key: 'student',
           title: 'Schülerinnen und Schüler',
-          body:
-            'Deine E-Mail ist dein vierstelliger Code gefolgt von @colegioaleman.edu.co. Wenn du noch kein Passwort hast, vergibt es die Schule.',
+          body: 'Deine E-Mail ist dein vierstelliger Code gefolgt von @colegioaleman.edu.co. Wenn du noch kein Passwort hast, vergibt es die Schule.',
           bullets: [
             'Zugewiesene Prüfungen sehen und bearbeiten',
             'Einen begonnenen Versuch ohne Verlust fortsetzen',
@@ -266,8 +345,7 @@ export const de: PublicContent = {
         {
           key: 'teacher',
           title: 'Lehrkräfte',
-          body:
-            'Mit der schulischen E-Mail. Anmeldung mit Passwort oder, falls aktiviert, mit dem Microsoft-Konto der Schule.',
+          body: 'Mit der schulischen E-Mail. Anmeldung mit Passwort oder, falls aktiviert, mit dem Microsoft-Konto der Schule.',
           bullets: [
             'Prüfungen erstellen – auf Wunsch mit KI – und vor dem Veröffentlichen ansehen',
             'Gruppen zuweisen und offene Antworten bewerten',
@@ -277,8 +355,7 @@ export const de: PublicContent = {
         {
           key: 'admin',
           title: 'Verwaltung',
-          body:
-            'Für die Koordination: akademische Struktur, Berechtigungen und Fortbildungsinhalte.',
+          body: 'Für die Koordination: akademische Struktur, Berechtigungen und Fortbildungsinhalte.',
           bullets: [
             'Einschreibung mit Phidias synchronisieren und das Schuljahr eröffnen',
             'Fortbildungsmaterial schreiben und veröffentlichen',
@@ -291,8 +368,7 @@ export const de: PublicContent = {
 
   wiki: {
     title: 'So wird Medienpass benutzt',
-    lead:
-      'Eine Anleitung nach Aufgaben, nicht nach Bildschirmen: was du tun willst und wie es geht. Sie ist so geschrieben, dass man sie vor der ersten Anmeldung lesen kann.',
+    lead: 'Eine Anleitung nach Aufgaben, nicht nach Bildschirmen: was du tun willst und wie es geht. Sie ist so geschrieben, dass man sie vor der ersten Anmeldung lesen kann.',
     audiences: {
       all: 'Alle',
       teacher: 'Lehrkräfte',
@@ -304,25 +380,20 @@ export const de: PublicContent = {
         id: 'acceso',
         title: 'Die erste Anmeldung',
         audience: 'all',
-        lead:
-          'Alle melden sich an derselben Stelle an. Was sich danach unterscheidet, ist das Menü links – es hängt davon ab, was dein Konto darf.',
+        lead: 'Alle melden sich an derselben Stelle an. Was sich danach unterscheidet, ist das Menü links – es hängt davon ab, was dein Konto darf.',
         steps: [
           {
             title: 'Nutze deine schulische E-Mail',
-            body:
-              'Bei Lernenden ist es der vierstellige Code plus @colegioaleman.edu.co. Bei Lehrkräften die übliche Schul-E-Mail.',
-            tip:
-              'Wenn die Anmeldedaten als ungültig gemeldet werden und die E-Mail sicher stimmt, hat dein Konto vielleicht noch kein Passwort. Das löst die Verwaltung, nicht ein Passwortwechsel.',
+            body: 'Bei Lernenden ist es der vierstellige Code plus @colegioaleman.edu.co. Bei Lehrkräften die übliche Schul-E-Mail.',
+            tip: 'Wenn die Anmeldedaten als ungültig gemeldet werden und die E-Mail sicher stimmt, hat dein Konto vielleicht noch kein Passwort. Das löst die Verwaltung, nicht ein Passwortwechsel.',
           },
           {
             title: 'Ändere das vorläufige Passwort',
-            body:
-              'Von der Schule vergebene Passwörter werden vorgelesen oder auf Listen gedruckt. Die Plattform verlangt den Wechsel, bevor irgendetwas anderes möglich ist – das ist keine Schikane: Dieses Passwort war in fremden Händen.',
+            body: 'Von der Schule vergebene Passwörter werden vorgelesen oder auf Listen gedruckt. Die Plattform verlangt den Wechsel, bevor irgendetwas anderes möglich ist – das ist keine Schikane: Dieses Passwort war in fremden Händen.',
           },
           {
             title: 'Wähle deine Sprache',
-            body:
-              'Oben rechts. Die Oberfläche gibt es auf Spanisch, Deutsch und Englisch, und die Wahl wird gemerkt. Die Sprache der Inhalte bestimmt, wer sie geschrieben hat.',
+            body: 'Oben rechts. Die Oberfläche gibt es auf Spanisch, Deutsch und Englisch, und die Wahl wird gemerkt. Die Sprache der Inhalte bestimmt, wer sie geschrieben hat.',
           },
         ],
         screen: {
@@ -358,27 +429,21 @@ export const de: PublicContent = {
         steps: [
           {
             title: 'Öffne «Meine Prüfungen»',
-            body:
-              'Dort stehen die zugewiesenen und die bereits abgegebenen. Jede zeigt die verbleibenden Versuche und bis wann sie offen ist.',
+            body: 'Dort stehen die zugewiesenen und die bereits abgegebenen. Jede zeigt die verbleibenden Versuche und bis wann sie offen ist.',
           },
           {
             title: 'Antworte in beliebiger Reihenfolge',
-            body:
-              'Mit der Übersicht unten springst du hin und her. Beantwortete Fragen sind markiert, offene ebenfalls.',
-            tip:
-              'Wenn der Browser schließt oder die Verbindung abbricht: neu anmelden und weitermachen. Der Versuch wartet mit allem, was du geschrieben hattest.',
+            body: 'Mit der Übersicht unten springst du hin und her. Beantwortete Fragen sind markiert, offene ebenfalls.',
+            tip: 'Wenn der Browser schließt oder die Verbindung abbricht: neu anmelden und weitermachen. Der Versuch wartet mit allem, was du geschrieben hattest.',
           },
           {
             title: 'Hänge Nachweise an, wenn verlangt',
-            body:
-              'Manche Fragen erlauben Fotos, Dokumente oder Audio. Ist der Nachweis Pflicht, steht es an der Frage und ohne ihn kannst du nicht abgeben.',
-            tip:
-              'Lade die Datei hoch, sobald du sie hast, nicht am Schluss. Fünf Uploads in der letzten Minute konkurrieren um dieselbe Schulverbindung.',
+            body: 'Manche Fragen erlauben Fotos, Dokumente oder Audio. Ist der Nachweis Pflicht, steht es an der Frage und ohne ihn kannst du nicht abgeben.',
+            tip: 'Lade die Datei hoch, sobald du sie hast, nicht am Schluss. Fünf Uploads in der letzten Minute konkurrieren um dieselbe Schulverbindung.',
           },
           {
             title: 'Gib ab, wenn du sicher bist',
-            body:
-              'Beim Abgeben wird Ausstehendes gespeichert und der Versuch geschlossen. Das lässt sich nicht rückgängig machen.',
+            body: 'Beim Abgeben wird Ausstehendes gespeichert und der Versuch geschlossen. Das lässt sich nicht rückgängig machen.',
           },
         ],
         screen: {
@@ -386,7 +451,10 @@ export const de: PublicContent = {
           caption: 'Die Zeit führt der Server: Neuladen setzt sie nicht zurück.',
           regions: [
             { label: 'Kopfleiste', note: 'Titel, Restzeit und Speicherstatus' },
-            { label: 'Aufgabenstellung', note: 'Mit Format, Bildern und der gemessenen KMK-Kompetenz' },
+            {
+              label: 'Aufgabenstellung',
+              note: 'Mit Format, Bildern und der gemessenen KMK-Kompetenz',
+            },
             { label: 'Deine Antwort', note: 'Speichert sich beim Schreiben', emphasis: true },
             { label: 'Nachweis', note: 'Nur wenn die Frage ihn erlaubt' },
             { label: 'Fragenübersicht', note: 'Beantwortet, offen und aktuell', emphasis: true },
@@ -410,23 +478,19 @@ export const de: PublicContent = {
         id: 'estudiante-resultados',
         title: 'Dein Ergebnis verstehen',
         audience: 'student',
-        lead:
-          'Die Note folgt der deutschen Skala: 1,0 ist das beste Ergebnis, 6,0 das schlechteste. Sterne begleiten die Zahl, sie ersetzen sie nicht.',
+        lead: 'Die Note folgt der deutschen Skala: 1,0 ist das beste Ergebnis, 6,0 das schlechteste. Sterne begleiten die Zahl, sie ersetzen sie nicht.',
         steps: [
           {
             title: 'Schau zuerst auf die Aufschlüsselung',
-            body:
-              'Der Gesamtwert sagt, wie es lief; die Aufschlüsselung sagt, worin. «Quellen bewerten» zu verfehlen ist nicht dasselbe wie «produzieren und präsentieren», und mehr vom Gleichen zu lernen hilft bei keinem von beiden.',
+            body: 'Der Gesamtwert sagt, wie es lief; die Aufschlüsselung sagt, worin. «Quellen bewerten» zu verfehlen ist nicht dasselbe wie «produzieren und präsentieren», und mehr vom Gleichen zu lernen hilft bei keinem von beiden.',
           },
           {
             title: 'Vorsicht mit den Sternen',
-            body:
-              'Fünf Sterne bedeuten 1,0, die beste Note. Das ist umgekehrt wie in einem Shop, und deshalb zeigt die Plattform sie nie allein: immer mit Zahl und Wort.',
+            body: 'Fünf Sterne bedeuten 1,0, die beste Note. Das ist umgekehrt wie in einem Shop, und deshalb zeigt die Plattform sie nie allein: immer mit Zahl und Wort.',
           },
           {
             title: 'Lies die Rückmeldung',
-            body:
-              'Zu jeder Frage steht, warum die richtige Antwort richtig ist. Das ist der Teil, der wirklich etwas lehrt; die Note fasst nur zusammen.',
+            body: 'Zu jeder Frage steht, warum die richtige Antwort richtig ist. Das ist der Teil, der wirklich etwas lehrt; die Note fasst nur zusammen.',
           },
         ],
       },
@@ -435,8 +499,7 @@ export const de: PublicContent = {
         id: 'docente-crear',
         title: 'Eine Prüfung erstellen und veröffentlichen',
         audience: 'teacher',
-        lead:
-          'Eine Prüfung hat Versionen. Als Entwurf ist alles änderbar; veröffentlicht ist sie eingefroren – und genau das sorgt dafür, dass ein Ergebnis vom März im November noch dasselbe bedeutet.',
+        lead: 'Eine Prüfung hat Versionen. Als Entwurf ist alles änderbar; veröffentlicht ist sie eingefroren – und genau das sorgt dafür, dass ein Ergebnis vom März im November noch dasselbe bedeutet.',
         steps: [
           {
             title: 'Lege die Prüfung an',
@@ -444,34 +507,26 @@ export const de: PublicContent = {
           },
           {
             title: 'Füge Fragen hinzu',
-            body:
-              'Dreizehn Typen, von Einfachauswahl bis Ordnen, Zuordnen oder Bereiche in einem Bild markieren. Jede Frage muss angeben, welche KMK-Kompetenz sie übt.',
-            tip:
-              'Diese Angabe trägt alles Weitere. Eine nachlässig etikettierte Frage verfälscht die Statistik der ganzen Klasse, und niemand merkt es, bis die Zahlen keinen Sinn mehr ergeben.',
+            body: 'Dreizehn Typen, von Einfachauswahl bis Ordnen, Zuordnen oder Bereiche in einem Bild markieren. Jede Frage muss angeben, welche KMK-Kompetenz sie übt.',
+            tip: 'Diese Angabe trägt alles Weitere. Eine nachlässig etikettierte Frage verfälscht die Statistik der ganzen Klasse, und niemand merkt es, bis die Zahlen keinen Sinn mehr ergeben.',
           },
           {
             title: 'Entscheide über Nachweise',
-            body:
-              'Pro Frage kannst du Anhänge erlauben und für die Abgabe verpflichtend machen. Standardmäßig aus: Eine Datei zu verlangen, die niemand braucht, ist Reibung für die Lernenden und Speicher, den jemand löschen muss.',
+            body: 'Pro Frage kannst du Anhänge erlauben und für die Abgabe verpflichtend machen. Standardmäßig aus: Eine Datei zu verlangen, die niemand braucht, ist Reibung für die Lernenden und Speicher, den jemand löschen muss.',
           },
           {
             title: 'Vorschau vor dem Veröffentlichen',
-            body:
-              'Über «Vorschau» siehst du die Prüfung genau so, wie die Klasse sie sieht, und kannst sie testweise beantworten, ohne dass etwas gespeichert wird. Mit «Lösungen anzeigen» prüfst du zusätzlich, ob die markierte Antwort stimmt.',
-            tip:
-              'Bei KI-erzeugten Fragen ist dieser Schritt unverzichtbar. Eine Frage kann formal einwandfrei sein und die falsche Option als richtig markiert haben; keine automatische Prüfung erkennt das, ein Mensch schon.',
+            body: 'Über «Vorschau» siehst du die Prüfung genau so, wie die Klasse sie sieht, und kannst sie testweise beantworten, ohne dass etwas gespeichert wird. Mit «Lösungen anzeigen» prüfst du zusätzlich, ob die markierte Antwort stimmt.',
+            tip: 'Bei KI-erzeugten Fragen ist dieser Schritt unverzichtbar. Eine Frage kann formal einwandfrei sein und die falsche Option als richtig markiert haben; keine automatische Prüfung erkennt das, ein Mensch schon.',
           },
           {
             title: 'Veröffentlichen und zuweisen',
-            body:
-              'Mit dem Veröffentlichen wird die Version unveränderlich. Danach weist du sie einer deiner Gruppen zu, mit Zeitraum und Versuchszahl.',
-            tip:
-              'Zuweisen kannst du nur Gruppen, die du leitest. Eine leere Auswahlliste ist kein Fehler: Du bist in keiner als Klassenleitung eingetragen – das klärt die Verwaltung.',
+            body: 'Mit dem Veröffentlichen wird die Version unveränderlich. Danach weist du sie einer deiner Gruppen zu, mit Zeitraum und Versuchszahl.',
+            tip: 'Zuweisen kannst du nur Gruppen, die du leitest. Eine leere Auswahlliste ist kein Fehler: Du bist in keiner als Klassenleitung eingetragen – das klärt die Verwaltung.',
           },
           {
             title: 'Korrigiere, was die Maschine nicht kann',
-            body:
-              'Offene Antworten bleiben zur Bewertung offen. Bis du sie korrigierst, zeigt die Note nur den automatischen Teil.',
+            body: 'Offene Antworten bleiben zur Bewertung offen. Bis du sie korrigierst, zeigt die Note nur den automatischen Teil.',
           },
         ],
         screen: {
@@ -479,7 +534,11 @@ export const de: PublicContent = {
           caption: 'Im Entwurf erscheinen die Bearbeitungs-, veröffentlicht die Nutzungsaktionen.',
           regions: [
             { label: 'Kopfbereich', note: 'Titel, Status, Version, Fragen und Punkte' },
-            { label: 'Aktionen', note: 'Vorschau · Bearbeiten · Veröffentlichen · Zuweisen · Ergebnisse', emphasis: true },
+            {
+              label: 'Aktionen',
+              note: 'Vorschau · Bearbeiten · Veröffentlichen · Zuweisen · Ergebnisse',
+              emphasis: true,
+            },
             { label: 'Fragenliste', note: 'Mit KMK-Kompetenz und Punkten' },
             { label: 'Frageneditor', note: 'Formatierter Text, Bild und Nachweis', emphasis: true },
             { label: 'Versionsverlauf', note: 'Was wann veröffentlicht wurde' },
@@ -503,26 +562,24 @@ export const de: PublicContent = {
         id: 'docente-ia',
         title: 'Fragen mit KI erzeugen',
         audience: 'teacher',
-        lead:
-          'Die KI schlägt vor, du entscheidest. Alles Erzeugte entsteht als Entwurf und erreicht niemanden, bis du es liest und veröffentlichst.',
+        lead: 'Die KI schlägt vor, du entscheidest. Alles Erzeugte entsteht als Entwurf und erreicht niemanden, bis du es liest und veröffentlichst.',
         steps: [
-          { title: 'Beschreibe das Thema', body: 'Ein kurzer Satz. «Der Wasserkreislauf», «Quellenprüfung im Internet».' },
+          {
+            title: 'Beschreibe das Thema',
+            body: 'Ein kurzer Satz. «Der Wasserkreislauf», «Quellenprüfung im Internet».',
+          },
           {
             title: 'Schreibe den Kontext – darauf kommt es an',
-            body:
-              'Was im Unterricht behandelt wurde, mit welchen Werkzeugen gearbeitet wird, welches Vokabular zu nutzen und was zu vermeiden ist. Das unterscheidet eine allgemeine Prüfung von einer, die zu deiner Gruppe passt.',
-            tip:
-              'Ein echtes Beispiel: «6. Klasse. Verdunstung und Kondensation haben wir mit einem Glas-und-Eis-Versuch behandelt. Versickerung noch nicht. Vermeide Beispiele mit Schnee: hier schneit es nicht.» Das Modell nutzte den Versuch in einer Frage und erwähnte keinen Schnee.',
+            body: 'Was im Unterricht behandelt wurde, mit welchen Werkzeugen gearbeitet wird, welches Vokabular zu nutzen und was zu vermeiden ist. Das unterscheidet eine allgemeine Prüfung von einer, die zu deiner Gruppe passt.',
+            tip: 'Ein echtes Beispiel: «6. Klasse. Verdunstung und Kondensation haben wir mit einem Glas-und-Eis-Versuch behandelt. Versickerung noch nicht. Vermeide Beispiele mit Schnee: hier schneit es nicht.» Das Modell nutzte den Versuch in einer Frage und erwähnte keinen Schnee.',
           },
           {
             title: 'Wähle Kompetenzen und Typen',
-            body:
-              'Mindestens eine KMK-Kompetenz. Angeboten werden nur Typen, die das Modell gut erzeugt: keine, die Koordinaten auf einem ungesehenen Bild verlangen.',
+            body: 'Mindestens eine KMK-Kompetenz. Angeboten werden nur Typen, die das Modell gut erzeugt: keine, die Koordinaten auf einem ungesehenen Bild verlangen.',
           },
           {
             title: 'Prüfe den Entwurf',
-            body:
-              'Öffne die Vorschau mit sichtbaren Lösungen und lies sie. Eine Frage ohne markierte richtige Antwort wird rot hervorgehoben.',
+            body: 'Öffne die Vorschau mit sichtbaren Lösungen und lies sie. Eine Frage ohne markierte richtige Antwort wird rot hervorgehoben.',
           },
         ],
         faq: [
@@ -543,28 +600,28 @@ export const de: PublicContent = {
         id: 'docente-resultados',
         title: 'Ergebnisse einer Gruppe lesen',
         audience: 'teacher',
-        lead:
-          'Es gibt zwei Ansichten für zwei Fragen: «wie steht die Klasse insgesamt» und «wie lief genau diese Prüfung».',
+        lead: 'Es gibt zwei Ansichten für zwei Fragen: «wie steht die Klasse insgesamt» und «wie lief genau diese Prüfung».',
         steps: [
           {
             title: 'Schau zuerst, wie viele begonnen haben',
-            body:
-              'In den Gruppenergebnissen steht «nicht begonnen» vor dem Durchschnitt. 40 % Schnitt bei halber Klasse ohne Start sagt nichts über den Unterricht.',
+            body: 'In den Gruppenergebnissen steht «nicht begonnen» vor dem Durchschnitt. 40 % Schnitt bei halber Klasse ohne Start sagt nichts über den Unterricht.',
           },
           {
             title: 'Vergleiche die Form, nicht nur den Schnitt',
-            body:
-              'Die Verteilung nach Notenband zeigt, ob die Gruppe homogen oder zweigeteilt ist. Gleicher Schnitt kann verschiedene Unterrichtsentscheidungen verlangen.',
+            body: 'Die Verteilung nach Notenband zeigt, ob die Gruppe homogen oder zweigeteilt ist. Gleicher Schnitt kann verschiedene Unterrichtsentscheidungen verlangen.',
           },
           {
             title: 'Sieh dir die am häufigsten verfehlten Fragen an',
-            body:
-              'Sortiert nach beobachteter Schwierigkeit, nicht nach der beim Schreiben angegebenen. Weichen beide ab, liegt es meist an der Formulierung.',
+            body: 'Sortiert nach beobachteter Schwierigkeit, nicht nach der beim Schreiben angegebenen. Weichen beide ab, liegt es meist an der Formulierung.',
+          },
+          {
+            title: 'Geh in die Aufschlüsselung, wenn der Schnitt nicht reicht',
+            body: 'Unter Statistik zeigt die Aufschlüsselung nach Kompetenz dieselbe Zahl nach Fach, nach Klasse oder Kind für Kind. Dort sieht man, dass das Problem der Klasse nicht «das Digitale» ist, sondern konkret Kompetenz 6 – oder dass zwei Lernende seit Monaten nicht mitkommen, während der Schnitt das verdeckt.',
+            tip: 'Erst nach Klasse filtern, dann nach Lernenden schauen: die Tabelle wird zur Klassenliste. «Nicht gemessen» ist keine Null, sondern eine Kompetenz, die dort noch nicht geprüft wurde.',
           },
           {
             title: 'Nutze das KMK-Radar für Entscheidungen',
-            body:
-              'Nicht gemessene Kompetenzen erscheinen als null und verschwinden nicht aus der Grafik – so fällt auf, wenn «Analysieren und Reflektieren» das ganze Jahr ungeprüft blieb.',
+            body: 'Nicht gemessene Kompetenzen erscheinen als null und verschwinden nicht aus der Grafik – so fällt auf, wenn «Analysieren und Reflektieren» das ganze Jahr ungeprüft blieb.',
           },
         ],
       },
@@ -573,23 +630,19 @@ export const de: PublicContent = {
         id: 'docente-capacitacion',
         title: 'Deine eigene KMK-Fortbildung',
         audience: 'teacher',
-        lead:
-          'Sechs Module, eines je Kompetenz, mit Material und Prüfung am Ende. Die Prüfung nutzt dieselbe Engine wie bei den Lernenden – du erlebst also genau das, was sie erleben werden.',
+        lead: 'Sechs Module, eines je Kompetenz, mit Material und Prüfung am Ende. Die Prüfung nutzt dieselbe Engine wie bei den Lernenden – du erlebst also genau das, was sie erleben werden.',
         steps: [
           {
             title: 'Arbeite das Material durch',
-            body:
-              'Jeder geöffnete Block zählt als gesehen. Es gibt Texte, Aktivitäten und geprüfte externe Ressourcen: KMK-Strategie, Medienkompetenzrahmen NRW, klicksafe, Internet-ABC, INTEF und Common Sense.',
+            body: 'Jeder geöffnete Block zählt als gesehen. Es gibt Texte, Aktivitäten und geprüfte externe Ressourcen: KMK-Strategie, Medienkompetenzrahmen NRW, klicksafe, Internet-ABC, INTEF und Common Sense.',
           },
           {
             title: 'Lege die Modulprüfung ab',
-            body:
-              'Fünf Versuche. Die Bestehensgrenze für Lehrkräfte liegt bei 80 %, strenger als die 70 % der Lernenden, und wird vorher genannt.',
+            body: 'Fünf Versuche. Die Bestehensgrenze für Lehrkräfte liegt bei 80 %, strenger als die 70 % der Lernenden, und wird vorher genannt.',
           },
           {
             title: 'Zertifiziere dich',
-            body:
-              'Das Material durchzuarbeiten zertifiziert nicht; die bestandene Prüfung tut es. Das ist bewusst zweierlei.',
+            body: 'Das Material durchzuarbeiten zertifiziert nicht; die bestandene Prüfung tut es. Das ist bewusst zweierlei.',
           },
         ],
       },
@@ -600,30 +653,33 @@ export const de: PublicContent = {
         audience: 'admin',
         lead: 'Das Material entsteht in Blöcken je Modul. Nichts ist sichtbar, bis es veröffentlicht wird.',
         steps: [
-          { title: 'Modul anlegen', body: 'Kurzer, stabiler Code, KMK-Kompetenz, Titel und Beschreibung. Entsteht als Entwurf.' },
+          {
+            title: 'Modul anlegen',
+            body: 'Kurzer, stabiler Code, KMK-Kompetenz, Titel und Beschreibung. Entsteht als Entwurf.',
+          },
           {
             title: 'Blöcke hinzufügen',
-            body:
-              'Text, Video, Dokument, Link oder Aktivität. Jeweils mit Titel, formatiertem Text und bei Bedarf Anhängen.',
-            tip:
-              'Mehrere kurze Blöcke wirken besser als ein langer: Lehrkräfte klappen sie nacheinander auf, und der Fortschritt misst sich daran. Ein Block von zehn Seiten macht daraus einen Schalter.',
+            body: 'Text, Video, Dokument, Link oder Aktivität. Jeweils mit Titel, formatiertem Text und bei Bedarf Anhängen.',
+            tip: 'Mehrere kurze Blöcke wirken besser als ein langer: Lehrkräfte klappen sie nacheinander auf, und der Fortschritt misst sich daran. Ein Block von zehn Seiten macht daraus einen Schalter.',
           },
           {
             title: 'Bild und Anhang unterscheiden',
-            body:
-              'Das Bild zum Absatz wird im Text eingefügt, über die Symbolleiste. Das PDF zum Herunterladen ist ein Anhang. Zwei verschiedene Dinge, zwei verschiedene Verhalten.',
+            body: 'Das Bild zum Absatz wird im Text eingefügt, über die Symbolleiste. Das PDF zum Herunterladen ist ein Anhang. Zwei verschiedene Dinge, zwei verschiedene Verhalten.',
           },
           {
             title: 'Veröffentlichen',
-            body:
-              'Ein Modul ohne Material lässt sich nicht veröffentlichen. Danach kannst du zurückziehen oder archivieren; Archivieren bewahrt den Fortschritt derer, die es schon absolviert haben.',
+            body: 'Ein Modul ohne Material lässt sich nicht veröffentlichen. Danach kannst du zurückziehen oder archivieren; Archivieren bewahrt den Fortschritt derer, die es schon absolviert haben.',
           },
         ],
         screen: {
           title: 'Moduleditor',
           caption: 'Blöcke werden mit Pfeilen sortiert und zum Bearbeiten aufgeklappt.',
           regions: [
-            { label: 'Kopfbereich', note: 'Status, Code und Veröffentlichungsaktionen', emphasis: true },
+            {
+              label: 'Kopfbereich',
+              note: 'Status, Code und Veröffentlichungsaktionen',
+              emphasis: true,
+            },
             { label: 'Moduldaten', note: 'Titel und Beschreibung in drei Sprachen' },
             { label: 'Blöcke', note: 'Zugeklappt; einzeln zum Bearbeiten öffnen', emphasis: true },
             { label: 'Blockeditor', note: 'Formatierter Text, Bilder, Link und Anhänge' },
@@ -636,30 +692,24 @@ export const de: PublicContent = {
         id: 'admin-plataforma',
         title: 'Die Plattform verwalten',
         audience: 'admin',
-        lead:
-          'Vier Bereiche: Rollenrechte, Einstellungen, Schuljahr und Dateien. Seltene Vorgänge mit großer Reichweite – die Oberfläche ist darauf ausgelegt, sie bewusst zu tun, nicht schnell.',
+        lead: 'Vier Bereiche: Rollenrechte, Einstellungen, Schuljahr und Dateien. Seltene Vorgänge mit großer Reichweite – die Oberfläche ist darauf ausgelegt, sie bewusst zu tun, nicht schnell.',
         steps: [
           {
             title: 'Rollenrechte',
-            body:
-              'Was jede Rolle darf, ohne Deployment änderbar. Die Administratorrolle ist gesperrt: Könnte man ihr Rechte entziehen, bliebe nach einem Versehen niemand übrig, der sie zurückgibt.',
+            body: 'Was jede Rolle darf, ohne Deployment änderbar. Die Administratorrolle ist gesperrt: Könnte man ihr Rechte entziehen, bliebe nach einem Versehen niemand übrig, der sie zurückgibt.',
           },
           {
             title: 'Mit Phidias synchronisieren',
-            body:
-              'Holt die echte Einschreibung. Die E-Mail jedes Lernenden leitet sich aus dem Code ab; die private Adresse, die Phidias manchmal führt, ist der Familienkontakt und dient nicht als Identität.',
+            body: 'Holt die echte Einschreibung. Die E-Mail jedes Lernenden leitet sich aus dem Code ab; die private Adresse, die Phidias manchmal führt, ist der Familienkontakt und dient nicht als Identität.',
           },
           {
             title: 'Schuljahr eröffnen',
-            body:
-              'Erstellt das neue Jahr und repliziert die Gruppen leer; die Einschreibung kommt danach über Phidias. Das Vorjahr bleibt mit allen Noten unverändert.',
-            tip:
-              'Das Löschen der Nachweise des endenden Jahres ist standardmäßig aus. Das Vorjahr behält seine Noten, und eine Note zu einem Nachweis, den es nicht mehr gibt, lässt sich später von niemandem begründen.',
+            body: 'Erstellt das neue Jahr und repliziert die Gruppen leer; die Einschreibung kommt danach über Phidias. Das Vorjahr bleibt mit allen Noten unverändert.',
+            tip: 'Das Löschen der Nachweise des endenden Jahres ist standardmäßig aus. Das Vorjahr behält seine Noten, und eine Note zu einem Nachweis, den es nicht mehr gibt, lässt sich später von niemandem begründen.',
           },
           {
             title: 'Gespeicherte Dateien',
-            body:
-              'Was es gibt, wie viel Platz und pro Jahr. Zum Löschen: Umfang wählen, simulieren, prüfen, bestätigen. Vom Gelöschten gibt es keine Kopie.',
+            body: 'Was es gibt, wie viel Platz und pro Jahr. Zum Löschen: Umfang wählen, simulieren, prüfen, bestätigen. Vom Gelöschten gibt es keine Kopie.',
           },
         ],
       },
@@ -672,28 +722,23 @@ export const de: PublicContent = {
         steps: [
           {
             title: 'Wirklich eine Kompetenz pro Frage',
-            body:
-              'Wenn du beim Etikettieren zwischen zwei Kompetenzen schwankst, misst die Frage wahrscheinlich zwei Dinge. Teile sie. Eine Frage, die zwei Dinge misst, verrät nicht, welches fehlschlug.',
+            body: 'Wenn du beim Etikettieren zwischen zwei Kompetenzen schwankst, misst die Frage wahrscheinlich zwei Dinge. Teile sie. Eine Frage, die zwei Dinge misst, verrät nicht, welches fehlschlug.',
           },
           {
             title: 'Prüfe übers Jahr alle sechs Kompetenzen',
-            body:
-              'Leicht landet man nur bei «Suchen» und «Produzieren», weil die sich von selbst ergeben. Das KMK-Radar zeigt die Nullen genau deshalb an.',
+            body: 'Leicht landet man nur bei «Suchen» und «Produzieren», weil die sich von selbst ergeben. Das KMK-Radar zeigt die Nullen genau deshalb an.',
           },
           {
             title: 'Die Rückmeldung ist der lehrende Teil',
-            body:
-              '«Gut gemacht!» bringt nichts. Zu erklären, warum die richtige Option richtig ist und wohin man bei einem Fehler schauen sollte, macht aus einer Prüfung eine Unterrichtsstunde.',
+            body: '«Gut gemacht!» bringt nichts. Zu erklären, warum die richtige Option richtig ist und wohin man bei einem Fehler schauen sollte, macht aus einer Prüfung eine Unterrichtsstunde.',
           },
           {
             title: 'Teste auf dem Tablet vor einer Tablet-Prüfung',
-            body:
-              'Zehn Minuten Vorschau auf demselben Gerät wie die Klasse verhindern die meisten Überraschungen am Prüfungstag.',
+            body: 'Zehn Minuten Vorschau auf demselben Gerät wie die Klasse verhindern die meisten Überraschungen am Prüfungstag.',
           },
           {
             title: 'Verlange Nachweise nicht vorsorglich',
-            body:
-              'Jede hochgeladene Datei ist Speicher, den jemand irgendwann prüfen und löschen muss – und es sind Arbeiten Minderjähriger. Verlange sie, wenn du sie ansehen wirst.',
+            body: 'Jede hochgeladene Datei ist Speicher, den jemand irgendwann prüfen und löschen muss – und es sind Arbeiten Minderjähriger. Verlange sie, wenn du sie ansehen wirst.',
           },
         ],
       },

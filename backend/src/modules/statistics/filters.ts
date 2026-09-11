@@ -91,6 +91,7 @@ const ANSWER_FILTER_MAP: Array<{
   { key: 'groupId', toClause: (value) => ({ groupId: value }) },
   { key: 'periodId', toClause: (value) => ({ academicPeriodId: value }) },
   { key: 'competencyId', toClause: (value) => ({ kmkCompetencyId: value }) },
+  { key: 'studentId', toClause: (value) => ({ studentId: value }) },
 
   // Filtros que sí requieren un salto, sobre relaciones ya indexadas.
   { key: 'areaId', toClause: (value) => ({ subject: { areaId: value } }) },
@@ -100,7 +101,6 @@ const ANSWER_FILTER_MAP: Array<{
     key: 'teacherId',
     toClause: (value) => ({ attempt: { version: { assessment: { createdById: value } } } }),
   },
-  { key: 'studentId', toClause: (value) => ({ attempt: { user: { student: { id: value } } } }) },
 ];
 
 /**

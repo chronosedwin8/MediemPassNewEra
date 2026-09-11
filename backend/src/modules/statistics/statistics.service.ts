@@ -6,6 +6,7 @@ import {
   type StatisticsActor,
   type StatisticsFilters,
 } from './filters.js';
+import { resolveLevel, type CompetencyLevel } from './levels.js';
 
 /**
  * Estadísticas.
@@ -35,7 +36,7 @@ export interface CompetencyStatistics {
   correctCount: number;
   correctRate: number;
   /** Nivel alcanzado, derivado del porcentaje. */
-  level: 'INICIAL' | 'EN_DESARROLLO' | 'CONSOLIDADO' | 'AVANZADO';
+  level: CompetencyLevel;
 }
 
 export interface CompetencyTrendPoint {
@@ -53,21 +54,6 @@ export interface KmkReport {
   strongest: CompetencyStatistics | null;
   weakest: CompetencyStatistics | null;
   totalAnswers: number;
-}
-
-/**
- * Nivel alcanzado en una competencia.
- *
- * Los cortes se eligen para que digan algo pedagógicamente: por debajo del
- * 50 % la competencia no está adquirida, y por encima del 90 % lo está con
- * solvencia. No se reutiliza la escala de calificación porque una nota es un
- * juicio sobre una evaluación concreta y esto es una tendencia acumulada.
- */
-function resolveLevel(percentage: number): CompetencyStatistics['level'] {
-  if (percentage >= 90) return 'AVANZADO';
-  if (percentage >= 70) return 'CONSOLIDADO';
-  if (percentage >= 50) return 'EN_DESARROLLO';
-  return 'INICIAL';
 }
 
 /**

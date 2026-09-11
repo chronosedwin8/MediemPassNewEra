@@ -175,7 +175,15 @@ async function buildFixture(): Promise<Fixture> {
  * Ambos estudiantes aciertan la pregunta de la competencia 1 y fallan la de la
  * competencia 5, de modo que el informe debe dar exactamente 100 % y 0 %.
  */
-async function seedResults(fixture: Fixture): Promise<{ assessmentId: string; versionId: string }> {
+async function seedResults(
+  fixture: Fixture,
+  /*
+   * Qué acierta cada estudiante, por posición. Por omisión todos responden
+   * igual, que es lo que comprueban las pruebas del informe agregado; el
+   * desglose por alumno necesita que difieran para tener algo que distinguir.
+   */
+  correctByStudent?: boolean[][],
+): Promise<{ assessmentId: string; versionId: string }> {
   const assessment = await request(app)
     .post('/api/assessments')
     .set('Authorization', `Bearer ${fixture.teacherToken}`)
@@ -219,7 +227,7 @@ async function seedResults(fixture: Fixture): Promise<{ assessmentId: string; ve
       attemptsAllowed: 1,
     });
 
-  for (const student of fixture.students) {
+  for (const [studentIndex, student] of fixture.students.entries()) {
     const assigned = await request(app)
       .get('/api/attempts/assigned')
       .set('Authorization', `Bearer ${student.token}`);
@@ -229,15 +237,20 @@ async function seedResults(fixture: Fixture): Promise<{ assessmentId: string; ve
       .set('Authorization', `Bearer ${student.token}`)
       .send({ recipientId: assigned.body.data[0].recipientId });
 
-    // Acierta la primera (competencia 1), falla la segunda (competencia 5).
-    await request(app)
-      .put(`/api/attempts/${attempt.body.data.id}/answers/${questionIds[0]}`)
-      .set('Authorization', `Bearer ${student.token}`)
-      .send({ response: { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'b' } });
-    await request(app)
-      .put(`/api/attempts/${attempt.body.data.id}/answers/${questionIds[1]}`)
-      .set('Authorization', `Bearer ${student.token}`)
-      .send({ response: { kind: QUESTION_TYPE.SINGLE_CHOICE, optionId: 'a' } });
+    // Por omisión: acierta la primera (competencia 1) y falla la segunda (5).
+    const pattern = correctByStudent?.[studentIndex] ?? [true, false];
+
+    for (const [questionIndex, questionId] of questionIds.entries()) {
+      await request(app)
+        .put(`/api/attempts/${attempt.body.data.id}/answers/${questionId}`)
+        .set('Authorization', `Bearer ${student.token}`)
+        .send({
+          response: {
+            kind: QUESTION_TYPE.SINGLE_CHOICE,
+            optionId: pattern[questionIndex] ? 'b' : 'a',
+          },
+        });
+    }
 
     await request(app)
       .post(`/api/attempts/${attempt.body.data.id}/submit`)
@@ -355,6 +368,162 @@ describe('informe por competencia KMK', () => {
     const kmkFirst = kmk.body.data.competencies.find((e: { code: string }) => e.code === '1');
     const groupFirst = group.body.data.competencies.find((e: { code: string }) => e.code === '1');
     expect(groupFirst.percentage).toBe(kmkFirst.percentage);
+  });
+});
+
+describe('desglose por materia, grupo y estudiante', () => {
+  interface Row {
+    id: string;
+    code: string | null;
+    name: unknown;
+    context: string | null;
+    percentage: number;
+    answerCount: number;
+    level: string;
+    cells: Array<{ competencyId: string; percentage: number; answerCount: number; level: string }>;
+  }
+
+  async function breakdown(
+    token: string,
+    dimension: string,
+    query: Record<string, string> = {},
+  ): Promise<{ status: number; body: { data: { rows: Row[]; truncated: boolean } } }> {
+    return request(app)
+      .get('/api/statistics/kmk/breakdown')
+      .query({ dimension, ...query })
+      .set('Authorization', `Bearer ${token}`);
+  }
+
+  it('da una fila por materia con el detalle de cada competencia', async () => {
+    await seedResults(fixture);
+
+    const response = await breakdown(fixture.adminToken, 'subject');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.rows).toHaveLength(1);
+
+    const row = response.body.data.rows[0]!;
+    expect(row.id).toBe(fixture.subjectId);
+    expect(row.code).toBe('INF');
+    expect(row.context).toBe('Tecnología');
+    // Dos preguntas de cinco puntos, una acertada: la mitad de lo posible.
+    expect(row.percentage).toBe(50);
+
+    const byCompetency = new Map(row.cells.map((cell) => [cell.competencyId, cell]));
+    expect(byCompetency.get(fixture.competencyIds[0]!)).toMatchObject({ percentage: 100 });
+    expect(byCompetency.get(fixture.competencyIds[1]!)).toMatchObject({ percentage: 0 });
+  });
+
+  it('da una fila por grupo con su curso', async () => {
+    await seedResults(fixture);
+
+    const response = await breakdown(fixture.adminToken, 'group');
+
+    const row = response.body.data.rows[0]!;
+    expect(row.id).toBe(fixture.groupId);
+    expect(row.code).toBe('K8A');
+    expect(row.context).toBe('KLASSE 8');
+    // Dos estudiantes por dos preguntas.
+    expect(row.answerCount).toBe(4);
+  });
+
+  it('distingue a un estudiante de otro', async () => {
+    /*
+     * El primero acierta solo la competencia 1; el segundo, las dos. Es el
+     * caso que justifica todo el desglose: en el agregado del grupo ambos
+     * desaparecen dentro de un promedio del 75 %.
+     */
+    await seedResults(fixture, [
+      [true, false],
+      [true, true],
+    ]);
+
+    const response = await breakdown(fixture.adminToken, 'student');
+
+    expect(response.body.data.rows).toHaveLength(2);
+
+    const byId = new Map(response.body.data.rows.map((row) => [row.id, row]));
+    const first = byId.get(fixture.students[0]!.profileId)!;
+    const second = byId.get(fixture.students[1]!.profileId)!;
+
+    expect(first.percentage).toBe(50);
+    expect(second.percentage).toBe(100);
+
+    const weakCompetency = fixture.competencyIds[1]!;
+    expect(first.cells.find((cell) => cell.competencyId === weakCompetency)).toMatchObject({
+      percentage: 0,
+      level: 'INICIAL',
+    });
+    expect(second.cells.find((cell) => cell.competencyId === weakCompetency)).toMatchObject({
+      percentage: 100,
+      level: 'AVANZADO',
+    });
+  });
+
+  it('nombra al estudiante por apellido y lo sitúa en su grupo', async () => {
+    await seedResults(fixture);
+
+    const response = await breakdown(fixture.adminToken, 'student');
+
+    const row = response.body.data.rows[0]!;
+    expect(typeof row.name).toBe('string');
+    expect(row.name as string).toContain(',');
+    expect(row.context).toBe('K8A');
+  });
+
+  it('respeta el alcance: un docente ajeno no ve a estos estudiantes', async () => {
+    await seedResults(fixture);
+    await createTeacher({ username: 'docente.desglose.ajeno' });
+
+    const response = await breakdown(await tokenFor('docente.desglose.ajeno'), 'student');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.rows).toHaveLength(0);
+  });
+
+  it('el docente titular sí ve a los suyos', async () => {
+    await seedResults(fixture);
+
+    const response = await breakdown(fixture.teacherToken, 'student');
+
+    expect(response.body.data.rows).toHaveLength(2);
+  });
+
+  it('un estudiante solo se ve a sí mismo', async () => {
+    await seedResults(fixture);
+
+    const response = await breakdown(fixture.students[0]!.token, 'student');
+
+    expect(response.body.data.rows).toHaveLength(1);
+    expect(response.body.data.rows[0]!.id).toBe(fixture.students[0]!.profileId);
+  });
+
+  it('acepta los mismos filtros que el resto del módulo', async () => {
+    await seedResults(fixture);
+
+    const included = await breakdown(fixture.adminToken, 'student', {
+      groupId: fixture.groupId,
+    });
+    expect(included.body.data.rows).toHaveLength(2);
+
+    const excluded = await breakdown(fixture.adminToken, 'student', {
+      competencyId: fixture.competencyIds[0]!,
+    });
+    // Filtrada una competencia, cada fila queda con una sola celda.
+    expect(excluded.body.data.rows[0]!.cells).toHaveLength(1);
+  });
+
+  it('rechaza una dimensión que no existe', async () => {
+    const response = await breakdown(fixture.adminToken, 'planeta');
+
+    expect(response.status).toBe(422);
+  });
+
+  it('no inventa filas cuando nadie ha respondido', async () => {
+    const response = await breakdown(fixture.adminToken, 'group');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.rows).toEqual([]);
   });
 });
 

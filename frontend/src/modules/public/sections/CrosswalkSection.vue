@@ -26,7 +26,9 @@ defineProps<{ crosswalk: HomeContent['crosswalk'] }>();
       <table class="w-full min-w-[46rem] border-collapse bg-surface text-left text-sm">
         <thead>
           <tr class="border-b border-border bg-surface-muted">
-            <th scope="col" class="px-4 py-3 font-semibold text-ink">{{ crosswalk.columns.kmk }}</th>
+            <th scope="col" class="px-4 py-3 font-semibold text-ink">
+              {{ crosswalk.columns.kmk }}
+            </th>
             <th scope="col" class="px-4 py-3 font-semibold text-ink">
               {{ crosswalk.columns.iste }}
             </th>

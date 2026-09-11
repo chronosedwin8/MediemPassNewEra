@@ -39,10 +39,7 @@ const { t } = useI18n();
             : 'border-border border-dashed bg-surface'
         "
       >
-        <span
-          class="text-sm font-medium"
-          :class="region.emphasis ? 'text-brand-700' : 'text-ink'"
-        >
+        <span class="text-sm font-medium" :class="region.emphasis ? 'text-brand-700' : 'text-ink'">
           {{ region.label }}
         </span>
         <span class="text-xs text-ink-muted sm:ml-auto sm:text-right">{{ region.note }}</span>

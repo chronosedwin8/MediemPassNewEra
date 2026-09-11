@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { localize, type LocalizedText } from '@medienpass/shared';
 import { http } from '@/services/http';
 import KmkChart from './KmkChart.vue';
+import KmkBreakdownTable from './KmkBreakdownTable.vue';
+import type { BreakdownRow, Dimension } from './breakdown-types';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
@@ -11,6 +13,10 @@ import EmptyState from '@/design-system/EmptyState.vue';
 
 /**
  * Estadísticas por competencia KMK.
+ *
+ * Dos lecturas de lo mismo, en este orden: el conjunto —en qué se es fuerte y
+ * en qué no— y el desglose —quién y en qué—. La segunda existe porque la
+ * primera, aplicada a un curso entero, esconde a quien va muy por detrás.
  *
  * Los filtros se envían tal cual al servidor, que es quien calcula: si el
  * cliente hiciera sus propias cuentas, dos pantallas podrían discrepar sobre
@@ -50,7 +56,29 @@ const loading = ref(true);
 const subjects = ref<Option[]>([]);
 const groups = ref<Option[]>([]);
 
-const filters = ref({ subjectId: '', groupId: '' });
+const filters = ref({ subjectId: '', groupId: '', studentId: '' });
+
+/**
+ * Por qué dimensión se desglosa. Por grupo de partida: es la comparación que
+ * más veces se quiere y la que menos filas produce.
+ */
+const dimension = ref<Dimension>('group');
+
+const DIMENSIONS: Array<{ value: Dimension; labelKey: string }> = [
+  { value: 'subject', labelKey: 'kmk.dimensionSubject' },
+  { value: 'group', labelKey: 'kmk.dimensionGroup' },
+  { value: 'student', labelKey: 'kmk.dimensionStudent' },
+];
+
+/**
+ * Estudiante enfocado al pulsar su fila.
+ *
+ * Solo los estudiantes: materia y grupo tienen su propio desplegable arriba, y
+ * al pulsarlos se ve ahí. Un alumno no lo tiene —elegir entre mil ciento
+ * setenta y siete nombres no es buscar a nadie— así que necesita su propio
+ * indicador de a quién se está mirando y cómo salir.
+ */
+const focusedStudent = ref<string | null>(null);
 
 const levelTone: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
   AVANZADO: 'success',
@@ -59,23 +87,47 @@ const levelTone: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
   INICIAL: 'danger',
 };
 
-const levelLabel: Record<string, string> = {
-  AVANZADO: 'Avanzado',
-  CONSOLIDADO: 'Consolidado',
-  EN_DESARROLLO: 'En desarrollo',
-  INICIAL: 'Inicial',
-};
+function levelLabel(level: string): string {
+  return t(`kmk.level${level}`);
+}
+
+/** Lo que se manda al servidor: los vacíos no viajan. */
+const query = computed(() => ({
+  subjectId: filters.value.subjectId || undefined,
+  groupId: filters.value.groupId || undefined,
+  studentId: filters.value.studentId || undefined,
+}));
 
 async function load(): Promise<void> {
   loading.value = true;
   try {
-    report.value = await http.get<KmkReport>('/statistics/kmk', {
-      subjectId: filters.value.subjectId || undefined,
-      groupId: filters.value.groupId || undefined,
-    });
+    report.value = await http.get<KmkReport>('/statistics/kmk', query.value);
   } finally {
     loading.value = false;
   }
+}
+
+const FOCUS_FIELD: Record<Dimension, 'subjectId' | 'groupId' | 'studentId'> = {
+  subject: 'subjectId',
+  group: 'groupId',
+  student: 'studentId',
+};
+
+/**
+ * Pulsar una fila acota el informe de arriba a esa entidad.
+ *
+ * Es lo que convierte la tabla en un itinerario: se ve que el 10.º B flojea,
+ * se pulsa, y el gráfico de competencias pasa a ser el de ese curso. Con un
+ * estudiante, ese gráfico es su perfil individual.
+ */
+function focus(row: BreakdownRow, label: string): void {
+  filters.value[FOCUS_FIELD[dimension.value]] = row.id;
+  focusedStudent.value = dimension.value === 'student' ? label : focusedStudent.value;
+}
+
+function clearFocus(): void {
+  filters.value.studentId = '';
+  focusedStudent.value = null;
 }
 
 onMounted(async () => {
@@ -99,7 +151,7 @@ const selectClass =
 <template>
   <div class="flex flex-col gap-5">
     <!-- Filtros. Los mismos nombres que usa la API en toda la plataforma. -->
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap items-end gap-3">
       <div class="flex flex-col gap-1.5">
         <label class="text-xs font-medium text-ink-muted" for="filter-subject">
           {{ t('assessment.subject') }}
@@ -123,6 +175,23 @@ const selectClass =
           </option>
         </select>
       </div>
+
+      <!--
+        El estudiante enfocado no tiene desplegable propio: elegir entre mil
+        ciento setenta y siete nombres no es una forma razonable de buscar a
+        nadie. Se llega pulsando su fila en el desglose, y aquí solo se muestra
+        a quién se está mirando y cómo salir.
+      -->
+      <button
+        v-if="focusedStudent"
+        type="button"
+        class="inline-flex h-10 items-center gap-2 rounded-md border border-brand-600 bg-brand-50 px-3 text-sm font-medium text-brand-700"
+        @click="clearFocus"
+      >
+        {{ focusedStudent }}
+        <span aria-hidden="true">×</span>
+        <span class="sr-only">{{ t('common.close') }}</span>
+      </button>
     </div>
 
     <BaseSpinner v-if="loading" size="lg" />
@@ -179,12 +248,47 @@ const selectClass =
                 {{ n(entry.correctRate / 100, 'percent') }} {{ t('result.correct').toLowerCase() }}
               </span>
               <BaseBadge :tone="levelTone[entry.level] ?? 'neutral'">
-                {{ levelLabel[entry.level] ?? entry.level }}
+                {{ levelLabel(entry.level) }}
               </BaseBadge>
             </span>
           </li>
         </ul>
       </BaseCard>
     </template>
+
+    <!--
+      El desglose se pinta aunque el agregado esté vacío por los filtros: es
+      justamente donde se ve que una materia no ha evaluado nada.
+    -->
+    <BaseCard :title="t('kmk.breakdown')">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-medium text-ink-muted">{{ t('kmk.viewBy') }}</span>
+          <button
+            v-for="option in DIMENSIONS"
+            :key="option.value"
+            type="button"
+            :aria-pressed="dimension === option.value"
+            :class="[
+              'rounded-md border px-3 py-1.5 text-sm transition-colors',
+              dimension === option.value
+                ? 'border-brand-600 bg-brand-600 font-medium text-ink-inverse'
+                : 'border-border-strong bg-surface text-ink-muted hover:bg-surface-muted hover:text-ink',
+            ]"
+            @click="dimension = option.value"
+          >
+            {{ t(option.labelKey) }}
+          </button>
+        </div>
+
+        <p class="text-sm text-ink-muted">{{ t('kmk.breakdownHint') }}</p>
+
+        <KmkBreakdownTable
+          :dimension="dimension"
+          :filters="query"
+          @select="(row) => focus(row, typeof row.name === 'string' ? row.name : row.code || '')"
+        />
+      </div>
+    </BaseCard>
   </div>
 </template>

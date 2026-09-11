@@ -97,10 +97,7 @@ const visible = computed(() =>
         />
 
         <p class="border-t border-border pt-6">
-          <a
-            href="#"
-            class="text-sm font-medium text-brand-700 underline underline-offset-2"
-          >
+          <a href="#" class="text-sm font-medium text-brand-700 underline underline-offset-2">
             {{ t('public.backToTop') }}
           </a>
         </p>

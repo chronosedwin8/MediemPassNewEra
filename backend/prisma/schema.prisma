@@ -628,6 +628,7 @@ model Student {
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   gradeLevel  GradeLevel?       @relation(fields: [gradeLevelId], references: [id])
   memberships GroupMembership[]
+  answers     AttemptAnswer[]
 
   @@unique([externalSource, externalId])
   @@index([enrollmentStatus])
@@ -1088,6 +1089,9 @@ model AttemptAnswer {
   subjectId          String?      @map("subject_id")
   groupId            String?      @map("group_id")
   academicPeriodId   String?      @map("academic_period_id")
+  /// Estudiante que respondió. Nulo cuando quien responde no lo es: el
+  /// profesorado también resuelve las evaluaciones de su capacitación.
+  studentId          String?      @map("student_id")
 
   attempt          AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question         Question          @relation(fields: [questionId], references: [id])
@@ -1097,12 +1101,14 @@ model AttemptAnswer {
   subject          Subject?          @relation(fields: [subjectId], references: [id])
   group            Group?            @relation(fields: [groupId], references: [id])
   academicPeriod   AcademicPeriod?   @relation(fields: [academicPeriodId], references: [id])
+  student          Student?          @relation(fields: [studentId], references: [id])
 
   @@unique([attemptId, questionId])
   @@index([kmkCompetencyId, answeredAt])
   @@index([subjectId, kmkCompetencyId])
   @@index([groupId, kmkCompetencyId])
   @@index([academicPeriodId, kmkCompetencyId])
+  @@index([studentId, kmkCompetencyId])
   @@index([requiresManualGrading, gradedAt])
   @@map("attempt_answers")
 }

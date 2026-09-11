@@ -98,9 +98,7 @@ function changeLanguage(event: Event): void {
     </main>
 
     <footer class="border-t border-border bg-surface">
-      <div
-        class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-ink-muted sm:px-6"
-      >
+      <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-ink-muted sm:px-6">
         <p class="font-medium text-ink">{{ t('public.school') }}</p>
         <p>{{ t('public.footer') }}</p>
         <p class="text-ink-subtle">{{ t('public.privacyNote') }}</p>

@@ -662,6 +662,7 @@ async function resolveAnalyticsContext(attemptId: string) {
     where: { id: attemptId },
     select: {
       startedAt: true,
+      user: { select: { student: { select: { id: true } } } },
       recipient: {
         select: {
           assignment: {
@@ -679,6 +680,12 @@ async function resolveAnalyticsContext(attemptId: string) {
     subjectId: attempt.recipient.assignment.version.assessment.subjectId,
     groupId: attempt.recipient.assignment.groupId,
     academicPeriodId: await resolvePeriodAt(attempt.startedAt),
+    /*
+     * Nulo cuando quien responde no es estudiante: el profesorado resuelve las
+     * evaluaciones de su propia capacitación con el mismo motor, y esas
+     * respuestas no deben aparecer en el desglose por alumno.
+     */
+    studentId: attempt.user.student?.id ?? null,
   };
 }
 
@@ -699,7 +706,12 @@ function gradeAllQuestions(
     kmkSubcompetencyId: string | null;
   }>,
   answersByQuestion: Map<string, { response: unknown }>,
-  analytics: { subjectId: string | null; groupId: string | null; academicPeriodId: string | null },
+  analytics: {
+    subjectId: string | null;
+    groupId: string | null;
+    academicPeriodId: string | null;
+    studentId: string | null;
+  },
 ): {
   pointsEarned: number;
   pointsPossible: number;
@@ -740,6 +752,7 @@ function gradeAllQuestions(
         subjectId: analytics.subjectId,
         groupId: analytics.groupId,
         academicPeriodId: analytics.academicPeriodId,
+        studentId: analytics.studentId,
       },
     });
   }

@@ -6,6 +6,7 @@ import { requireAnyPermission } from '../../middleware/authorize.js';
 import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
 import { statisticsFiltersSchema, type StatisticsFilters } from './filters.js';
 import { getAssessmentReport } from './assessment-report.service.js';
+import { breakdownQuerySchema, getKmkBreakdown } from './kmk-breakdown.service.js';
 import {
   getGroupStatistics,
   getKmkReport,
@@ -39,6 +40,23 @@ statisticsRouter.get(
   validate({ query: statisticsFiltersSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await getKmkReport(requireAuth(req), getQuery<StatisticsFilters>(req)));
+  }),
+);
+
+/**
+ * La misma competencia, desglosada por materia, grupo o estudiante.
+ *
+ * `/kmk` responde «cómo va esto»; esta responde «comparado con qué». Son dos
+ * preguntas distintas y por eso son dos rutas: filtrar la primera cincuenta
+ * veces para comparar cincuenta grupos es lo que esta evita.
+ */
+statisticsRouter.get(
+  '/kmk/breakdown',
+  requireAnyPermission(...ANY_STATS_PERMISSION),
+  validate({ query: statisticsFiltersSchema.merge(breakdownQuerySchema) }),
+  asyncHandler(async (req, res) => {
+    const query = getQuery<StatisticsFilters & { dimension: 'subject' | 'group' | 'student' }>(req);
+    ok(res, await getKmkBreakdown(requireAuth(req), query.dimension, query));
   }),
 );
 
