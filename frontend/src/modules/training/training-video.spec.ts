@@ -80,3 +80,22 @@ describe('lo que no está en la lista', () => {
     expect(wrapper.find('video').exists()).toBe(false);
   });
 });
+
+describe('material de la propia plataforma', () => {
+  it('reproduce un vídeo servido por el mismo sitio', () => {
+    // Los vídeos de la capacitación viven en /media/capacitacion. Mismo
+    // origen: el caso más seguro, y el que se usa en producción.
+    const wrapper = render('/media/capacitacion/kmk-m1.mp4');
+
+    expect(wrapper.find('iframe').exists()).toBe(false);
+    expect(wrapper.find('video').attributes('src')).toContain('/media/capacitacion/kmk-m1.mp4');
+  });
+
+  it('no confunde una URL sin esquema con una ruta local', () => {
+    // `//otro-sitio/x.mp4` empieza por barra pero apunta fuera.
+    const wrapper = render('//sitio-cualquiera.example/video.mp4');
+
+    expect(wrapper.find('iframe').exists()).toBe(false);
+    expect(wrapper.find('video').exists()).toBe(false);
+  });
+});

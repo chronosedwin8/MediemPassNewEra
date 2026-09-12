@@ -64,22 +64,43 @@ const PLATFORMS: Array<{ hosts: string[]; embed: (url: URL) => string | null }> 
   },
 ];
 
+/**
+ * La URL, si es una que se puede reproducir.
+ *
+ * Una ruta que empieza por una sola barra es material servido por la propia
+ * plataforma —los vídeos de la capacitación viven ahí— y se resuelve contra
+ * el origen actual. Es el caso más seguro de todos: mismo origen, nada de
+ * terceros. Se excluye «//» porque no es una ruta local sino una URL sin
+ * esquema, que apunta fuera.
+ *
+ * Para lo demás se exige HTTPS: un vídeo por HTTP en una página segura no
+ * carga, y un `javascript:` no debe llegar nunca a un atributo `src`.
+ */
 const parsed = computed<URL | null>(() => {
+  const bruta = props.url.trim();
+
   try {
-    const url = new URL(props.url);
-    // Solo HTTPS: un vídeo por HTTP en una página segura no carga, y un
-    // `javascript:` no debe llegar nunca a un atributo `src`.
+    if (bruta.startsWith('/') && !bruta.startsWith('//')) {
+      return new URL(bruta, window.location.origin);
+    }
+    const url = new URL(bruta);
     return url.protocol === 'https:' ? url : null;
   } catch {
     return null;
   }
 });
 
+/** Lo servido por la propia plataforma se reproduce aunque no lleve extensión. */
+const esPropio = computed(
+  () => parsed.value !== null && parsed.value.origin === window.location.origin,
+);
+
 const fileUrl = computed(() => {
   const url = parsed.value;
   if (!url) return null;
   const path = url.pathname.toLowerCase();
-  return FILE_EXTENSIONS.some((extension) => path.endsWith(extension)) ? url.href : null;
+  const esArchivo = FILE_EXTENSIONS.some((extension) => path.endsWith(extension));
+  return esArchivo || esPropio.value ? url.href : null;
 });
 
 const embedUrl = computed(() => {

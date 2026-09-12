@@ -40,3 +40,8 @@ Desktop.ini
 # Prisma
 backend/prisma/*.db
 backend/prisma/migrations/dev.db*
+
+# Vídeos de la capacitación docente: material, no código. Se generan con
+# `npm run -w backend videos` y se despliegan aparte.
+media/
+frontend/public/media/
