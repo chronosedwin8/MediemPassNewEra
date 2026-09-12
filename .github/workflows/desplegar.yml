@@ -39,10 +39,15 @@ jobs:
 
       - run: npm ci --workspaces --include-workspace-root
 
-      # `packages/shared` no se compila: backend y frontend lo consumen como
-      # fuente a través del mapeo de rutas de TypeScript. Aquí había un paso
-      # que lo compilaba y no existe tal script, así que el flujo entero
-      # moría antes de construir nada.
+      # Sin el cliente de Prisma generado, TODOS los tipos de la base colapsan
+      # a `any` y el typecheck se llena de errores que apuntan a cincuenta
+      # archivos distintos, ninguno de los cuales es el problema. En local no
+      # se nota porque el cliente ya está generado de alguna ejecución previa.
+      #
+      # (`packages/shared` no lleva paso equivalente: se consume como fuente a
+      # través del mapeo de rutas de TypeScript, y no tiene compilación.)
+      - run: npm run db:generate --workspace backend
+
       - run: npm run typecheck --workspace backend
       - run: npm run typecheck --workspace frontend
       - run: npm run lint
