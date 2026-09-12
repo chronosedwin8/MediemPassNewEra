@@ -7,6 +7,7 @@ import OrderingQuestion from './OrderingQuestion.vue';
 import PairingQuestion from './PairingQuestion.vue';
 import FillBlankQuestion from './FillBlankQuestion.vue';
 import HotspotQuestion from './HotspotQuestion.vue';
+import MediaResponseQuestion from './MediaResponseQuestion.vue';
 
 /**
  * Selecciona el componente que corresponde a cada tipo de pregunta.
@@ -17,6 +18,8 @@ import HotspotQuestion from './HotspotQuestion.vue';
  */
 
 defineProps<{
+  /** Hace falta para subir la grabación: el archivo cuelga del intento. */
+  attemptId: string;
   questionId: string;
   type: QuestionType;
   payload: Record<string, unknown>;
@@ -42,7 +45,19 @@ const SEQUENCE_TYPES: QuestionType[] = [QUESTION_TYPE.ORDERING, QUESTION_TYPE.TI
 
 const PAIRING_TYPES: QuestionType[] = [QUESTION_TYPE.MATCHING, QUESTION_TYPE.GROUPING];
 
-const component = computed(() => ({ CHOICE_TYPES, TEXT_TYPES, SEQUENCE_TYPES, PAIRING_TYPES }));
+const MEDIA_TYPES: QuestionType[] = [
+  QUESTION_TYPE.SELFIE,
+  QUESTION_TYPE.VIDEO_RESPONSE,
+  QUESTION_TYPE.AUDIO_RESPONSE,
+];
+
+const component = computed(() => ({
+  CHOICE_TYPES,
+  TEXT_TYPES,
+  SEQUENCE_TYPES,
+  PAIRING_TYPES,
+  MEDIA_TYPES,
+}));
 </script>
 
 <template>
@@ -88,6 +103,16 @@ const component = computed(() => ({ CHOICE_TYPES, TEXT_TYPES, SEQUENCE_TYPES, PA
 
   <HotspotQuestion
     v-else-if="type === QUESTION_TYPE.HOTSPOT"
+    :payload="payload"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+  />
+
+  <MediaResponseQuestion
+    v-else-if="component.MEDIA_TYPES.includes(type)"
+    :attempt-id="attemptId"
+    :question-id="questionId"
+    :type="type"
     :payload="payload"
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"

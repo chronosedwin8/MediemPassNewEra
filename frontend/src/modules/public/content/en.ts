@@ -541,8 +541,13 @@ export const en: PublicContent = {
             tip: 'You can only assign to groups you lead. An empty group list is not a bug: you are not registered as homeroom teacher anywhere, and administration resolves that.',
           },
           {
+            title: 'Ask for a photo, a video or a voice note when it helps',
+            body: 'Three question types are answered by recording: a selfie, a video of up to three minutes and a voice note of up to five. They are for what text does not show: that someone can explain out loud what they understood, or that the build they are describing actually exists.',
+            tip: 'Camera and microphone only work over HTTPS or on the computer itself. If you plan to use them in class over the network address, tell whoever is serving the platform beforehand or there will be no camera on the day.',
+          },
+          {
             title: 'Grade what the machine cannot',
-            body: 'Open answers stay pending review. Until you mark them, the grade shown reflects only the automatic part.',
+            body: 'Open and recorded answers stay pending review. "Marking" lists them all together, oldest first, with the video or audio ready to play right there: you enter the mark and a comment without opening each attempt.',
           },
         ],
         screen: {

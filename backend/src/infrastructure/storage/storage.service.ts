@@ -83,6 +83,8 @@ export const ALLOWED_CONTENT_TYPES: Record<string, string> = {
   'audio/mpeg': 'mp3',
   'audio/mp4': 'm4a',
   'audio/ogg': 'ogg',
+  // Lo que produce MediaRecorder en Chrome y Firefox al grabar solo voz.
+  'audio/webm': 'weba',
   'video/mp4': 'mp4',
   'video/webm': 'webm',
   'text/plain': 'txt',
@@ -130,6 +132,29 @@ export function buildTrainingMediaKey(input: {
 }): string {
   const extension = extensionFor(input.contentType);
   return `training/${input.moduleCode}/${input.contentId}/${randomUUID()}.${extension}`;
+}
+
+/**
+ * Clave de una grabación que responde una pregunta.
+ *
+ * Cuelga del intento y de la pregunta, no de una carpeta común de evidencias:
+ * mirando el bucket a mano se ve de quién es cada archivo y a qué contestaba,
+ * que es justo lo que hace falta el día que alguien pregunta qué se guardó.
+ */
+export function buildResponseMediaKey(input: {
+  academicYearCode: string;
+  assessmentId: string;
+  attemptId: string;
+  questionId: string;
+  contentType: string;
+}): string {
+  const extension = extensionFor(baseContentType(input.contentType));
+  return `response/${input.academicYearCode}/${input.assessmentId}/${input.attemptId}/${input.questionId}-${randomUUID()}.${extension}`;
+}
+
+/** `video/webm;codecs=vp8` → `video/webm`. Los navegadores anuncian su códec. */
+export function baseContentType(contentType: string): string {
+  return contentType.split(';')[0]!.trim().toLowerCase();
 }
 
 export function buildQuestionMediaKey(input: {

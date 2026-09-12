@@ -1,4 +1,4 @@
-import { QUESTION_TYPE, type QuestionType } from '@medienpass/shared';
+import { MEDIA_MAX_SECONDS, QUESTION_TYPE, type QuestionType } from '@medienpass/shared';
 
 /**
  * Contenido inicial mínimo y válido para cada tipo.
@@ -39,5 +39,13 @@ export function seedPayload(questionType: QuestionType): Record<string, unknown>
       return { kind: questionType, template: '', blanks: [] };
     case QUESTION_TYPE.HOTSPOT:
       return { kind: questionType, imageUrl: '', alt: '', multiple: false, regions: [] };
+
+    // La duración por defecto es el tope del tipo: el docente la baja si
+    // quiere respuestas más cortas, nunca la sube.
+    case QUESTION_TYPE.SELFIE:
+      return { kind: questionType };
+    case QUESTION_TYPE.VIDEO_RESPONSE:
+    case QUESTION_TYPE.AUDIO_RESPONSE:
+      return { kind: questionType, maxSeconds: MEDIA_MAX_SECONDS[questionType] };
   }
 }

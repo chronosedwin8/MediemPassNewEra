@@ -102,6 +102,11 @@ enum QuestionType {
   HOTSPOT
   SHORT_ANSWER
   LONG_ANSWER
+
+  /// Respuestas capturadas con la cámara o el micrófono. Se califican a mano.
+  SELFIE
+  VIDEO_RESPONSE
+  AUDIO_RESPONSE
 }
 
 enum AssignmentTargetType {
@@ -212,6 +217,12 @@ enum StoredFileKind {
   EVIDENCE
   /// Imagen, vídeo o documento del material de capacitación.
   TRAINING_MEDIA
+  /// La grabación **es** la respuesta: foto, vídeo o nota de voz.
+  ///
+  /// No es evidencia. La evidencia acompaña a una respuesta escrita y es
+  /// opcional; esto es lo único que el estudiante entregó, y distinguirlo
+  /// permite que el borrado y los informes traten cada cosa como lo que es.
+  RESPONSE_MEDIA
 }
 
 enum TrainingModuleStatus {

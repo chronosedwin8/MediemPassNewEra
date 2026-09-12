@@ -4,7 +4,8 @@ import { PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, ok } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
 import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
-import { uuidParam, validate } from '../../middleware/validate.js';
+import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
+import { assertCanGrade, listPendingReview } from './review.service.js';
 import { buildCertificateData } from '../certificates/certificate.service.js';
 import { renderCertificate } from '../certificates/certificate.pdf.js';
 import { assertCanDownloadCertificate } from '../certificates/certificate.access.js';
@@ -136,6 +137,27 @@ attemptsRouter.get(
   }),
 );
 
+/**
+ * Cola de corrección.
+ *
+ * Lo que falta por puntuar, de lo más antiguo a lo más reciente: quien lleva
+ * más tiempo esperando su nota sale primero.
+ */
+attemptsRouter.get(
+  '/review/pending',
+  requirePermission(PERMISSION.ATTEMPT_GRADE),
+  validate({
+    query: z.object({
+      assessmentId: z.string().uuid().optional(),
+      limit: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+  }),
+  asyncHandler(async (req, res) => {
+    const query = getQuery<{ assessmentId?: string; limit?: number }>(req);
+    ok(res, await listPendingReview(requireAuth(req), query));
+  }),
+);
+
 /** Calificación manual de una respuesta abierta por el docente. */
 attemptsRouter.post(
   '/:id/answers/:questionId/grade',
@@ -149,10 +171,16 @@ attemptsRouter.post(
   }),
   asyncHandler(async (req, res) => {
     const { points, feedback } = req.body as { points: number; feedback?: string | null };
+    const auth = requireAuth(req);
+
+    // El permiso dice que corrige; esto decide qué. Sin la comprobación,
+    // cualquier docente puntuaba un examen ajeno con dos identificadores.
+    await assertCanGrade(auth, req.params['id']!, req.params['questionId']!);
+
     ok(
       res,
       await gradeAnswerManually(
-        requireAuth(req).userId,
+        auth.userId,
         req.params['id']!,
         req.params['questionId']!,
         points,

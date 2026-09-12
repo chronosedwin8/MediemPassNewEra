@@ -261,6 +261,7 @@ async function confirmFinish(): Promise<void> {
 
           <QuestionRenderer
             :key="store.currentQuestion.id"
+            :attempt-id="store.attempt!.id"
             :question-id="store.currentQuestion.id"
             :type="store.currentQuestion.type"
             :payload="store.currentQuestion.payload"

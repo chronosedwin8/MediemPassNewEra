@@ -85,6 +85,10 @@ const TEACHING_NAV: NavRule[] = [
     permissions: [PERMISSION.STUDENT_READ],
   },
   {
+    item: { to: '/review', labelKey: 'nav.review', icon: 'assessment' },
+    permissions: [PERMISSION.ATTEMPT_GRADE],
+  },
+  {
     item: { to: '/ai/generate', labelKey: 'nav.aiGenerate', icon: 'assessment' },
     permissions: [PERMISSION.AI_GENERATE],
   },

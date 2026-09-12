@@ -25,21 +25,19 @@ import { getEditableVersion } from './assessments.service.js';
  * la que una pregunta de una versión publicada pueda cambiar.
  */
 
-const questionTypeSchema = z.enum([
-  QUESTION_TYPE.SINGLE_CHOICE,
-  QUESTION_TYPE.MULTIPLE_CHOICE,
-  QUESTION_TYPE.TRUE_FALSE,
-  QUESTION_TYPE.OPEN_TEXT,
-  QUESTION_TYPE.FILL_BLANK,
-  QUESTION_TYPE.MATCHING,
-  QUESTION_TYPE.GROUPING,
-  QUESTION_TYPE.TIMELINE,
-  QUESTION_TYPE.ORDERING,
-  QUESTION_TYPE.IMAGE_CHOICE,
-  QUESTION_TYPE.HOTSPOT,
-  QUESTION_TYPE.SHORT_ANSWER,
-  QUESTION_TYPE.LONG_ANSWER,
-]);
+/**
+ * Los tipos admitidos salen del propio enum.
+ *
+ * Antes eran una lista escrita a mano que repetía `QUESTION_TYPE` entrada por
+ * entrada, y se quedó atrás en cuanto se añadieron los tipos de captura: el
+ * esquema del contenido los aceptaba, el calificador existía y la interfaz los
+ * ofrecía, pero crear la pregunta devolvía un 422 sin decir por qué.
+ *
+ * Derivarlo no es un atajo: es que no había dos listas, había una copia.
+ */
+const questionTypeSchema = z.enum(
+  Object.values(QUESTION_TYPE) as [QuestionType, ...QuestionType[]],
+);
 
 export const createQuestionSchema = z
   .object({
@@ -130,7 +128,7 @@ export async function listQuestions(actor: Actor, versionId: string) {
   });
   if (!version) throw AppError.notFound(ERROR_CODE.ASSESSMENT_VERSION_NOT_FOUND, { versionId });
 
-  return prisma.question.findMany({
+  const questions = await prisma.question.findMany({
     where: { assessmentVersionId: versionId },
     orderBy: { position: 'asc' },
     include: {
@@ -138,6 +136,20 @@ export async function listQuestions(actor: Actor, versionId: string) {
       kmkSubcompetency: { select: { id: true, code: true, name: true } },
     },
   });
+
+  /*
+   * Los puntos salen como número.
+   *
+   * Prisma devuelve `Decimal`, que al serializarse a JSON se convierte en
+   * texto. El tipo del cliente decía `number`, así que nadie se enteraba hasta
+   * que alguien sumaba: el total de una evaluación de cinco preguntas aparecía
+   * como «023344» en lugar de 16, porque `0 + '2' + '3'…` concatena.
+   *
+   * Se convierte aquí y no en la pantalla porque el problema es del contrato:
+   * si cada consumidor tiene que acordarse de convertirlo, el siguiente que
+   * sume volverá a concatenar.
+   */
+  return questions.map((question) => ({ ...question, points: Number(question.points) }));
 }
 
 export async function createQuestion(actor: Actor, versionId: string, input: CreateQuestionInput) {

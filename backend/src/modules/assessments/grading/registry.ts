@@ -27,6 +27,7 @@ import {
   orderingGrader,
   timelineGrader,
 } from './relation.graders.js';
+import { audioResponseGrader, selfieGrader, videoResponseGrader } from './media.graders.js';
 import { EMPTY_OUTCOME, type GradeOutcome, type Grader } from './types.js';
 
 /**
@@ -52,6 +53,9 @@ const GRADERS: { [T in QuestionType]: Grader<T> } = {
   [QUESTION_TYPE.GROUPING]: groupingGrader,
   [QUESTION_TYPE.ORDERING]: orderingGrader,
   [QUESTION_TYPE.TIMELINE]: timelineGrader,
+  [QUESTION_TYPE.SELFIE]: selfieGrader,
+  [QUESTION_TYPE.VIDEO_RESPONSE]: videoResponseGrader,
+  [QUESTION_TYPE.AUDIO_RESPONSE]: audioResponseGrader,
 };
 
 export function getGrader<T extends QuestionType>(type: T): Grader<T> {

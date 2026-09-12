@@ -80,6 +80,15 @@ const SOLUTION_TEXT: Record<QuestionType, (data: Payload, labels: BooleanLabels)
   // correcta» sería falso. La interfaz lo distingue con `MANUAL_TYPES`.
   [QUESTION_TYPE.OPEN_TEXT]: () => [],
   [QUESTION_TYPE.LONG_ANSWER]: () => [],
+
+  /*
+   * Las respuestas grabadas no tienen solución que enseñar: lo que hay es una
+   * grabación que alguien mira. Se enumeran para que el mapa siga siendo
+   * completo sobre los tipos y el compilador avise si algún día la tienen.
+   */
+  [QUESTION_TYPE.SELFIE]: () => [],
+  [QUESTION_TYPE.VIDEO_RESPONSE]: () => [],
+  [QUESTION_TYPE.AUDIO_RESPONSE]: () => [],
 };
 
 function orderedItems(data: Payload): string[] {
@@ -91,6 +100,9 @@ function orderedItems(data: Payload): string[] {
 
 /** Tipos que no tienen clave porque los califica el docente. */
 export const MANUAL_TYPES: readonly QuestionType[] = [
+  QUESTION_TYPE.SELFIE,
+  QUESTION_TYPE.VIDEO_RESPONSE,
+  QUESTION_TYPE.AUDIO_RESPONSE,
   QUESTION_TYPE.OPEN_TEXT,
   QUESTION_TYPE.LONG_ANSWER,
 ];

@@ -122,6 +122,15 @@ export const QUESTION_TYPE = {
   HOTSPOT: 'HOTSPOT',
   SHORT_ANSWER: 'SHORT_ANSWER',
   LONG_ANSWER: 'LONG_ANSWER',
+
+  /*
+   * Respuestas capturadas con la cámara o el micrófono. No tienen solución
+   * que comparar: son una grabación que alguien mira y califica, igual que
+   * una redacción.
+   */
+  SELFIE: 'SELFIE',
+  VIDEO_RESPONSE: 'VIDEO_RESPONSE',
+  AUDIO_RESPONSE: 'AUDIO_RESPONSE',
 } as const;
 export type QuestionType = (typeof QUESTION_TYPE)[keyof typeof QUESTION_TYPE];
 
@@ -129,6 +138,9 @@ export type QuestionType = (typeof QUESTION_TYPE)[keyof typeof QUESTION_TYPE];
 export const MANUALLY_GRADED_QUESTION_TYPES: readonly QuestionType[] = [
   QUESTION_TYPE.OPEN_TEXT,
   QUESTION_TYPE.LONG_ANSWER,
+  QUESTION_TYPE.SELFIE,
+  QUESTION_TYPE.VIDEO_RESPONSE,
+  QUESTION_TYPE.AUDIO_RESPONSE,
 ];
 
 export const ASSIGNMENT_TARGET_TYPE = {

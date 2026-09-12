@@ -78,7 +78,8 @@
     "skipToContent": "Zum Inhalt springen",
     "aiGenerate": "Mit KI erzeugen",
     "admin": "Verwaltung",
-    "trainingAdmin": "Fortbildungsinhalte"
+    "trainingAdmin": "Fortbildungsinhalte",
+    "review": "Korrigieren"
   },
   "roles": {
     "ADMIN": "Administrator",
@@ -246,7 +247,18 @@
       "IMAGE_CHOICE": "Bildauswahl",
       "HOTSPOT": "Bildbereich",
       "SHORT_ANSWER": "Kurzantwort",
-      "LONG_ANSWER": "Lange Antwort"
+      "LONG_ANSWER": "Lange Antwort",
+      "SELFIE": "Mach ein Selfie",
+      "VIDEO_RESPONSE": "Antworte per Video",
+      "AUDIO_RESPONSE": "Antworte per Sprachnachricht"
+    },
+    "media": {
+      "guidance": "Hinweis für die antwortende Person",
+      "guidanceHint": "Erscheint neben der Aufnahmetaste. Zum Beispiel: «Erkläre deinen Gedankengang, lies den Text nicht vor».",
+      "guidanceSelfieHint": "Erscheint neben der Kamera. Zum Beispiel: «Der fertige Aufbau soll hinter dir zu sehen sein».",
+      "maxSeconds": "Maximale Dauer (Sekunden)",
+      "maxSecondsHint": "Du kannst weniger verlangen, nie mehr als {seconds} s. Das Limit schützt den Speicher und die Zeit der korrigierenden Person.",
+      "secureContextNote": "Kamera und Mikrofon funktionieren nur über HTTPS oder auf dem eigenen Rechner. Über eine Netzwerkadresse ohne Zertifikat blockiert der Browser sie."
     }
   },
   "editor": {
@@ -794,5 +806,37 @@
     "step": "Schritt {number}",
     "tip": "Empfehlung",
     "wiki": "Anleitung"
+  },
+  "media": {
+    "answerSaved": "Deine Antwort ist gespeichert. Du kannst sie wiederholen.",
+    "enableCamera": "Kamera aktivieren",
+    "enableMicrophone": "Mikrofon aktivieren",
+    "insecureContext": "Der Browser erlaubt Kamera und Mikrofon unter dieser Adresse nicht. Die Plattform muss über HTTPS oder auf diesem Rechner geöffnet werden; sag es der Person, die sie bereitstellt.",
+    "maxDuration": "Höchstens {minutes} Min.",
+    "noCamera": "Es wurde keine Kamera gefunden.",
+    "noMicrophone": "Es wurde kein Mikrofon gefunden.",
+    "permissionDenied": "Du hast Kamera oder Mikrofon nicht erlaubt. Du kannst das über das Symbol in der Adresszeile nachholen.",
+    "previewOnly": "Hier siehst du nur, wie es deine Klasse sieht. Die Aufnahme geht erst beim echten Beantworten.",
+    "remaining": "noch",
+    "retake": "Wiederholen",
+    "saved": "Aufnahme gespeichert",
+    "saving": "Wird gespeichert …",
+    "startRecording": "Aufnahme starten",
+    "stopRecording": "Stoppen",
+    "takePhoto": "Foto aufnehmen",
+    "yourPhoto": "Dein Foto"
+  },
+  "review": {
+    "empty": "Nichts zu korrigieren",
+    "emptyHint": "Hier erscheinen offene Antworten und Aufnahmen, sobald jemand sie abgibt.",
+    "feedback": "Rückmeldung",
+    "feedbackHint": "Was gut war und worauf beim nächsten Mal zu achten ist",
+    "graded": "Korrigiert",
+    "intro": "{count} Antworten warten auf eine Note, von der ältesten zur neuesten.",
+    "noAnswer": "Abgegeben, ohne diese Frage zu beantworten.",
+    "points": "Punkte (max. {max})",
+    "save": "Note speichern",
+    "studentPhoto": "Foto der lernenden Person",
+    "title": "Korrekturliste"
   }
 }

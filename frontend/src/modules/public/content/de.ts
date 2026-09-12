@@ -545,8 +545,13 @@ export const de: PublicContent = {
             tip: 'Zuweisen kannst du nur Gruppen, die du leitest. Eine leere Auswahlliste ist kein Fehler: Du bist in keiner als Klassenleitung eingetragen – das klärt die Verwaltung.',
           },
           {
+            title: 'Verlange ein Foto, ein Video oder eine Sprachnachricht',
+            body: 'Drei Fragetypen werden durch Aufnehmen beantwortet: ein Selfie, ein Video von bis zu drei Minuten und eine Sprachnachricht von bis zu fünf. Sie zeigen, was Text nicht zeigt: dass jemand laut erklären kann, was er verstanden hat, oder dass der beschriebene Aufbau wirklich existiert.',
+            tip: 'Kamera und Mikrofon funktionieren nur über HTTPS oder auf dem Rechner selbst. Wenn du sie im Unterricht über die Netzwerkadresse nutzen willst, sag vorher der Person Bescheid, die die Plattform bereitstellt – sonst gibt es am Prüfungstag keine Kamera.',
+          },
+          {
             title: 'Korrigiere, was die Maschine nicht kann',
-            body: 'Offene Antworten bleiben zur Bewertung offen. Bis du sie korrigierst, zeigt die Note nur den automatischen Teil.',
+            body: 'Offene und aufgenommene Antworten bleiben zur Bewertung offen. Unter «Korrigieren» stehen sie alle zusammen, die ältesten zuerst, mit Video oder Audio direkt abspielbar: du trägst Note und Kommentar ein, ohne jeden Versuch zu öffnen.',
           },
         ],
         screen: {

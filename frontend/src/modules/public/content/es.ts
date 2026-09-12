@@ -546,8 +546,13 @@ export const es: PublicContent = {
             tip: 'Solo puedes asignar a grupos que diriges. Si el desplegable sale vacío, no es un fallo: significa que no figuras como director de ninguno, y eso lo arregla administración.',
           },
           {
+            title: 'Pide una foto, un vídeo o una nota de voz si hace falta',
+            body: 'Hay tres tipos de pregunta que se responden grabando: una selfie, un vídeo de hasta tres minutos y una nota de voz de hasta cinco. Sirven para lo que un texto no demuestra: que alguien sepa explicar en voz alta lo que entendió, o que el montaje del que habla existe de verdad.',
+            tip: 'La cámara y el micrófono solo funcionan si la plataforma se abre por HTTPS o desde el propio equipo. Si la vas a usar en el aula por la dirección de red, avisa antes a quien la esté sirviendo o el día del examen no habrá cámara.',
+          },
+          {
             title: 'Corrige lo que la máquina no puede',
-            body: 'Las respuestas abiertas quedan pendientes de revisión. Hasta que las corriges, la nota del estudiante refleja solo la parte automática.',
+            body: 'Las respuestas abiertas y las grabadas quedan pendientes de revisión. En «Corregir» aparecen todas juntas, de la más antigua a la más reciente, con el vídeo o el audio listos para reproducir ahí mismo: pones la nota y un comentario sin abrir cada intento.',
           },
         ],
         screen: {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { QUESTION_TYPE, type QuestionType } from '../enums.js';
+import { MEDIA_MAX_SECONDS } from '../media.js';
 
 /**
  * Contenido específico de cada tipo de pregunta.
@@ -99,6 +100,42 @@ const longAnswerBase = z.object({
   minWords: z.number().int().min(0).max(5000).optional(),
   maxWords: z.number().int().min(1).max(5000).optional(),
   rubric: z.string().trim().max(3000).optional(),
+});
+
+/**
+ * Enunciados de captura: foto, vídeo y nota de voz.
+ *
+ * No llevan solución. Lo único configurable es cuánto puede durar la
+ * grabación, acotado por el tope del tipo: el docente puede pedir menos de
+ * tres minutos de vídeo, nunca más, porque el límite es de almacenamiento y
+ * de atención de quien corrige, no una preferencia.
+ */
+const selfieBase = z.object({
+  kind: z.literal(QUESTION_TYPE.SELFIE),
+  /** Qué debe verse en la foto, más allá del enunciado. */
+  guidance: z.string().trim().max(500).optional(),
+});
+
+const videoResponseBase = z.object({
+  kind: z.literal(QUESTION_TYPE.VIDEO_RESPONSE),
+  maxSeconds: z
+    .number()
+    .int()
+    .min(10)
+    .max(MEDIA_MAX_SECONDS[QUESTION_TYPE.VIDEO_RESPONSE]!)
+    .default(MEDIA_MAX_SECONDS[QUESTION_TYPE.VIDEO_RESPONSE]!),
+  guidance: z.string().trim().max(500).optional(),
+});
+
+const audioResponseBase = z.object({
+  kind: z.literal(QUESTION_TYPE.AUDIO_RESPONSE),
+  maxSeconds: z
+    .number()
+    .int()
+    .min(10)
+    .max(MEDIA_MAX_SECONDS[QUESTION_TYPE.AUDIO_RESPONSE]!)
+    .default(MEDIA_MAX_SECONDS[QUESTION_TYPE.AUDIO_RESPONSE]!),
+  guidance: z.string().trim().max(500).optional(),
 });
 
 const fillBlankBase = z.object({
@@ -222,6 +259,9 @@ export const questionPayloadSchema = z.discriminatedUnion('kind', [
   orderingBase,
   timelineBase,
   hotspotBase,
+  selfieBase,
+  videoResponseBase,
+  audioResponseBase,
 ]);
 
 export type QuestionPayload = z.infer<typeof questionPayloadSchema>;
@@ -409,6 +449,9 @@ export const QUESTION_PAYLOAD_SCHEMAS = {
   [QUESTION_TYPE.SHORT_ANSWER]: shortAnswerBase,
   [QUESTION_TYPE.OPEN_TEXT]: openTextPayload,
   [QUESTION_TYPE.LONG_ANSWER]: longAnswerPayload,
+  [QUESTION_TYPE.SELFIE]: selfieBase,
+  [QUESTION_TYPE.VIDEO_RESPONSE]: videoResponseBase,
+  [QUESTION_TYPE.AUDIO_RESPONSE]: audioResponseBase,
   [QUESTION_TYPE.FILL_BLANK]: fillBlankPayload,
   [QUESTION_TYPE.MATCHING]: matchingPayload,
   [QUESTION_TYPE.GROUPING]: groupingPayload,

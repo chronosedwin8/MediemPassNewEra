@@ -7,6 +7,7 @@ import { ApiError } from '@/services/http';
 import RichTextEditor from '@/design-system/RichTextEditor.vue';
 import EvidenceSettings from './EvidenceSettings.vue';
 import { seedPayload } from './seed-payload';
+import { CHOICE_FAMILY, LIST_FAMILY, MEDIA_FAMILY } from './question-families';
 import { useSignedUpload } from '@/composables/useSignedUpload';
 import { useToast } from '@/composables/useToast';
 import {
@@ -19,6 +20,7 @@ import {
 import ChoiceEditor from './ChoiceEditor.vue';
 import ListEditor from './ListEditor.vue';
 import HotspotEditor from './HotspotEditor.vue';
+import MediaResponseEditor from './MediaResponseEditor.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
 
 /**
@@ -95,24 +97,6 @@ if (props.question) {
   requiresEvidence.value = props.question.requiresEvidence ?? false;
   maxEvidenceFiles.value = props.question.maxEvidenceFiles ?? 3;
 }
-
-const CHOICE_FAMILY: QuestionType[] = [
-  QUESTION_TYPE.SINGLE_CHOICE,
-  QUESTION_TYPE.MULTIPLE_CHOICE,
-  QUESTION_TYPE.TRUE_FALSE,
-  QUESTION_TYPE.IMAGE_CHOICE,
-];
-
-const LIST_FAMILY: QuestionType[] = [
-  QUESTION_TYPE.SHORT_ANSWER,
-  QUESTION_TYPE.OPEN_TEXT,
-  QUESTION_TYPE.LONG_ANSWER,
-  QUESTION_TYPE.ORDERING,
-  QUESTION_TYPE.TIMELINE,
-  QUESTION_TYPE.MATCHING,
-  QUESTION_TYPE.GROUPING,
-  QUESTION_TYPE.FILL_BLANK,
-];
 
 // Cambiar de tipo reinicia el contenido: el de un tipo no sirve para otro.
 watch(type, (next) => {
@@ -295,6 +279,13 @@ const inputClass =
         :payload="payload"
         @update:payload="payload = $event"
       />
+      <MediaResponseEditor
+        v-else-if="MEDIA_FAMILY.includes(type)"
+        :type="type"
+        :payload="payload"
+        @update:payload="payload = $event"
+      />
+
       <HotspotEditor v-else :payload="payload" @update:payload="payload = $event" />
 
       <p v-if="payloadError" class="mt-3 text-sm text-danger" role="alert">{{ payloadError }}</p>

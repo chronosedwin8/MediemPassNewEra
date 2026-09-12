@@ -228,6 +228,7 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
             esta pantalla sirva para algo: si aquí se ve bien, allí también.
           -->
           <QuestionRenderer
+            :attempt-id="''"
             :question-id="question.id"
             :type="question.type"
             :payload="question.payload"

@@ -78,7 +78,8 @@
     "skipToContent": "Saltar al contenido",
     "aiGenerate": "Generar con IA",
     "admin": "Administración",
-    "trainingAdmin": "Contenido formativo"
+    "trainingAdmin": "Contenido formativo",
+    "review": "Corregir"
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -246,7 +247,18 @@
       "IMAGE_CHOICE": "Selección con imágenes",
       "HOTSPOT": "Zona de una imagen",
       "SHORT_ANSWER": "Respuesta corta",
-      "LONG_ANSWER": "Respuesta larga"
+      "LONG_ANSWER": "Respuesta larga",
+      "SELFIE": "Tómate una selfie",
+      "VIDEO_RESPONSE": "Responde en vídeo",
+      "AUDIO_RESPONSE": "Responde con nota de voz"
+    },
+    "media": {
+      "guidance": "Indicación para quien responde",
+      "guidanceHint": "Aparece junto al botón de grabar. Por ejemplo: «Explica tu razonamiento, no leas el texto».",
+      "guidanceSelfieHint": "Aparece junto a la cámara. Por ejemplo: «Que se vea el montaje terminado detrás de ti».",
+      "maxSeconds": "Duración máxima (segundos)",
+      "maxSecondsHint": "Puedes pedir menos, nunca más de {seconds} s. El límite protege el almacenamiento y el tiempo de quien corrige.",
+      "secureContextNote": "La cámara y el micrófono solo funcionan si la plataforma se abre por HTTPS o desde el propio equipo. Por una dirección de red sin certificado, el navegador los bloquea."
     }
   },
   "editor": {
@@ -794,5 +806,37 @@
     "step": "Paso {number}",
     "tip": "Recomendación",
     "wiki": "Guía de uso"
+  },
+  "media": {
+    "answerSaved": "Tu respuesta está guardada. Puedes repetirla si quieres.",
+    "enableCamera": "Activar la cámara",
+    "enableMicrophone": "Activar el micrófono",
+    "insecureContext": "El navegador no deja usar la cámara ni el micrófono en esta dirección. Hace falta abrir la plataforma por HTTPS o desde el propio equipo; díselo a quien la esté sirviendo.",
+    "maxDuration": "Máximo {minutes} min",
+    "noCamera": "No se encontró ninguna cámara disponible.",
+    "noMicrophone": "No se encontró ningún micrófono disponible.",
+    "permissionDenied": "No diste permiso para la cámara o el micrófono. Puedes volver a darlo desde el icono de la barra de direcciones del navegador.",
+    "previewOnly": "Aquí solo se muestra cómo lo verá tu clase. La grabación se activa al responder de verdad.",
+    "remaining": "quedan",
+    "retake": "Repetir",
+    "saved": "Grabación guardada",
+    "saving": "Guardando…",
+    "startRecording": "Empezar a grabar",
+    "stopRecording": "Detener",
+    "takePhoto": "Tomar la foto",
+    "yourPhoto": "Tu foto"
+  },
+  "review": {
+    "empty": "No hay nada por corregir",
+    "emptyHint": "Aquí aparecen las respuestas abiertas y las grabaciones en cuanto alguien las entrega.",
+    "feedback": "Retroalimentación",
+    "feedbackHint": "Qué hizo bien y qué mirar la próxima vez",
+    "graded": "Corregida",
+    "intro": "{count} respuestas esperando nota, de la más antigua a la más reciente.",
+    "noAnswer": "Se entregó sin responder esta pregunta.",
+    "points": "Puntos (máx. {max})",
+    "save": "Guardar nota",
+    "studentPhoto": "Foto del estudiante",
+    "title": "Cola de corrección"
   }
 }

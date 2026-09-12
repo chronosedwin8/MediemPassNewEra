@@ -78,7 +78,8 @@
     "skipToContent": "Skip to content",
     "aiGenerate": "Generate with AI",
     "admin": "Administration",
-    "trainingAdmin": "Training content"
+    "trainingAdmin": "Training content",
+    "review": "Marking"
   },
   "roles": {
     "ADMIN": "Administrator",
@@ -246,7 +247,18 @@
       "IMAGE_CHOICE": "Image choice",
       "HOTSPOT": "Image hotspot",
       "SHORT_ANSWER": "Short answer",
-      "LONG_ANSWER": "Long answer"
+      "LONG_ANSWER": "Long answer",
+      "SELFIE": "Take a selfie",
+      "VIDEO_RESPONSE": "Answer with a video",
+      "AUDIO_RESPONSE": "Answer with a voice note"
+    },
+    "media": {
+      "guidance": "Note for whoever answers",
+      "guidanceHint": "Appears next to the record button. For example: \"Explain your reasoning, do not read the text out.\"",
+      "guidanceSelfieHint": "Appears next to the camera. For example: \"The finished build should be visible behind you.\"",
+      "maxSeconds": "Maximum duration (seconds)",
+      "maxSecondsHint": "You can ask for less, never more than {seconds} s. The limit protects storage and the time of whoever marks it.",
+      "secureContextNote": "Camera and microphone only work over HTTPS or on this computer. Over a network address without a certificate the browser blocks them."
     }
   },
   "editor": {
@@ -794,5 +806,37 @@
     "step": "Step {number}",
     "tip": "Recommendation",
     "wiki": "User guide"
+  },
+  "media": {
+    "answerSaved": "Your answer is saved. You can record it again if you want.",
+    "enableCamera": "Turn on the camera",
+    "enableMicrophone": "Turn on the microphone",
+    "insecureContext": "The browser will not allow camera or microphone at this address. The platform has to be opened over HTTPS or on this computer; tell whoever is serving it.",
+    "maxDuration": "Up to {minutes} min",
+    "noCamera": "No camera was found.",
+    "noMicrophone": "No microphone was found.",
+    "permissionDenied": "You did not allow the camera or microphone. You can grant it again from the icon in the browser address bar.",
+    "previewOnly": "This only shows how your class will see it. Recording works when actually answering.",
+    "remaining": "left",
+    "retake": "Record again",
+    "saved": "Recording saved",
+    "saving": "Saving…",
+    "startRecording": "Start recording",
+    "stopRecording": "Stop",
+    "takePhoto": "Take the photo",
+    "yourPhoto": "Your photo"
+  },
+  "review": {
+    "empty": "Nothing to mark",
+    "emptyHint": "Open answers and recordings appear here as soon as someone submits them.",
+    "feedback": "Feedback",
+    "feedbackHint": "What they did well and what to look at next time",
+    "graded": "Marked",
+    "intro": "{count} answers waiting for a mark, oldest first.",
+    "noAnswer": "Submitted without answering this question.",
+    "points": "Points (max {max})",
+    "save": "Save mark",
+    "studentPhoto": "Student photo",
+    "title": "Marking queue"
   }
 }

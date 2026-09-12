@@ -141,6 +141,18 @@ const routes: RouteRecordRaw[] = [
         meta: { permissions: [PERMISSION.RESULT_READ_OWN], titleKey: 'result.title' },
       },
 
+      /*
+       * Cola de corrección. Vive fuera del detalle de una evaluación porque lo
+       * que se corrige de una tarde son respuestas de varias, y obligar a
+       * entrar en cada una convertía treinta correcciones en una tarde entera.
+       */
+      {
+        path: '/review',
+        name: 'review',
+        component: () => import('@/modules/attempts/ReviewQueueView.vue'),
+        meta: { permissions: [PERMISSION.ATTEMPT_GRADE], titleKey: 'review.title' },
+      },
+
       {
         path: '/statistics',
         name: 'statistics',

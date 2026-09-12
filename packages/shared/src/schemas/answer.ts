@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { QUESTION_TYPE, type QuestionType } from '../enums.js';
+import { MEDIA_MAX_SECONDS } from '../media.js';
 
 /**
  * Respuestas del estudiante, una forma por tipo de pregunta.
@@ -51,6 +52,36 @@ const longAnswerAnswer = z.object({
   text: z.string().max(50000),
 });
 
+/**
+ * Respuestas de captura.
+ *
+ * Lo que se guarda no es el archivo sino su identificador: el vídeo ya viajó
+ * a S3 por su propio camino —subida firmada y confirmación contra lo que hay
+ * de verdad en el bucket— y meterlo aquí en base64 haría que cada
+ * autoguardado arrastrara quince megas.
+ *
+ * `durationSeconds` es lo que el navegador dice haber grabado. Se guarda para
+ * poder enseñarlo al corregir y se comprueba contra el tope del tipo, pero la
+ * autoridad sobre el tamaño es el archivo que el servidor encuentra en S3, no
+ * este número.
+ */
+const selfieAnswer = z.object({
+  kind: z.literal(QUESTION_TYPE.SELFIE),
+  fileId: z.string().uuid().nullable(),
+});
+
+const videoResponseAnswer = z.object({
+  kind: z.literal(QUESTION_TYPE.VIDEO_RESPONSE),
+  fileId: z.string().uuid().nullable(),
+  durationSeconds: z.number().int().min(0).max(MEDIA_MAX_SECONDS.VIDEO_RESPONSE!).nullable(),
+});
+
+const audioResponseAnswer = z.object({
+  kind: z.literal(QUESTION_TYPE.AUDIO_RESPONSE),
+  fileId: z.string().uuid().nullable(),
+  durationSeconds: z.number().int().min(0).max(MEDIA_MAX_SECONDS.AUDIO_RESPONSE!).nullable(),
+});
+
 const fillBlankAnswer = z.object({
   kind: z.literal(QUESTION_TYPE.FILL_BLANK),
   blanks: z.array(z.object({ id: optionId, text: z.string().max(300) })).max(20),
@@ -96,6 +127,9 @@ export const answerSchema = z.discriminatedUnion('kind', [
   orderingAnswer,
   timelineAnswer,
   hotspotAnswer,
+  selfieAnswer,
+  videoResponseAnswer,
+  audioResponseAnswer,
 ]);
 
 export type Answer = z.infer<typeof answerSchema>;
@@ -115,6 +149,9 @@ export const ANSWER_SCHEMAS = {
   [QUESTION_TYPE.ORDERING]: orderingAnswer,
   [QUESTION_TYPE.TIMELINE]: timelineAnswer,
   [QUESTION_TYPE.HOTSPOT]: hotspotAnswer,
+  [QUESTION_TYPE.SELFIE]: selfieAnswer,
+  [QUESTION_TYPE.VIDEO_RESPONSE]: videoResponseAnswer,
+  [QUESTION_TYPE.AUDIO_RESPONSE]: audioResponseAnswer,
 } as const;
 
 export function parseAnswer(type: QuestionType, value: unknown): Answer {
@@ -165,6 +202,12 @@ export function emptyAnswer(type: QuestionType): Answer {
       return { kind: QUESTION_TYPE.TIMELINE, order: [] };
     case QUESTION_TYPE.HOTSPOT:
       return { kind: QUESTION_TYPE.HOTSPOT, regionIds: [] };
+    case QUESTION_TYPE.SELFIE:
+      return { kind: QUESTION_TYPE.SELFIE, fileId: null };
+    case QUESTION_TYPE.VIDEO_RESPONSE:
+      return { kind: QUESTION_TYPE.VIDEO_RESPONSE, fileId: null, durationSeconds: null };
+    case QUESTION_TYPE.AUDIO_RESPONSE:
+      return { kind: QUESTION_TYPE.AUDIO_RESPONSE, fileId: null, durationSeconds: null };
   }
 }
 
@@ -193,6 +236,11 @@ export function isAnswerEmpty(answer: Answer): boolean {
       return answer.order.length === 0;
     case QUESTION_TYPE.HOTSPOT:
       return answer.regionIds.length === 0;
+    // Sin archivo no hay respuesta: el enunciado pedía una grabación.
+    case QUESTION_TYPE.SELFIE:
+    case QUESTION_TYPE.VIDEO_RESPONSE:
+    case QUESTION_TYPE.AUDIO_RESPONSE:
+      return answer.fileId === null;
   }
 }
 /* eslint-enable complexity */

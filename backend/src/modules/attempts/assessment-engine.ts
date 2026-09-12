@@ -176,7 +176,7 @@ export interface AttemptResult {
  * de decir la verdad en cuanto una de las dos cambia, y entonces sirve para lo
  * contrario de lo que existe: para dar por bueno lo que el estudiante verá.
  */
-/* eslint-disable-next-line complexity -- switch exhaustivo sobre los trece
+/* eslint-disable-next-line complexity -- switch exhaustivo sobre los dieciséis
    tipos de pregunta: partirlo perdería la garantía de que TypeScript avise
    cuando se añada uno nuevo y nadie lo contemple aquí, que es justo el fallo
    que filtraría respuestas correctas al estudiante. */
@@ -247,6 +247,17 @@ export function stripSolution(type: QuestionType, payload: unknown): unknown {
       const { rubric: _rubric, ...rest } = data;
       return rest;
     }
+
+    /*
+     * Las respuestas grabadas no esconden nada: el enunciado es la consigna y
+     * el límite de duración lo necesita el navegador para cortar la grabación.
+     * Se enumeran igualmente para que el `switch` siga siendo exhaustivo y el
+     * compilador avise si algún día llevan solución.
+     */
+    case QUESTION_TYPE.SELFIE:
+    case QUESTION_TYPE.VIDEO_RESPONSE:
+    case QUESTION_TYPE.AUDIO_RESPONSE:
+      return data;
   }
 }
 

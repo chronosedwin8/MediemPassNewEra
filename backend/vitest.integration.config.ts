@@ -36,6 +36,16 @@ export default defineConfig({
       DATABASE_URL: testDatabaseUrl,
       PHIDIAS_MODE: 'mock',
       AI_PROVIDER: 'mock',
+      /*
+       * Almacenamiento en memoria, como Phidias y la IA.
+       *
+       * Sin esto la suite hereda el `.env` del repositorio, donde el driver es
+       * S3, y acaba firmando subidas contra el bucket real: las pruebas
+       * dependerían de la red y de una cuenta de AWS para comprobar algo que
+       * no es de Amazon, y una confirmación fallaría siempre porque nadie ha
+       * subido nada de verdad.
+       */
+      STORAGE_DRIVER: 'memory',
       LOG_LEVEL: 'error',
       // El SSO se prueba con un proveedor controlado, no contra Entra ID. Los
       // valores de tenant son ficticios: el proveedor real nunca se instancia.

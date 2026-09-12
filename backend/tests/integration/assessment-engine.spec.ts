@@ -1057,6 +1057,317 @@ describe('diploma de competencias KMK', () => {
   });
 });
 
+describe('preguntas que se responden grabando', () => {
+  /** Crea y publica una evaluación con una única pregunta de captura. */
+  async function publishMediaAssessment(
+    type: string,
+    payload: Record<string, unknown>,
+  ): Promise<{ versionId: string; questionId: string }> {
+    const created = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Explícalo a cámara', subjectId: fixture.subjectId });
+
+    const versionId = created.body.data.versionId as string;
+
+    const question = await request(app)
+      .post(`/api/assessments/versions/${versionId}/questions`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        type,
+        statement: 'Cuenta cómo comprobaste la fuente',
+        points: 5,
+        kmkCompetencyId: fixture.competencyIds[0],
+        payload: { kind: type, ...payload },
+      });
+    expect(question.status).toBe(201);
+
+    await request(app)
+      .post(`/api/assessments/versions/${versionId}/publish`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .expect(200);
+
+    return { versionId, questionId: question.body.data.id as string };
+  }
+
+  it('acepta los tres tipos y guarda su duración máxima', async () => {
+    const video = await publishMediaAssessment('VIDEO_RESPONSE', { maxSeconds: 120 });
+
+    const preview = await request(app)
+      .get(`/api/assessments/versions/${video.versionId}/preview`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(preview.body.data.questions[0].type).toBe('VIDEO_RESPONSE');
+    expect(preview.body.data.questions[0].payload.maxSeconds).toBe(120);
+  });
+
+  it('no deja pedir más tiempo del tope del tipo', async () => {
+    const created = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Vídeo largo', subjectId: fixture.subjectId });
+
+    const response = await request(app)
+      .post(`/api/assessments/versions/${created.body.data.versionId}/questions`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        type: 'VIDEO_RESPONSE',
+        statement: 'Media hora de vídeo',
+        points: 5,
+        kmkCompetencyId: fixture.competencyIds[0],
+        // El tope son tres minutos: es un límite de almacenamiento y de la
+        // atención de quien corrige, no una preferencia del docente.
+        payload: { kind: 'VIDEO_RESPONSE', maxSeconds: 1800 },
+      });
+
+    expect(response.status).toBe(422);
+  });
+
+  it('sube la grabación y la deja como respuesta', async () => {
+    const { versionId, questionId } = await publishMediaAssessment('AUDIO_RESPONSE', {
+      maxSeconds: 300,
+    });
+    await assignToGroup(fixture, versionId);
+    const { attempt } = await startAttempt(fixture);
+    const attemptId = attempt.body.data.id as string;
+
+    const descriptor = {
+      attemptId,
+      questionId,
+      contentType: 'audio/webm',
+      sizeBytes: 40_000,
+      durationSeconds: 42,
+    };
+
+    const ticket = await request(app)
+      .post('/api/files/response-media/upload-url')
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send(descriptor);
+    expect(ticket.status).toBe(200);
+
+    const confirmed = await request(app)
+      .post('/api/files/response-media/confirm')
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({ ...descriptor, storageKey: ticket.body.data.storageKey });
+    expect(confirmed.status).toBe(201);
+
+    const fileId = confirmed.body.data.fileId as string;
+
+    await request(app)
+      .put(`/api/attempts/${attemptId}/answers/${questionId}`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({ response: { kind: 'AUDIO_RESPONSE', fileId, durationSeconds: 42 } })
+      .expect(200);
+
+    const submitted = await request(app)
+      .post(`/api/attempts/${attemptId}/submit`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    // No se puede calificar sola: queda esperando a que alguien la escuche.
+    expect(submitted.body.data.status).toBe('PENDING_REVIEW');
+    expect(submitted.body.data.requiresManualGrading).toBe(true);
+  });
+
+  it('rechaza un formato que no corresponde al tipo', async () => {
+    const { versionId, questionId } = await publishMediaAssessment('SELFIE', {});
+    await assignToGroup(fixture, versionId);
+    const { attempt } = await startAttempt(fixture);
+
+    const response = await request(app)
+      .post('/api/files/response-media/upload-url')
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({
+        attemptId: attempt.body.data.id,
+        questionId,
+        // Una selfie es una foto: un vídeo aquí es otra cosa.
+        contentType: 'video/webm',
+        sizeBytes: 1000,
+        durationSeconds: null,
+      });
+
+    expect(response.status).toBe(422);
+  });
+
+  it('rechaza una grabación más larga que el límite', async () => {
+    const { versionId, questionId } = await publishMediaAssessment('VIDEO_RESPONSE', {
+      maxSeconds: 180,
+    });
+    await assignToGroup(fixture, versionId);
+    const { attempt } = await startAttempt(fixture);
+
+    const response = await request(app)
+      .post('/api/files/response-media/upload-url')
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({
+        attemptId: attempt.body.data.id,
+        questionId,
+        contentType: 'video/webm',
+        sizeBytes: 1000,
+        // El cronómetro del navegador es una comodidad; el límite lo impone
+        // el servidor, que es lo que un cliente modificado no puede saltarse.
+        durationSeconds: 600,
+      });
+
+    expect(response.status).toBe(422);
+  });
+
+  it('no deja grabar en una pregunta que no es de captura', async () => {
+    const assessment = await createPublishedAssessment(fixture);
+    await assignToGroup(fixture, assessment.versionId);
+    const { attempt } = await startAttempt(fixture);
+
+    const response = await request(app)
+      .post('/api/files/response-media/upload-url')
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({
+        attemptId: attempt.body.data.id,
+        questionId: assessment.questionIds[0],
+        contentType: 'video/webm',
+        sizeBytes: 1000,
+        durationSeconds: 10,
+      });
+
+    expect(response.status).toBe(409);
+  });
+
+  it('volver a grabar sustituye la toma anterior', async () => {
+    const { versionId, questionId } = await publishMediaAssessment('AUDIO_RESPONSE', {
+      maxSeconds: 300,
+    });
+    await assignToGroup(fixture, versionId);
+    const { attempt } = await startAttempt(fixture);
+    const attemptId = attempt.body.data.id as string;
+
+    const descriptor = {
+      attemptId,
+      questionId,
+      contentType: 'audio/webm',
+      sizeBytes: 30_000,
+      durationSeconds: 20,
+    };
+
+    for (let take = 0; take < 3; take += 1) {
+      const ticket = await request(app)
+        .post('/api/files/response-media/upload-url')
+        .set('Authorization', `Bearer ${fixture.studentToken}`)
+        .send(descriptor);
+
+      await request(app)
+        .post('/api/files/response-media/confirm')
+        .set('Authorization', `Bearer ${fixture.studentToken}`)
+        .send({ ...descriptor, storageKey: ticket.body.data.storageKey })
+        .expect(201);
+    }
+
+    /*
+     * Un estudiante indeciso no debe dejar tres grabaciones en el bucket de
+     * las que solo una es su respuesta: las otras no aparecerían en ninguna
+     * pantalla que permita borrarlas.
+     */
+    const stored = await prisma.storedFile.count({
+      where: { attemptId, questionId, kind: 'RESPONSE_MEDIA' },
+    });
+    expect(stored).toBe(1);
+  });
+});
+
+describe('cola de corrección', () => {
+  /** Entrega una respuesta abierta, que es lo que queda por corregir. */
+  async function submitOpenAnswer(): Promise<{ attemptId: string; questionId: string }> {
+    const created = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Redacción', subjectId: fixture.subjectId });
+
+    const versionId = created.body.data.versionId as string;
+
+    const question = await request(app)
+      .post(`/api/assessments/versions/${versionId}/questions`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        type: QUESTION_TYPE.OPEN_TEXT,
+        statement: 'Explica cómo comprobaste la fuente',
+        points: 10,
+        kmkCompetencyId: fixture.competencyIds[0],
+        payload: { kind: QUESTION_TYPE.OPEN_TEXT },
+      });
+
+    await request(app)
+      .post(`/api/assessments/versions/${versionId}/publish`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+    await assignToGroup(fixture, versionId);
+
+    const { attempt } = await startAttempt(fixture);
+    const attemptId = attempt.body.data.id as string;
+    const questionId = question.body.data.id as string;
+
+    await request(app)
+      .put(`/api/attempts/${attemptId}/answers/${questionId}`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({ response: { kind: QUESTION_TYPE.OPEN_TEXT, text: 'Comparé tres fuentes.' } });
+
+    await request(app)
+      .post(`/api/attempts/${attemptId}/submit`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    return { attemptId, questionId };
+  }
+
+  it('enseña lo que falta por corregir, con el estudiante y el enunciado', async () => {
+    await submitOpenAnswer();
+
+    const response = await request(app)
+      .get('/api/attempts/review/pending')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toMatchObject({
+      question: { pointsPossible: 10 },
+    });
+    expect(response.body.data[0].student.name).toContain(',');
+  });
+
+  it('desaparece de la cola al puntuarla', async () => {
+    const { attemptId, questionId } = await submitOpenAnswer();
+
+    await request(app)
+      .post(`/api/attempts/${attemptId}/answers/${questionId}/grade`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ points: 8, feedback: 'Buen contraste de fuentes.' })
+      .expect(200);
+
+    const after = await request(app)
+      .get('/api/attempts/review/pending')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(after.body.data).toHaveLength(0);
+  });
+
+  it('un docente ajeno no ve ni puede corregir lo que no es suyo', async () => {
+    const { attemptId, questionId } = await submitOpenAnswer();
+    await createTeacher({ username: 'docente.correccion.ajeno' });
+    const intruderToken = await tokenFor('docente.correccion.ajeno');
+
+    const queue = await request(app)
+      .get('/api/attempts/review/pending')
+      .set('Authorization', `Bearer ${intruderToken}`);
+    expect(queue.body.data).toHaveLength(0);
+
+    /*
+     * Y tampoco puede puntuarla a ciegas. Antes de la cola, el permiso de
+     * calificar bastaba para corregir cualquier respuesta del colegio con solo
+     * conocer dos identificadores.
+     */
+    const attempt = await request(app)
+      .post(`/api/attempts/${attemptId}/answers/${questionId}/grade`)
+      .set('Authorization', `Bearer ${intruderToken}`)
+      .send({ points: 10 });
+
+    expect(attempt.status).toBe(404);
+  });
+});
+
 describe('integridad histórica', () => {
   it('editar la evaluación después no altera un resultado ya emitido', async () => {
     const { assessmentId, versionId, questionIds } = await createPublishedAssessment(fixture);

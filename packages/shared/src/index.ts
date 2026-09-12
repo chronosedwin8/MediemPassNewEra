@@ -1,6 +1,7 @@
 export * from './enums.js';
 export * from './errors.js';
 export * from './i18n.js';
+export * from './media.js';
 export * from './permissions.js';
 export * from './rich-text.js';
 export * from './settings.js';

@@ -22,6 +22,12 @@ import {
   requestTrainingMediaUpload,
   requestTrainingMediaUploadSchema,
 } from './files.service.js';
+import {
+  confirmResponseMediaSchema,
+  confirmResponseMediaUpload,
+  requestResponseMediaSchema,
+  requestResponseMediaUpload,
+} from './response-media.service.js';
 
 export const filesRouter: Router = Router();
 
@@ -54,6 +60,32 @@ filesRouter.post(
   validate({ body: requestEvidenceUploadSchema.merge(withKey) }),
   asyncHandler(async (req, res) => {
     created(res, await confirmEvidenceUpload(requireAuth(req), req.body));
+  }),
+);
+
+/**
+ * La grabación que responde una pregunta.
+ *
+ * Mismo camino de tres pasos que la evidencia, con reglas propias: aquí no se
+ * comprueba si la pregunta admite adjuntos sino que sea de las que se
+ * responden grabando, y solo cabe un archivo, porque volver a grabar
+ * sustituye la toma anterior en lugar de acumularla.
+ */
+filesRouter.post(
+  '/response-media/upload-url',
+  requirePermission(PERMISSION.ATTEMPT_TAKE),
+  validate({ body: requestResponseMediaSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await requestResponseMediaUpload(requireAuth(req), req.body));
+  }),
+);
+
+filesRouter.post(
+  '/response-media/confirm',
+  requirePermission(PERMISSION.ATTEMPT_TAKE),
+  validate({ body: confirmResponseMediaSchema }),
+  asyncHandler(async (req, res) => {
+    created(res, await confirmResponseMediaUpload(requireAuth(req), req.body));
   }),
 );
 
