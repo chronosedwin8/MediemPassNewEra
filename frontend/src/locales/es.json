@@ -50,7 +50,8 @@
     "mustChangePassword": "Debes cambiar tu contraseña antes de continuar",
     "passwordChanged": "Contraseña actualizada. Vuelve a iniciar sesión.",
     "passwordPolicy": "Al menos 10 caracteres, con mayúscula, minúscula y número",
-    "passwordsDoNotMatch": "Las contraseñas no coinciden"
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "passwordRule": "Al menos 10 caracteres, con mayúscula, minúscula y número"
   },
   "nav": {
     "dashboard": "Panel",
@@ -957,7 +958,22 @@
     "deleteKeeps": "Se conserva su historial: las evaluaciones que corrigió y los intentos que hizo siguen en su sitio, con su autor.",
     "deleteFrees": "Se liberan su nombre de usuario y su correo, por si hay que reasignarlos, y se cierran todas sus sesiones abiertas.",
     "deleteConfirmLabel": "Escriba «{username}» para confirmar",
-    "deleteConfirm": "Dar de baja"
+    "deleteConfirm": "Dar de baja",
+    "firstName": "Nombre",
+    "lastName": "Apellidos",
+    "email": "Correo",
+    "language": "Idioma",
+    "create": "Crear cuenta",
+    "created": "Cuenta de {name} creada.",
+    "createTitle": "Nueva cuenta",
+    "createSubtitle": "Docente, administración o estudiante. Los roles se pueden cambiar después.",
+    "createdTitle": "Cuenta creada",
+    "createdOnce": "Contraseña temporal de {name}. Se muestra una sola vez y habrá que cambiarla al entrar.",
+    "howTheySignIn": "Cómo entrará",
+    "signInWithSso": "Con su cuenta del colegio",
+    "signInWithSsoHint": "No se guarda ninguna contraseña. La cuenta se activa la primera vez que entre con Microsoft.",
+    "signInWithPassword": "Con una contraseña temporal",
+    "signInWithPasswordHint": "Para quien no tiene cuenta institucional."
   },
   "groupPasswords": {
     "confirm": "Escribe «{code}» para confirmar",

@@ -50,7 +50,8 @@
     "mustChangePassword": "You must change your password before continuing",
     "passwordChanged": "Password updated. Please sign in again.",
     "passwordPolicy": "At least 10 characters, with uppercase, lowercase and a number",
-    "passwordsDoNotMatch": "The passwords do not match"
+    "passwordsDoNotMatch": "The passwords do not match",
+    "passwordRule": "At least 10 characters, with upper case, lower case and a digit"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -957,7 +958,22 @@
     "deleteKeeps": "Their history is kept: assessments they graded and attempts they made stay in place, with their authorship.",
     "deleteFrees": "Their username and email are released in case they need reassigning, and every open session is closed.",
     "deleteConfirmLabel": "Type \"{username}\" to confirm",
-    "deleteConfirm": "Remove access"
+    "deleteConfirm": "Remove access",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "language": "Language",
+    "create": "Create account",
+    "created": "Account for {name} created.",
+    "createTitle": "New account",
+    "createSubtitle": "Teacher, administration or student. Roles can be changed later.",
+    "createdTitle": "Account created",
+    "createdOnce": "Temporary password for {name}. It is shown once and must be changed on first sign-in.",
+    "howTheySignIn": "How they will sign in",
+    "signInWithSso": "With their school account",
+    "signInWithSsoHint": "No password is stored. The account activates the first time they sign in with Microsoft.",
+    "signInWithPassword": "With a temporary password",
+    "signInWithPasswordHint": "For people without an institutional account."
   },
   "groupPasswords": {
     "confirm": "Type \"{code}\" to confirm",

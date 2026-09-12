@@ -50,7 +50,8 @@
     "mustChangePassword": "Du musst dein Passwort ändern, bevor du fortfahren kannst",
     "passwordChanged": "Passwort aktualisiert. Bitte melde dich erneut an.",
     "passwordPolicy": "Mindestens 10 Zeichen, mit Groß-, Kleinbuchstaben und Ziffer",
-    "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein"
+    "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein",
+    "passwordRule": "Mindestens 10 Zeichen, mit Groß-, Kleinbuchstaben und Ziffer"
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -957,7 +958,22 @@
     "deleteKeeps": "Der Verlauf bleibt erhalten: korrigierte Beurteilungen und abgelegte Versuche bleiben mitsamt ihrer Urheberschaft bestehen.",
     "deleteFrees": "Benutzername und E-Mail werden freigegeben, falls sie neu vergeben werden müssen, und alle offenen Sitzungen werden beendet.",
     "deleteConfirmLabel": "Geben Sie zur Bestätigung „{username}“ ein",
-    "deleteConfirm": "Zugang entziehen"
+    "deleteConfirm": "Zugang entziehen",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail",
+    "language": "Sprache",
+    "create": "Konto anlegen",
+    "created": "Konto für {name} angelegt.",
+    "createTitle": "Neues Konto",
+    "createSubtitle": "Lehrkraft, Verwaltung oder Lernende. Die Rollen lassen sich später ändern.",
+    "createdTitle": "Konto angelegt",
+    "createdOnce": "Vorläufiges Passwort für {name}. Es wird nur einmal angezeigt und muss beim ersten Anmelden geändert werden.",
+    "howTheySignIn": "Art der Anmeldung",
+    "signInWithSso": "Mit dem Schulkonto",
+    "signInWithSsoHint": "Es wird kein Passwort gespeichert. Das Konto wird bei der ersten Anmeldung mit Microsoft aktiviert.",
+    "signInWithPassword": "Mit einem vorläufigen Passwort",
+    "signInWithPasswordHint": "Für Personen ohne Schulkonto."
   },
   "groupPasswords": {
     "confirm": "Tippe «{code}» zur Bestätigung",

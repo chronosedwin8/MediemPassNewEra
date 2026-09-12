@@ -10,6 +10,7 @@ import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
 import UserRolesDialog from './UserRolesDialog.vue';
 import UserDeleteDialog from './UserDeleteDialog.vue';
+import UserCreateDialog from './UserCreateDialog.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useToast } from '@/composables/useToast';
 
@@ -60,6 +61,7 @@ const SCOPES = [
 
 const editing = ref<UserSummary | null>(null);
 const deleting = ref<UserSummary | null>(null);
+const creating = ref(false);
 
 /**
  * Quién ve el botón de dar de baja.
@@ -160,6 +162,10 @@ async function resetPassword(user: UserSummary): Promise<void> {
           {{ t(option.labelKey) }}
         </button>
       </div>
+
+      <BaseButton v-if="auth.can(PERMISSION.USER_CREATE)" @click="creating = true">
+        {{ t('users.create') }}
+      </BaseButton>
 
       <label class="flex flex-col gap-1.5">
         <span class="sr-only">{{ t('common.search') }}</span>
@@ -284,6 +290,15 @@ async function resetPassword(user: UserSummary): Promise<void> {
         load();
       "
       @cancel="editing = null"
+    />
+
+    <UserCreateDialog
+      v-if="creating"
+      @created="
+        creating = false;
+        load();
+      "
+      @cancel="creating = false"
     />
 
     <UserDeleteDialog
