@@ -273,7 +273,9 @@
       "rubricFixed": "Das Raster ist fest und zählt {max} Punkte. Es wird nicht pro Frage konfiguriert: würde es jede Lehrkraft neu definieren, ließe sich die Statistik nach Dimension nicht mehr über Klassen hinweg addieren.",
       "showRubric": "Raster beim Schreiben anzeigen",
       "showRubricHint": "Empfohlen. Das Raster ist das, was gelehrt wird; es zu verstecken macht die Aufgabe zum Raten."
-    }
+    },
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten"
   },
   "editor": {
     "imageUrl": "Bild-URL",

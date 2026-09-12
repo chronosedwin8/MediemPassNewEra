@@ -273,7 +273,9 @@
       "rubricFixed": "The rubric is fixed and worth {max} points. It is not configured per question: if every teacher redefined it, the per-dimension statistics could no longer be added up across classes.",
       "showRubric": "Show the rubric while writing",
       "showRubricHint": "Recommended. The rubric is what is being taught; hiding it turns the task into guessing."
-    }
+    },
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "editor": {
     "imageUrl": "Image URL",

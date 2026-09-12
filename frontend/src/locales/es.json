@@ -273,7 +273,9 @@
       "rubricFixed": "La rúbrica es fija y vale {max} puntos. No se configura por pregunta: si cada docente la redefiniera, la estadística por dimensión dejaría de poder sumarse entre cursos.",
       "showRubric": "Enseñar la rúbrica mientras se escribe",
       "showRubricHint": "Recomendado. La rúbrica es lo que se está enseñando; esconderla convierte el ejercicio en adivinar."
-    }
+    },
+    "moveUp": "Subir",
+    "moveDown": "Bajar"
   },
   "editor": {
     "imageUrl": "URL de la imagen",

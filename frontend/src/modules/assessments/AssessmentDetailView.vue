@@ -12,6 +12,7 @@ import AssignPanel from './AssignPanel.vue';
 import AssignmentsPanel from './AssignmentsPanel.vue';
 import QuestionList from './QuestionList.vue';
 import type { Question } from './types';
+import { useQuestionOrder } from './useQuestionOrder';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
@@ -58,6 +59,7 @@ const toast = useToast();
 
 const assessment = ref<Assessment | null>(null);
 const questions = ref<Question[]>([]);
+const { reordenar, guardar: guardarOrden } = useQuestionOrder(questions);
 const competencies = ref<Competency[]>([]);
 
 const loading = ref(true);
@@ -82,6 +84,20 @@ const hasResults = computed(() =>
 const isPublished = computed(
   () => currentVersion.value?.status === ASSESSMENT_VERSION_STATUS.PUBLISHED,
 );
+
+/** Mueve una pregunta y confirma. Si el servidor rechaza, se recarga. */
+async function moverPregunta(questionId: string, direccion: -1 | 1): Promise<void> {
+  const orden = reordenar(questionId, direccion);
+  if (!orden || !currentVersion.value) return;
+
+  questions.value = orden;
+  try {
+    await guardarOrden(currentVersion.value.id, orden);
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('errors.generic'));
+    await loadQuestions();
+  }
+}
 
 async function loadQuestions(): Promise<void> {
   if (!currentVersion.value) return;
@@ -329,6 +345,7 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
         :showing-editor="showEditor"
         @edit="editQuestion"
         @remove="removeQuestion"
+        @move="moverPregunta"
       />
 
       <div v-if="showEditor" class="mt-5 border-t border-border pt-5">

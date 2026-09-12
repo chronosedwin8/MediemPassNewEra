@@ -11,9 +11,17 @@ import EmptyState from '@/design-system/EmptyState.vue';
  * que es la misma regla que aplica el servidor.
  */
 
-defineProps<{ questions: Question[]; editable: boolean; showingEditor: boolean }>();
+const { questions, editable } = defineProps<{
+  questions: Question[];
+  editable: boolean;
+  showingEditor: boolean;
+}>();
 
-const emit = defineEmits<{ edit: [question: Question]; remove: [questionId: string] }>();
+const emit = defineEmits<{
+  edit: [question: Question];
+  remove: [questionId: string];
+  move: [questionId: string, direccion: -1 | 1];
+}>();
 
 const { t } = useI18n();
 </script>
@@ -27,8 +35,32 @@ const { t } = useI18n();
       :key="question.id"
       class="flex items-start gap-3 rounded-md border border-border p-3"
     >
-      <span class="mt-0.5 w-6 shrink-0 text-center text-xs tabular-nums text-ink-subtle">
-        {{ index + 1 }}
+      <!--
+        Flechas y no arrastrar: una lista de treinta preguntas en una tableta
+        se reordena mejor a toques que arrastrando, y con teclado también.
+      -->
+      <span class="mt-0.5 flex w-6 shrink-0 flex-col items-center gap-0.5">
+        <button
+          v-if="editable"
+          type="button"
+          class="text-ink-subtle hover:text-ink disabled:opacity-30"
+          :disabled="index === 0"
+          :aria-label="t('question.moveUp')"
+          @click="emit('move', question.id, -1)"
+        >
+          ↑
+        </button>
+        <span class="text-xs tabular-nums text-ink-subtle">{{ index + 1 }}</span>
+        <button
+          v-if="editable"
+          type="button"
+          class="text-ink-subtle hover:text-ink disabled:opacity-30"
+          :disabled="index === questions.length - 1"
+          :aria-label="t('question.moveDown')"
+          @click="emit('move', question.id, 1)"
+        >
+          ↓
+        </button>
       </span>
 
       <div class="min-w-0 flex-1">
