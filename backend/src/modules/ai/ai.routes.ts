@@ -8,7 +8,13 @@ import { validate } from '../../middleware/validate.js';
 import { env } from '../../config/env.js';
 import { getAiProvider } from './ai.provider.js';
 import { AI_SUPPORTED_TYPES } from './ai.schema.js';
-import { generateAssessment, generateSchema, listGenerationRequests } from './ai.service.js';
+import {
+  generateAssessment,
+  generateSchema,
+  listGenerationRequests,
+  suggestGradeForAnswer,
+  suggestGradeSchema,
+} from './ai.service.js';
 
 export const aiRouter: Router = Router();
 
@@ -61,5 +67,20 @@ aiRouter.get(
   requirePermission(PERMISSION.AI_GENERATE),
   asyncHandler(async (req, res) => {
     ok(res, await listGenerationRequests(requireAuth(req)));
+  }),
+);
+
+/**
+ * Propuesta de corrección para una respuesta escrita.
+ *
+ * Exige calificar, no generar: es una ayuda a la corrección y quien la usa es
+ * quien iba a poner la nota de todos modos.
+ */
+aiRouter.post(
+  '/grade',
+  requirePermission(PERMISSION.ATTEMPT_GRADE),
+  validate({ body: suggestGradeSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await suggestGradeForAnswer(requireAuth(req), req.body));
   }),
 );

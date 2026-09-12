@@ -216,7 +216,8 @@
     "certificate": "Competence certificate",
     "certificateEnable": "Issue a certificate to those who pass",
     "certificateHint": "Anyone who passes can download a PDF certifying the KMK competences they demonstrated. You can switch this on even after publishing.",
-    "certificateThreshold": "Only competences scoring at least 70% on the questions that measure them are certified."
+    "certificateThreshold": "Only competences scoring at least 70% on the questions that measure them are certified.",
+    "language": "Language"
   },
   "question": {
     "add": "Add question",
@@ -491,7 +492,11 @@
     "minLength": "Must be at least {min} characters",
     "maxLength": "Cannot exceed {max} characters",
     "min": "The minimum value is {min}",
-    "max": "The maximum value is {max}"
+    "max": "The maximum value is {max}",
+    "minItems": "At least {min} items are required",
+    "maxItems": "No more than {max} items allowed",
+    "invalidType": "The value is not in the expected format",
+    "generic": "Check this field"
   },
   "phidias": {
     "title": "Phidias integration",
@@ -847,7 +852,10 @@
     "points": "Points (max {max})",
     "save": "Save mark",
     "studentPhoto": "Student photo",
-    "title": "Marking queue"
+    "title": "Marking queue",
+    "byAuthor": "By {author}",
+    "suggestWithAi": "Suggest with AI",
+    "aiSuggestion": "The mark and feedback were suggested by AI. Check them: once you save, the mark is yours."
   },
   "smart": {
     "averageScore": "Average out of {max}",
@@ -961,5 +969,10 @@
     "sharedWarning": "With a shared password, until each student changes it, anyone in the class can sign in as anyone else and see their grades and their work.",
     "start": "Reset class passwords",
     "title": "Class passwords"
+  },
+  "difficulty": {
+    "ADVANCED": "Advanced",
+    "BASIC": "Basic",
+    "INTERMEDIATE": "Intermediate"
   }
 }

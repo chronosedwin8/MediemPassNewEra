@@ -7,6 +7,7 @@ import { ApiError } from '@/services/http';
 import RichTextEditor from '@/design-system/RichTextEditor.vue';
 import EvidenceSettings from './EvidenceSettings.vue';
 import { seedPayload } from './seed-payload';
+import { translateIssue } from '@/app/validation';
 import { CHOICE_FAMILY, LIST_FAMILY, MEDIA_FAMILY } from './question-families';
 import { useSignedUpload } from '@/composables/useSignedUpload';
 import { useToast } from '@/composables/useToast';
@@ -121,7 +122,8 @@ watch(kmkCompetencyId, () => {
 const payloadError = computed<string | null>(() => {
   const result = safeParseQuestionPayload(type.value, payload.value);
   if (result.success) return null;
-  return result.error.issues[0]?.message ?? t('errors.QUESTION_PAYLOAD_INVALID');
+  const issue = result.error.issues[0];
+  return issue ? translateIssue(issue) : t('errors.QUESTION_PAYLOAD_INVALID');
 });
 
 const canSave = computed(

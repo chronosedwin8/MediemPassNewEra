@@ -216,7 +216,8 @@
     "certificate": "Kompetenzzeugnis",
     "certificateEnable": "Zeugnis bei Bestehen ausstellen",
     "certificateHint": "Wer besteht, kann ein PDF herunterladen, das die nachgewiesenen KMK-Kompetenzen bescheinigt. Lässt sich auch bei bereits veröffentlichter Prüfung einschalten.",
-    "certificateThreshold": "Bescheinigt werden nur Kompetenzen mit mindestens 70 % in den sie messenden Fragen."
+    "certificateThreshold": "Bescheinigt werden nur Kompetenzen mit mindestens 70 % in den sie messenden Fragen.",
+    "language": "Sprache"
   },
   "question": {
     "add": "Aufgabe hinzufügen",
@@ -491,7 +492,11 @@
     "minLength": "Mindestens {min} Zeichen",
     "maxLength": "Höchstens {max} Zeichen",
     "min": "Mindestwert ist {min}",
-    "max": "Höchstwert ist {max}"
+    "max": "Höchstwert ist {max}",
+    "minItems": "Es braucht mindestens {min} Einträge",
+    "maxItems": "Es dürfen höchstens {max} Einträge sein",
+    "invalidType": "Der Wert hat nicht das erwartete Format",
+    "generic": "Prüfe dieses Feld"
   },
   "phidias": {
     "title": "Phidias-Anbindung",
@@ -847,7 +852,10 @@
     "points": "Punkte (max. {max})",
     "save": "Note speichern",
     "studentPhoto": "Foto der lernenden Person",
-    "title": "Korrekturliste"
+    "title": "Korrekturliste",
+    "byAuthor": "Von {author}",
+    "suggestWithAi": "Mit KI vorschlagen",
+    "aiSuggestion": "Note und Rückmeldung stammen von der KI. Prüfe sie: mit dem Speichern ist die Note deine."
   },
   "smart": {
     "averageScore": "Schnitt von {max}",
@@ -961,5 +969,10 @@
     "sharedWarning": "Bei einem gemeinsamen Passwort kann, bis alle es geändert haben, jede Person der Klasse sich als jede andere anmelden und deren Noten und Arbeiten sehen.",
     "start": "Passwörter der Klasse zurücksetzen",
     "title": "Passwörter der Klasse"
+  },
+  "difficulty": {
+    "ADVANCED": "Fortgeschritten",
+    "BASIC": "Grundlegend",
+    "INTERMEDIATE": "Mittel"
   }
 }

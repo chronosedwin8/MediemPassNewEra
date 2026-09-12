@@ -216,7 +216,8 @@
     "certificate": "Diploma de competencias",
     "certificateEnable": "Emitir diploma a quien apruebe",
     "certificateHint": "Quien apruebe podrá descargar un PDF que certifica las competencias KMK que demostró. Puedes activarlo también con la evaluación ya publicada.",
-    "certificateThreshold": "Solo se certifican las competencias con al menos un 70 % en las preguntas que las miden."
+    "certificateThreshold": "Solo se certifican las competencias con al menos un 70 % en las preguntas que las miden.",
+    "language": "Idioma"
   },
   "question": {
     "add": "Añadir pregunta",
@@ -491,7 +492,11 @@
     "minLength": "Debe tener al menos {min} caracteres",
     "maxLength": "No puede superar los {max} caracteres",
     "min": "El valor mínimo es {min}",
-    "max": "El valor máximo es {max}"
+    "max": "El valor máximo es {max}",
+    "minItems": "Hacen falta al menos {min} elementos",
+    "maxItems": "No puede haber más de {max} elementos",
+    "invalidType": "El valor no tiene el formato esperado",
+    "generic": "Revisa este campo"
   },
   "phidias": {
     "title": "Integración con Phidias",
@@ -847,7 +852,10 @@
     "points": "Puntos (máx. {max})",
     "save": "Guardar nota",
     "studentPhoto": "Foto del estudiante",
-    "title": "Cola de corrección"
+    "title": "Cola de corrección",
+    "byAuthor": "De {author}",
+    "suggestWithAi": "Proponer con IA",
+    "aiSuggestion": "La nota y la retroalimentación las propuso la IA. Revísalas: al guardar, la nota es tuya."
   },
   "smart": {
     "averageScore": "Media sobre {max}",
@@ -961,5 +969,10 @@
     "sharedWarning": "Con una contraseña compartida, hasta que cada estudiante la cambie, cualquiera del grupo puede entrar como cualquier otro y ver sus notas y sus trabajos.",
     "start": "Restablecer contraseñas del grupo",
     "title": "Contraseñas del grupo"
+  },
+  "difficulty": {
+    "ADVANCED": "Avanzada",
+    "BASIC": "Básica",
+    "INTERMEDIATE": "Intermedia"
   }
 }

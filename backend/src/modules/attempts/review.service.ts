@@ -36,7 +36,23 @@ export interface PendingAnswer {
   questionId: string;
   answeredAt: Date;
   student: { name: string; code: string | null };
-  assessment: { id: string; title: string };
+  /**
+   * De dónde sale esta respuesta.
+   *
+   * Sin esto, la cola era una respuesta suelta sin contexto: no se sabía de
+   * qué evaluación era, de qué curso ni de qué materia, ni siquiera si la
+   * evaluación era tuya. Corregir a ciegas es lo que hace que nadie corrija.
+   */
+  assessment: {
+    id: string;
+    title: string;
+    subject: string | null;
+    /** El curso al que se asignó, cuando fue a un grupo. */
+    groupCode: string | null;
+    /** Quién la escribió, para distinguir lo propio de lo ajeno. */
+    author: string;
+    isMine: boolean;
+  };
   question: {
     statement: string;
     type: QuestionType;
@@ -91,7 +107,20 @@ export async function listPendingReview(
           user: {
             select: { firstName: true, lastName: true, student: { select: { code: true } } },
           },
-          version: { select: { name: true, assessmentId: true } },
+          version: {
+            select: {
+              name: true,
+              assessmentId: true,
+              assessment: {
+                select: {
+                  createdById: true,
+                  createdBy: { select: { firstName: true, lastName: true } },
+                  subject: { select: { name: true } },
+                },
+              },
+            },
+          },
+          recipient: { select: { assignment: { select: { group: { select: { code: true } } } } } },
         },
       },
       question: {
@@ -104,10 +133,21 @@ export async function listPendingReview(
     },
   });
 
-  return Promise.all(answers.map((answer) => toPendingAnswer(answer)));
+  return Promise.all(answers.map((answer) => toPendingAnswer(answer, actor.userId)));
 }
 
-async function toPendingAnswer(answer: {
+/** El nombre de la materia, que es un texto localizado. */
+function localizedName(value: unknown): string | null {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') {
+    const text = value as Record<string, unknown>;
+    const first = text['es'] ?? text['de'] ?? text['en'];
+    return typeof first === 'string' ? first : null;
+  }
+  return null;
+}
+
+interface PendingRow {
   attemptId: string;
   questionId: string;
   answeredAt: Date;
@@ -115,15 +155,27 @@ async function toPendingAnswer(answer: {
   pointsPossible: unknown;
   attempt: {
     user: { firstName: string; lastName: string; student: { code: string | null } | null };
-    version: { name: string; assessmentId: string };
+    version: {
+      name: string;
+      assessmentId: string;
+      assessment: {
+        createdById: string;
+        createdBy: { firstName: string; lastName: string };
+        subject: { name: unknown } | null;
+      };
+    };
+    recipient: { assignment: { group: { code: string } | null } };
   };
   question: {
     statement: string;
     type: string;
     kmkCompetency: { code: string; name: unknown } | null;
   };
-}): Promise<PendingAnswer> {
+}
+
+async function toPendingAnswer(answer: PendingRow, viewerId: string): Promise<PendingAnswer> {
   const type = answer.question.type as QuestionType;
+  const source = answer.attempt.version.assessment;
 
   return {
     attemptId: answer.attemptId,
@@ -133,7 +185,14 @@ async function toPendingAnswer(answer: {
       name: `${answer.attempt.user.lastName}, ${answer.attempt.user.firstName}`,
       code: answer.attempt.user.student?.code ?? null,
     },
-    assessment: { id: answer.attempt.version.assessmentId, title: answer.attempt.version.name },
+    assessment: {
+      id: answer.attempt.version.assessmentId,
+      title: answer.attempt.version.name,
+      subject: localizedName(source.subject?.name),
+      groupCode: answer.attempt.recipient.assignment.group?.code ?? null,
+      author: `${source.createdBy.firstName} ${source.createdBy.lastName}`.trim(),
+      isMine: source.createdById === viewerId,
+    },
     question: {
       statement: answer.question.statement,
       type,

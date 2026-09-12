@@ -11,6 +11,9 @@ import {
   SETTING_KEY,
   type LocalizedText,
   type Role,
+  type Language,
+  type Permission,
+  type QuestionType,
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -18,6 +21,8 @@ import { createLogger } from '../../shared/logger.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { getSetting } from '../settings/settings.service.js';
 import { getActiveScale } from '../settings/scales.service.js';
+import { assertCanGrade } from '../attempts/review.service.js';
+import { isAiGradable, suggestGrade, type GradingSuggestion } from './ai.grading.js';
 import { env } from '../../config/env.js';
 import { getAiProvider, type GenerationOutcome, type GenerationParams } from './ai.provider.js';
 import {
@@ -515,4 +520,103 @@ export async function listGenerationRequests(actor: Actor, limit = 20) {
       createdAt: true,
     },
   });
+}
+
+// --- Corrección asistida -----------------------------------------------------
+
+export const suggestGradeSchema = z.object({
+  attemptId: z.string().uuid(),
+  questionId: z.string().uuid(),
+});
+
+export type SuggestGradeInput = z.infer<typeof suggestGradeSchema>;
+
+/**
+ * Propone nota y retroalimentación para una respuesta escrita.
+ *
+ * Devuelve una propuesta: no escribe nada en el intento. Quien corrige la ve
+ * en el formulario, la ajusta si hace falta y la guarda, que es el paso donde
+ * una persona se hace responsable de la nota de un menor.
+ *
+ * El alcance es el mismo que el de la cola de corrección: se propone sobre lo
+ * que esa persona podría corregir a mano de todos modos.
+ */
+export async function suggestGradeForAnswer(
+  actor: { userId: string; permissions: Permission[] },
+  input: SuggestGradeInput,
+): Promise<GradingSuggestion & { pointsPossible: number }> {
+  await assertCanGrade(actor, input.attemptId, input.questionId);
+
+  const answer = await prisma.attemptAnswer.findFirst({
+    where: { attemptId: input.attemptId, questionId: input.questionId },
+    select: {
+      response: true,
+      pointsPossible: true,
+      question: {
+        select: {
+          type: true,
+          statement: true,
+          payload: true,
+          version: { select: { language: true } },
+        },
+      },
+    },
+  });
+
+  if (!answer) {
+    throw AppError.notFound(ERROR_CODE.QUESTION_NOT_FOUND, {
+      attemptId: input.attemptId,
+      questionId: input.questionId,
+    });
+  }
+
+  const type = answer.question.type as QuestionType;
+  if (!isAiGradable(type)) {
+    /*
+     * Una nota de voz o un vídeo no se le envían al modelo: no los ha oído ni
+     * visto, y lo que devolvería sería una valoración inventada sobre algo
+     * que no conoce.
+     */
+    throw AppError.conflict(ERROR_CODE.CONFLICT, 'This answer cannot be graded by the model', {
+      questionType: type,
+    });
+  }
+
+  const response = answer.response as { text?: unknown } | null;
+  const answerText = typeof response?.text === 'string' ? response.text.trim() : '';
+
+  if (answerText.length === 0) {
+    throw AppError.conflict(ERROR_CODE.CONFLICT, 'The answer is empty', {
+      attemptId: input.attemptId,
+    });
+  }
+
+  const payload = answer.question.payload as { rubric?: unknown } | null;
+
+  return {
+    ...(await suggestGrade({
+      questionType: type,
+      statement: stripHtml(answer.question.statement),
+      rubric: typeof payload?.rubric === 'string' ? payload.rubric : null,
+      answerText: stripHtml(answerText),
+      pointsPossible: Number(answer.pointsPossible),
+      language: answer.question.version.language as Language,
+    })),
+    pointsPossible: Number(answer.pointsPossible),
+  };
+}
+
+/**
+ * Deja el texto sin etiquetas antes de enviarlo al modelo.
+ *
+ * El enunciado y las respuestas abiertas llevan formato. Mandar el HTML
+ * gastaría la mitad del contexto en `<p>` y `<strong>` y daría al modelo la
+ * oportunidad de fijarse en el marcado en lugar de en lo que dice el texto.
+ */
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

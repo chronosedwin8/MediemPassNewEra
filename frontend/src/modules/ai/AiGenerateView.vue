@@ -312,7 +312,7 @@ const inputClass =
               :checked="form.questionTypes.includes(type)"
               @change="toggle(form.questionTypes, type)"
             />
-            {{ t(`question.type.${type}`) }}
+            {{ t(`question.types.${type}`) }}
           </label>
         </div>
       </fieldset>

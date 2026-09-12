@@ -18,6 +18,7 @@ import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
 import RichTextView from '@/design-system/RichTextView.vue';
 import SmartRubricScorer from './SmartRubricScorer.vue';
+import { useAiGrading } from './useAiGrading';
 import { useToast } from '@/composables/useToast';
 
 /**
@@ -38,7 +39,14 @@ interface PendingAnswer {
   questionId: string;
   answeredAt: string;
   student: { name: string; code: string | null };
-  assessment: { id: string; title: string };
+  assessment: {
+    id: string;
+    title: string;
+    subject: string | null;
+    groupCode: string | null;
+    author: string;
+    isMine: boolean;
+  };
   question: {
     statement: string;
     type: QuestionType;
@@ -55,6 +63,8 @@ const toast = useToast();
 const pending = ref<PendingAnswer[]>([]);
 const loading = ref(true);
 const savingKey = ref<string | null>(null);
+
+const ai = useAiGrading();
 
 interface Draft {
   points: number;
@@ -111,6 +121,26 @@ function updateDraft(item: PendingAnswer, patch: Partial<Draft>): void {
   drafts.value.set(keyOf(item), { ...draftFor(item), ...patch });
 }
 
+/**
+ * Pide una propuesta de nota y la deja en el formulario.
+ *
+ * No guarda nada: rellena los campos y quien corrige decide. Es la diferencia
+ * entre una ayuda y delegar en el modelo la nota de un menor, y la pantalla lo
+ * dice con una marca visible en la respuesta que llegó así.
+ */
+async function suggest(item: PendingAnswer): Promise<void> {
+  try {
+    const result = await ai.suggest(keyOf(item), item.attemptId, item.questionId);
+    updateDraft(item, {
+      points: result.points,
+      feedback: result.feedback,
+      ...(result.rubricScores ? { rubric: result.rubricScores } : {}),
+    });
+  } catch (error) {
+    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
+  }
+}
+
 async function submit(item: PendingAnswer): Promise<void> {
   const draft = draftFor(item);
   savingKey.value = keyOf(item);
@@ -165,10 +195,21 @@ const inputClass =
       <BaseCard v-for="item in pending" :key="keyOf(item)">
         <div class="flex flex-col gap-4">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <div>
+            <div class="min-w-0">
               <p class="font-medium">{{ item.student.name }}</p>
-              <p class="text-xs text-ink-subtle">
-                {{ item.assessment.title }} · {{ d(new Date(item.answeredAt), 'short') }}
+              <!--
+                De dónde sale esta respuesta. Sin esto, la cola era una
+                respuesta suelta: no se sabía de qué evaluación, de qué curso
+                ni de qué materia, ni siquiera si la evaluación era tuya.
+              -->
+              <p class="text-sm">{{ item.assessment.title }}</p>
+              <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-subtle">
+                <span v-if="item.assessment.groupCode">{{ item.assessment.groupCode }}</span>
+                <span v-if="item.assessment.subject">· {{ item.assessment.subject }}</span>
+                <span>· {{ d(new Date(item.answeredAt), 'short') }}</span>
+                <BaseBadge v-if="!item.assessment.isMine" tone="warning">
+                  {{ t('review.byAuthor', { author: item.assessment.author }) }}
+                </BaseBadge>
               </p>
             </div>
             <BaseBadge v-if="item.question.competency" tone="info">
@@ -216,6 +257,18 @@ const inputClass =
             @update:scores="updateDraft(item, { rubric: $event })"
           />
 
+          <!--
+            Se marca lo que propuso el modelo. Una nota puesta por una persona
+            y una sugerida se parecen demasiado en un formulario relleno, y
+            quien guarda tiene que saber cuál de las dos está firmando.
+          -->
+          <p
+            v-if="ai.suggestedKeys.value.has(keyOf(item))"
+            class="rounded-md border border-info/30 bg-info-soft px-3 py-2 text-sm"
+          >
+            {{ t('review.aiSuggestion') }}
+          </p>
+
           <div class="flex flex-wrap items-end gap-3">
             <label v-if="!isSmart(item)" class="flex flex-col gap-1.5">
               <span class="text-xs font-medium text-ink-muted">
@@ -245,6 +298,15 @@ const inputClass =
                 @input="updateDraft(item, { feedback: ($event.target as HTMLInputElement).value })"
               />
             </label>
+
+            <BaseButton
+              v-if="ai.canSuggest(item.question.type)"
+              variant="secondary"
+              :loading="ai.pendingKey.value === keyOf(item)"
+              @click="suggest(item)"
+            >
+              {{ t('review.suggestWithAi') }}
+            </BaseButton>
 
             <BaseButton
               :loading="savingKey === keyOf(item)"
