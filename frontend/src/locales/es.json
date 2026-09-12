@@ -177,7 +177,7 @@
     "instructions": "Instrucciones",
     "subject": "Materia",
     "gradeLevel": "Grado",
-    "audience": "Dirigida a",
+    "audience": "Para quién es",
     "difficulty": "Dificultad",
     "timeLimit": "Duración máxima (minutos)",
     "timeLimitMinutes": "{minutes} minutos",
@@ -220,7 +220,14 @@
     "certificateEnable": "Emitir diploma a quien apruebe",
     "certificateHint": "Quien apruebe podrá descargar un PDF que certifica las competencias KMK que demostró. Puedes activarlo también con la evaluación ya publicada.",
     "certificateThreshold": "Solo se certifican las competencias con al menos un 70 % en las preguntas que las miden.",
-    "language": "Idioma"
+    "language": "Idioma",
+    "audienceStudent": "Estudiantes",
+    "audienceTeacher": "Docentes",
+    "purpose": "Propósito",
+    "purposeEvaluation": "Evaluación",
+    "purposeDiagnostic": "Diagnóstico",
+    "purposeTraining": "Capacitación",
+    "trainingHint": "Con estos dos ajustes podrá vincularla a un módulo de contenido formativo para certificar a los docentes."
   },
   "question": {
     "add": "Añadir pregunta",
@@ -682,7 +689,7 @@
     "questionTypes": "Tipos de pregunta",
     "questionTypesHint": "Solo se ofrecen los que el modelo sabe generar bien.",
     "generate": "Generar borrador",
-    "generatingHint": "Escribir treinta preguntas buenas lleva su tiempo: hasta un par de minutos. No cierres esta página.",
+    "generatingHint": "Escribir {count} preguntas buenas lleva su tiempo: hasta un par de minutos. No cierres esta página.",
     "generated": "Borrador creado con {count} preguntas.",
     "rejected": "La respuesta no pasó la validación y se descartó",
     "questionNumber": "Pregunta {number}",

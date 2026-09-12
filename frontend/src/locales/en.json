@@ -177,7 +177,7 @@
     "instructions": "Instructions",
     "subject": "Subject",
     "gradeLevel": "Grade",
-    "audience": "Intended for",
+    "audience": "Who it is for",
     "difficulty": "Difficulty",
     "timeLimit": "Time limit (minutes)",
     "timeLimitMinutes": "{minutes} minutes",
@@ -220,7 +220,14 @@
     "certificateEnable": "Issue a certificate to those who pass",
     "certificateHint": "Anyone who passes can download a PDF certifying the KMK competences they demonstrated. You can switch this on even after publishing.",
     "certificateThreshold": "Only competences scoring at least 70% on the questions that measure them are certified.",
-    "language": "Language"
+    "language": "Language",
+    "audienceStudent": "Students",
+    "audienceTeacher": "Teachers",
+    "purpose": "Purpose",
+    "purposeEvaluation": "Evaluation",
+    "purposeDiagnostic": "Diagnostic",
+    "purposeTraining": "Training",
+    "trainingHint": "With these two settings you can link it to a training module and certify teachers."
   },
   "question": {
     "add": "Add question",
@@ -682,7 +689,7 @@
     "questionTypes": "Question types",
     "questionTypesHint": "Only the types the model can reliably generate are offered.",
     "generate": "Generate draft",
-    "generatingHint": "Writing thirty good questions takes a while: up to a couple of minutes. Do not close this page.",
+    "generatingHint": "Writing {count} good questions takes a while: up to a couple of minutes. Do not close this page.",
     "generated": "Draft created with {count} questions.",
     "rejected": "The response failed validation and was discarded",
     "questionNumber": "Question {number}",

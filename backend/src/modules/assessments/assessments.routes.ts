@@ -195,7 +195,18 @@ assessmentsRouter.get(
   requirePermission(PERMISSION.ASSESSMENT_READ),
   validate({
     params: z.object({ versionId: z.string().uuid() }),
-    query: z.object({ withSolutions: z.coerce.boolean().default(false) }),
+    /*
+     * `z.coerce.boolean()` no sirve aquí y el fallo es silencioso: convierte
+     * cualquier cadena no vacía en `true`, así que `withSolutions=false`
+     * llegaba como verdadero y la casilla «Ver las respuestas» no podía
+     * apagarse nunca. La previsualización enseñaba las soluciones siempre.
+     */
+    query: z.object({
+      withSolutions: z
+        .enum(['true', 'false'])
+        .optional()
+        .transform((value) => value === 'true'),
+    }),
   }),
   asyncHandler(async (req, res) => {
     const { withSolutions } = getQuery<{ withSolutions: boolean }>(req);

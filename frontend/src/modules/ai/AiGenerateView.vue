@@ -339,7 +339,9 @@ const inputClass =
         <BaseButton type="submit" :disabled="!canSubmit" :loading="generating">
           {{ t('ai.generate') }}
         </BaseButton>
-        <p v-if="generating" class="text-sm text-ink-muted">{{ t('ai.generatingHint') }}</p>
+        <p v-if="generating" class="text-sm text-ink-muted">
+          {{ t('ai.generatingHint', { count: form.questionCount }) }}
+        </p>
       </div>
     </form>
   </div>

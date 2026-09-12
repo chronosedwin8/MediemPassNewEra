@@ -177,7 +177,7 @@
     "instructions": "Anweisungen",
     "subject": "Fach",
     "gradeLevel": "Klassenstufe",
-    "audience": "Gerichtet an",
+    "audience": "Für wen",
     "difficulty": "Schwierigkeit",
     "timeLimit": "Maximale Dauer (Minuten)",
     "timeLimitMinutes": "{minutes} Minuten",
@@ -220,7 +220,14 @@
     "certificateEnable": "Zeugnis bei Bestehen ausstellen",
     "certificateHint": "Wer besteht, kann ein PDF herunterladen, das die nachgewiesenen KMK-Kompetenzen bescheinigt. Lässt sich auch bei bereits veröffentlichter Prüfung einschalten.",
     "certificateThreshold": "Bescheinigt werden nur Kompetenzen mit mindestens 70 % in den sie messenden Fragen.",
-    "language": "Sprache"
+    "language": "Sprache",
+    "audienceStudent": "Lernende",
+    "audienceTeacher": "Lehrkräfte",
+    "purpose": "Zweck",
+    "purposeEvaluation": "Beurteilung",
+    "purposeDiagnostic": "Diagnose",
+    "purposeTraining": "Fortbildung",
+    "trainingHint": "Mit diesen beiden Einstellungen lässt sie sich einem Fortbildungsmodul zuordnen und zertifiziert Lehrkräfte."
   },
   "question": {
     "add": "Aufgabe hinzufügen",
@@ -682,7 +689,7 @@
     "questionTypes": "Fragetypen",
     "questionTypesHint": "Es werden nur Typen angeboten, die das Modell zuverlässig erzeugt.",
     "generate": "Entwurf erzeugen",
-    "generatingHint": "Dreißig gute Fragen zu schreiben dauert: bis zu zwei Minuten. Bitte schließe diese Seite nicht.",
+    "generatingHint": "{count} gute Fragen zu schreiben dauert: bis zu ein paar Minuten. Schließen Sie diese Seite nicht.",
     "generated": "Entwurf mit {count} Fragen erstellt.",
     "rejected": "Die Antwort hat die Validierung nicht bestanden und wurde verworfen",
     "questionNumber": "Frage {number}",
