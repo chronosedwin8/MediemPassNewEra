@@ -905,5 +905,61 @@
       "EXCELENTE": "Excelente",
       "INICIAL": "Inicial"
     }
+  },
+  "users": {
+    "editRoles": "Cambiar roles",
+    "empty": "No hay cuentas con este filtro",
+    "emptyHint": "Prueba con otro perfil o cambia la búsqueda.",
+    "grantAdminWarning": "Administración puede hacerlo todo: crear y borrar cuentas, ver los datos de cualquier estudiante, cambiar contraseñas y borrar evaluaciones con sus notas.",
+    "lastLogin": "Último acceso",
+    "name": "Nombre",
+    "needsRole": "Una cuenta sin ningún rol entra en la plataforma y no puede hacer nada.",
+    "never": "Nunca",
+    "resetPassword": "Restablecer contraseña",
+    "roles": "Roles",
+    "rolesFor": "Roles de {name}",
+    "searchPlaceholder": "Buscar por nombre, usuario o correo",
+    "status": "Estado",
+    "summary": "{total} cuentas, de las cuales {admins} pueden administrarlo todo.",
+    "temporaryFor": "Contraseña temporal de {name}",
+    "temporaryHint": "Se muestra una sola vez. Habrá que cambiarla al entrar y las sesiones abiertas se han cerrado.",
+    "title": "Personal y cuentas",
+    "scope": {
+      "admin": "Administración",
+      "staff": "Docentes y administración",
+      "student": "Estudiantes",
+      "teacher": "Docentes"
+    },
+    "roleMeaning": {
+      "ADMIN": "Puede hacerlo todo: cuentas, roles, contraseñas, borrados y los datos de cualquier persona.",
+      "STUDENT": "Responde las evaluaciones que le asignan y consulta sus propios resultados.",
+      "TEACHER": "Crea y asigna evaluaciones, corrige y ve los resultados de sus grupos."
+    },
+    "statuses": {
+      "ACTIVE": "Activa",
+      "INACTIVE": "Inactiva",
+      "PENDING_ACTIVATION": "Sin activar",
+      "SUSPENDED": "Suspendida"
+    }
+  },
+  "groupPasswords": {
+    "confirm": "Escribe «{code}» para confirmar",
+    "confirmHint": "Se cambiará la contraseña de {count} estudiantes.",
+    "done": "{count} contraseñas restablecidas",
+    "download": "Descargar listado (CSV)",
+    "finish": "Ya las copié",
+    "individual": "Una distinta por estudiante",
+    "individualHint": "Recomendado. Se genera una contraseña legible para cada uno y se entrega en un listado.",
+    "intro": "Restablece la contraseña de todos los estudiantes del grupo de una vez. Cada uno tendrá que cambiarla al entrar y las sesiones abiertas se cierran.",
+    "mode": "Cómo se asignan",
+    "onceOnly": "Estas contraseñas se muestran una sola vez: no quedan guardadas en ningún sitio. Cópialas o descárgalas antes de cerrar.",
+    "run": "Restablecer {count} contraseñas",
+    "shared": "La misma para todo el grupo",
+    "sharedHint": "Cómoda para dictar en clase el primer día.",
+    "sharedPassword": "Contraseña compartida",
+    "sharedPasswordHint": "Mínimo 10 caracteres. Solo sirve para el primer acceso.",
+    "sharedWarning": "Con una contraseña compartida, hasta que cada estudiante la cambie, cualquiera del grupo puede entrar como cualquier otro y ver sus notas y sus trabajos.",
+    "start": "Restablecer contraseñas del grupo",
+    "title": "Contraseñas del grupo"
   }
 }

@@ -117,6 +117,10 @@ const REFERENCE_NAV: NavRule[] = [
 
 const ADMIN_NAV: NavRule[] = [
   {
+    item: { to: '/admin/users', labelKey: 'nav.users', icon: 'users' },
+    permissions: [PERMISSION.USER_READ],
+  },
+  {
     item: { to: '/admin/training', labelKey: 'nav.trainingAdmin', icon: 'competency' },
     permissions: [PERMISSION.TRAINING_MANAGE],
   },

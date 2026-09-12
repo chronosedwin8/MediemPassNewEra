@@ -80,7 +80,11 @@ export async function listUsers(query: ListUsersQuery): Promise<Paginated<UserSu
   const where = {
     deletedAt: null,
     ...(query.status ? { status: query.status as never } : {}),
-    ...(query.role ? { roles: { some: { role: { code: query.role } } } } : {}),
+    ...(query.roles?.length
+      ? { roles: { some: { role: { code: { in: query.roles } } } } }
+      : query.role
+        ? { roles: { some: { role: { code: query.role } } } }
+        : {}),
     ...(query.search
       ? {
           OR: [

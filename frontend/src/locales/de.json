@@ -905,5 +905,61 @@
       "EXCELENTE": "Ausgezeichnet",
       "INICIAL": "Anfang"
     }
+  },
+  "users": {
+    "editRoles": "Rollen ändern",
+    "empty": "Keine Konten mit diesem Filter",
+    "emptyHint": "Probier ein anderes Profil oder ändere die Suche.",
+    "grantAdminWarning": "Die Verwaltung kann alles: Konten anlegen und löschen, die Daten jeder lernenden Person sehen, Passwörter ändern und Prüfungen samt Noten löschen.",
+    "lastLogin": "Letzter Zugriff",
+    "name": "Name",
+    "needsRole": "Ein Konto ohne Rolle kommt in die Plattform und kann nichts tun.",
+    "never": "Nie",
+    "resetPassword": "Passwort zurücksetzen",
+    "roles": "Rollen",
+    "rolesFor": "Rollen von {name}",
+    "searchPlaceholder": "Nach Name, Benutzer oder E-Mail suchen",
+    "status": "Status",
+    "summary": "{total} Konten, davon können {admins} alles verwalten.",
+    "temporaryFor": "Vorläufiges Passwort von {name}",
+    "temporaryHint": "Wird nur einmal angezeigt. Es muss beim Anmelden geändert werden, offene Sitzungen wurden beendet.",
+    "title": "Personal und Konten",
+    "scope": {
+      "admin": "Verwaltung",
+      "staff": "Lehrkräfte und Verwaltung",
+      "student": "Lernende",
+      "teacher": "Lehrkräfte"
+    },
+    "roleMeaning": {
+      "ADMIN": "Kann alles: Konten, Rollen, Passwörter, Löschungen und die Daten jeder Person.",
+      "STUDENT": "Beantwortet die zugewiesenen Prüfungen und sieht die eigenen Ergebnisse.",
+      "TEACHER": "Erstellt und weist Prüfungen zu, korrigiert und sieht die Ergebnisse seiner Klassen."
+    },
+    "statuses": {
+      "ACTIVE": "Aktiv",
+      "INACTIVE": "Inaktiv",
+      "PENDING_ACTIVATION": "Nicht aktiviert",
+      "SUSPENDED": "Gesperrt"
+    }
+  },
+  "groupPasswords": {
+    "confirm": "Tippe «{code}» zur Bestätigung",
+    "confirmHint": "Es werden die Passwörter von {count} Lernenden geändert.",
+    "done": "{count} Passwörter zurückgesetzt",
+    "download": "Liste herunterladen (CSV)",
+    "finish": "Ich habe sie kopiert",
+    "individual": "Für jede Person ein eigenes",
+    "individualHint": "Empfohlen. Für jede Person wird ein lesbares Passwort erzeugt und als Liste ausgegeben.",
+    "intro": "Setzt die Passwörter aller Lernenden der Klasse auf einmal zurück. Alle müssen es beim Anmelden ändern, offene Sitzungen werden beendet.",
+    "mode": "Wie sie vergeben werden",
+    "onceOnly": "Diese Passwörter werden nur einmal angezeigt und nirgends gespeichert. Kopiere oder lade sie herunter, bevor du schließt.",
+    "run": "{count} Passwörter zurücksetzen",
+    "shared": "Dasselbe für die ganze Klasse",
+    "sharedHint": "Praktisch, um es am ersten Tag im Unterricht zu diktieren.",
+    "sharedPassword": "Gemeinsames Passwort",
+    "sharedPasswordHint": "Mindestens 10 Zeichen. Gilt nur für den ersten Zugang.",
+    "sharedWarning": "Bei einem gemeinsamen Passwort kann, bis alle es geändert haben, jede Person der Klasse sich als jede andere anmelden und deren Noten und Arbeiten sehen.",
+    "start": "Passwörter der Klasse zurücksetzen",
+    "title": "Passwörter der Klasse"
   }
 }

@@ -8,6 +8,8 @@ import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
+import GroupPasswordsPanel from './GroupPasswordsPanel.vue';
+import { useAuthStore } from '@/stores/auth';
 
 /**
  * Los estudiantes de un grupo.
@@ -46,6 +48,8 @@ const route = useRoute();
 const { t, locale, d } = useI18n();
 
 const group = ref<Group | null>(null);
+const auth = useAuthStore();
+
 const members = ref<Member[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -132,6 +136,18 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
     <BaseCard v-if="withoutEmail > 0" class="border-warning/40 bg-warning/5">
       <p class="text-sm">{{ t('group.withoutEmail', { count: withoutEmail }) }}</p>
     </BaseCard>
+
+    <!--
+      Solo para administración: restablecer las contraseñas de un curso entero
+      es la operación más ancha de la plataforma y no corresponde a quien da
+      clase, aunque dirija el grupo.
+    -->
+    <GroupPasswordsPanel
+      v-if="group && auth.can('user:reset_password') && members.length > 0"
+      :group-id="group.id"
+      :group-code="group.code"
+      :student-count="members.length"
+    />
 
     <EmptyState v-if="members.length === 0" :title="t('group.noStudents')" />
 

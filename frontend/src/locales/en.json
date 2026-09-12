@@ -905,5 +905,61 @@
       "EXCELENTE": "Excellent",
       "INICIAL": "Starting"
     }
+  },
+  "users": {
+    "editRoles": "Change roles",
+    "empty": "No accounts with this filter",
+    "emptyHint": "Try another profile or change the search.",
+    "grantAdminWarning": "Administration can do everything: create and delete accounts, see any student’s data, change passwords and delete assessments along with their grades.",
+    "lastLogin": "Last sign-in",
+    "name": "Name",
+    "needsRole": "An account with no role gets into the platform and can do nothing.",
+    "never": "Never",
+    "resetPassword": "Reset password",
+    "roles": "Roles",
+    "rolesFor": "Roles for {name}",
+    "searchPlaceholder": "Search by name, username or email",
+    "status": "Status",
+    "summary": "{total} accounts, of which {admins} can administer everything.",
+    "temporaryFor": "Temporary password for {name}",
+    "temporaryHint": "Shown only once. It must be changed on sign-in, and open sessions have been closed.",
+    "title": "Staff and accounts",
+    "scope": {
+      "admin": "Administration",
+      "staff": "Teachers and administration",
+      "student": "Students",
+      "teacher": "Teachers"
+    },
+    "roleMeaning": {
+      "ADMIN": "Can do everything: accounts, roles, passwords, deletions and anyone’s data.",
+      "STUDENT": "Answers the assessments assigned to them and sees their own results.",
+      "TEACHER": "Creates and assigns assessments, marks them and sees their classes’ results."
+    },
+    "statuses": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "PENDING_ACTIVATION": "Not activated",
+      "SUSPENDED": "Suspended"
+    }
+  },
+  "groupPasswords": {
+    "confirm": "Type \"{code}\" to confirm",
+    "confirmHint": "This will change the password of {count} students.",
+    "done": "{count} passwords reset",
+    "download": "Download list (CSV)",
+    "finish": "I have copied them",
+    "individual": "A different one per student",
+    "individualHint": "Recommended. A readable password is generated for each and handed over as a list.",
+    "intro": "Reset the password of every student in the class at once. Each has to change it on sign-in, and open sessions are closed.",
+    "mode": "How they are issued",
+    "onceOnly": "These passwords are shown only once and are not stored anywhere. Copy or download them before closing.",
+    "run": "Reset {count} passwords",
+    "shared": "The same one for the whole class",
+    "sharedHint": "Convenient for dictating in class on the first day.",
+    "sharedPassword": "Shared password",
+    "sharedPasswordHint": "At least 10 characters. It only serves for the first sign-in.",
+    "sharedWarning": "With a shared password, until each student changes it, anyone in the class can sign in as anyone else and see their grades and their work.",
+    "start": "Reset class passwords",
+    "title": "Class passwords"
   }
 }

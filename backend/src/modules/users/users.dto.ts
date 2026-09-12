@@ -56,6 +56,29 @@ export const resetPasswordSchema = z.object({
 
 export const listUsersQuery = paginationQuery.extend({
   role: z.enum([ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT]).optional(),
+  /**
+   * Varios roles a la vez, separados por comas.
+   *
+   * Existe para la pregunta que de verdad se hace la administración: «quién
+   * trabaja aquí», que son docentes y administradores juntos. Con `role`
+   * suelto había que pedir la lista dos veces y mezclarla en la pantalla, y
+   * entonces la paginación deja de tener sentido.
+   */
+  roles: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value
+        ?.split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    )
+    .pipe(
+      z
+        .array(z.enum([ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT]))
+        .min(1)
+        .optional(),
+    ),
   status: z
     .enum([
       USER_STATUS.ACTIVE,

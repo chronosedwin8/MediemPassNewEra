@@ -11,11 +11,86 @@ import { prisma } from '../../src/infrastructure/database/prisma.js';
 import {
   TEST_PASSWORD,
   createAdmin,
+  createStudent,
   createTeacher,
   seedRolesAndPermissions,
 } from '../helpers/factories.js';
 
 const app = createApp();
+
+/**
+ * Un grupo con estudiantes ya matriculados y con sesión abierta.
+ *
+ * La sesión importa: parte de lo que hay que comprobar del restablecimiento
+ * masivo es que las que estaban abiertas se cierran, y sin haberlas abierto
+ * antes la comprobación no diría nada.
+ */
+async function buildGroupWithStudents(): Promise<{
+  adminToken: string;
+  teacherToken: string;
+  groupId: string;
+  usernames: string[];
+  userIds: string[];
+}> {
+  await createAdmin({ username: 'admin.claves' });
+  const teacher = await createTeacher({ username: 'docente.claves' });
+
+  const level = await prisma.educationLevel.create({
+    data: { code: 'SEC-C', name: trilingual('Secundaria'), position: 0 },
+  });
+  const gradeLevel = await prisma.gradeLevel.create({
+    data: {
+      educationLevelId: level.id,
+      code: 'K9',
+      name: trilingual('KLASSE 9'),
+      ordinal: 9,
+      position: 0,
+    },
+  });
+  const year = await prisma.academicYear.create({
+    data: {
+      code: '2026-2027-C',
+      name: 'Año de claves',
+      startDate: new Date('2026-08-01'),
+      endDate: new Date('2027-06-24'),
+    },
+  });
+  const group = await prisma.group.create({
+    data: {
+      code: 'K9C',
+      name: 'K9C',
+      academicYearId: year.id,
+      gradeLevelId: gradeLevel.id,
+      homeroomTeacherId: teacher.id,
+    },
+  });
+
+  const usernames: string[] = [];
+  const userIds: string[] = [];
+
+  for (const index of [1, 2, 3]) {
+    const username = `alumno.claves${index}`;
+    const user = await createStudent({ username });
+    const profile = await prisma.student.create({
+      data: { userId: user.id, gradeLevelId: gradeLevel.id, enrollmentStatus: 'ACTIVE' },
+    });
+    await prisma.groupMembership.create({ data: { groupId: group.id, studentId: profile.id } });
+
+    // Se abre sesión para que haya refrescos vivos que revocar.
+    await tokenFor(username);
+
+    usernames.push(username);
+    userIds.push(user.id);
+  }
+
+  return {
+    adminToken: await tokenFor('admin.claves'),
+    teacherToken: await tokenFor('docente.claves'),
+    groupId: group.id,
+    usernames,
+    userIds,
+  };
+}
 
 async function tokenFor(username: string): Promise<string> {
   const response = await request(app)
@@ -516,5 +591,95 @@ describe('competencias KMK', () => {
       });
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe('contraseñas de un grupo', () => {
+  async function resetPasswords(token: string, groupId: string, body: Record<string, unknown>) {
+    return request(app)
+      .post(`/api/groups/${groupId}/reset-student-passwords`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(body);
+  }
+
+  it('restablece la de todo el grupo y devuelve las credenciales una vez', async () => {
+    const fixture = await buildGroupWithStudents();
+
+    const response = await resetPasswords(fixture.adminToken, fixture.groupId, {
+      mode: 'individual',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.issued).toHaveLength(fixture.usernames.length);
+
+    // Cada uno recibe una distinta: es lo que distingue este modo del otro.
+    const passwords = new Set(
+      response.body.data.issued.map((entry: { password: string }) => entry.password),
+    );
+    expect(passwords.size).toBe(fixture.usernames.length);
+
+    // Y sirven: se puede entrar con ellas.
+    const first = response.body.data.issued[0];
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ identifier: first.username, password: first.password });
+
+    expect(login.status).toBe(200);
+    // Obligada a cambiarla: ha pasado por un listado impreso.
+    expect(login.body.data.user.mustChangePassword).toBe(true);
+  });
+
+  it('el modo compartido usa la misma para todos', async () => {
+    const fixture = await buildGroupWithStudents();
+
+    const response = await resetPasswords(fixture.adminToken, fixture.groupId, {
+      mode: 'shared',
+      password: 'ClaseDeOctavo2026',
+    });
+
+    const passwords = new Set(
+      response.body.data.issued.map((entry: { password: string }) => entry.password),
+    );
+    expect(passwords.size).toBe(1);
+  });
+
+  it('el modo compartido exige indicar la contraseña', async () => {
+    const fixture = await buildGroupWithStudents();
+
+    const response = await resetPasswords(fixture.adminToken, fixture.groupId, {
+      mode: 'shared',
+    });
+
+    expect(response.status).toBe(422);
+  });
+
+  it('un docente no puede restablecer las contraseñas de un grupo', async () => {
+    const fixture = await buildGroupWithStudents();
+
+    const response = await resetPasswords(fixture.teacherToken, fixture.groupId, {
+      mode: 'individual',
+    });
+
+    /*
+     * Ni siquiera el titular del grupo: es la operación más ancha de la
+     * plataforma y entrega credenciales en claro de menores.
+     */
+    expect(response.status).toBe(403);
+  });
+
+  it('cierra las sesiones que estuvieran abiertas', async () => {
+    const fixture = await buildGroupWithStudents();
+
+    const before = await prisma.refreshToken.count({
+      where: { userId: { in: fixture.userIds }, revokedAt: null },
+    });
+    expect(before).toBeGreaterThan(0);
+
+    await resetPasswords(fixture.adminToken, fixture.groupId, { mode: 'individual' });
+
+    const after = await prisma.refreshToken.count({
+      where: { userId: { in: fixture.userIds }, revokedAt: null },
+    });
+    expect(after).toBe(0);
   });
 });

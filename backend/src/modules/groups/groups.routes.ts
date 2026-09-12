@@ -19,6 +19,7 @@ import {
   updateGroup,
   updateGroupSchema,
 } from './groups.service.js';
+import { resetGroupPasswords, resetGroupPasswordsSchema } from './group-passwords.service.js';
 
 export const groupsRouter: Router = Router();
 
@@ -98,6 +99,23 @@ groupsRouter.post(
   asyncHandler(async (req, res) => {
     const { studentIds } = req.body as { studentIds: string[] };
     ok(res, await addMembers(requireAuth(req), req.params['id']!, studentIds));
+  }),
+);
+
+/**
+ * Restablece la contraseña de todos los estudiantes del grupo.
+ *
+ * Solo administración: es la operación más ancha de la plataforma y devuelve
+ * credenciales en claro. Las contraseñas viajan una única vez en la respuesta
+ * y no quedan en ningún registro; quien la lanza tiene que copiarlas antes de
+ * cerrar la pantalla.
+ */
+groupsRouter.post(
+  '/:id/reset-student-passwords',
+  requirePermission(PERMISSION.USER_RESET_PASSWORD),
+  validate({ params: uuidParam(), body: resetGroupPasswordsSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await resetGroupPasswords(requireAuth(req).userId, req.params['id']!, req.body));
   }),
 );
 

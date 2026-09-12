@@ -212,6 +212,17 @@ const routes: RouteRecordRaw[] = [
       },
 
       // --- Redacción de capacitaciones --------------------------------------
+      /*
+       * Personal y cuentas. Vive en administración porque el rol es lo que
+       * decide qué puede hacer cada uno, y eso no lo reparte quien da clase.
+       */
+      {
+        path: '/admin/users',
+        name: 'users',
+        component: () => import('@/modules/users/UserListView.vue'),
+        meta: { permissions: [PERMISSION.USER_READ], titleKey: 'users.title' },
+      },
+
       {
         path: '/admin/training',
         name: 'training-admin',
