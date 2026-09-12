@@ -9,6 +9,7 @@ import BaseButton from '@/design-system/BaseButton.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import ProgressBar from '@/design-system/ProgressBar.vue';
+import TrainingVideo from './TrainingVideo.vue';
 import { useToast } from '@/composables/useToast';
 
 /**
@@ -175,11 +176,18 @@ async function startAssessment(): Promise<void> {
               {{ localize(content.body, locale as never) }}
             </p>
             <!--
-              `rel="noopener"` no es opcional: sin él la página de destino puede
-              manipular esta pestaña a través de `window.opener`.
+              Un vídeo se reproduce aquí mismo. El resto de recursos siguen
+              siendo un enlace, con `rel="noopener"`, que no es opcional: sin
+              él la página de destino puede manipular esta pestaña a través de
+              `window.opener`.
             -->
+            <TrainingVideo
+              v-if="content.type === 'VIDEO' && content.url"
+              :url="content.url"
+              :title="localize(content.title, locale as never)"
+            />
             <a
-              v-if="content.url"
+              v-else-if="content.url"
               :href="content.url"
               target="_blank"
               rel="noopener noreferrer"

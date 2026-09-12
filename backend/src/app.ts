@@ -58,6 +58,24 @@ export function createApp(): Express {
           connectSrc: ["'self'", ...env.CORS_ORIGIN],
           objectSrc: ["'none'"],
           frameAncestors: ["'none'"],
+          /*
+           * Reproductores de vídeo de la capacitación docente.
+           *
+           * La lista es explícita y corta a propósito. Incrustar lo que diga
+           * una URL guardada en la base sería dejar que quien edite un módulo
+           * meta contenido ajeno en una página autenticada; el reproductor del
+           * cliente degrada a enlace lo que no esté aquí, y esta directiva es
+           * la red que lo respalda si alguien se salta ese camino.
+           */
+          frameSrc: [
+            "'self'",
+            'https://app.heygen.com',
+            'https://www.youtube-nocookie.com',
+            'https://player.vimeo.com',
+          ],
+          // Archivos de vídeo servidos por el almacenamiento propio o por la
+          // descarga directa de HeyGen.
+          mediaSrc: ["'self'", 'blob:', 'https:'],
         },
       },
       crossOriginResourcePolicy: { policy: 'same-site' },
