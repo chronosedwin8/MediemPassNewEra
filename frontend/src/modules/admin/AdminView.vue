@@ -11,6 +11,7 @@ import RolePermissionsPanel from './RolePermissionsPanel.vue';
 import AcademicYearPanel from './AcademicYearPanel.vue';
 import StoragePanel from './StoragePanel.vue';
 import PhidiasPanel from './PhidiasPanel.vue';
+import CalendarPanel from './CalendarPanel.vue';
 
 /**
  * Administración de la plataforma.
@@ -25,7 +26,7 @@ import PhidiasPanel from './PhidiasPanel.vue';
  * hacerlas con conocimiento de causa.
  */
 
-type TabKey = 'roles' | 'settings' | 'year' | 'phidias' | 'storage' | 'data';
+type TabKey = 'roles' | 'settings' | 'calendar' | 'year' | 'phidias' | 'storage' | 'data';
 
 interface SettingsPayload {
   [key: string]: unknown;
@@ -53,6 +54,7 @@ const backfillRunning = ref(false);
 const TABS: Array<{ key: TabKey; labelKey: string }> = [
   { key: 'roles', labelKey: 'admin.tabs.roles' },
   { key: 'settings', labelKey: 'admin.tabs.settings' },
+  { key: 'calendar', labelKey: 'admin.tabs.calendar' },
   { key: 'year', labelKey: 'admin.tabs.year' },
   { key: 'phidias', labelKey: 'admin.tabs.phidias' },
   { key: 'storage', labelKey: 'admin.tabs.storage' },
@@ -202,6 +204,8 @@ const inputClass =
         </BaseButton>
       </div>
     </div>
+
+    <CalendarPanel v-else-if="tab === 'calendar'" />
 
     <AcademicYearPanel v-else-if="tab === 'year'" />
 

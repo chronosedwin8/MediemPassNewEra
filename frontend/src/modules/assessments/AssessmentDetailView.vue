@@ -9,6 +9,7 @@ import DeleteAssessmentDialog from './DeleteAssessmentDialog.vue';
 import VersionSettingsForm from './VersionSettingsForm.vue';
 import CertificateToggle from './CertificateToggle.vue';
 import AssignPanel from './AssignPanel.vue';
+import AssignmentsPanel from './AssignmentsPanel.vue';
 import QuestionList from './QuestionList.vue';
 import type { Question } from './types';
 import BaseCard from '@/design-system/BaseCard.vue';
@@ -304,6 +305,15 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
     />
 
     <AssignPanel v-if="showAssignPanel" :version-id="currentVersion.id" />
+
+    <!--
+      Lo ya asignado. Va siempre visible, no detrás del botón de asignar:
+      quien entra a mirar qué hizo la semana pasada no viene a asignar nada.
+    -->
+    <BaseCard class="flex flex-col gap-3">
+      <h2 class="text-lg font-semibold">{{ t('assignment.existing') }}</h2>
+      <AssignmentsPanel :assessment-id="assessment.id" />
+    </BaseCard>
 
     <!-- Preguntas -->
     <BaseCard :title="t('assessment.questions')">

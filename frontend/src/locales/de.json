@@ -442,7 +442,20 @@
     "notOpenYet": "Verfügbar ab dem {date}",
     "closed": "Geschlossen am {date}",
     "attemptsLeft": "Noch {count} Versuch | Noch {count} Versuche",
-    "noAttemptsLeft": "Keine Versuche mehr übrig"
+    "noAttemptsLeft": "Keine Versuche mehr übrig",
+    "existing": "Zuweisungen",
+    "none": "Noch keiner Gruppe zugewiesen.",
+    "recipients": "{count} Empfänger",
+    "resync": "Neu abgleichen",
+    "resynced": "{count} Lernende hinzugefügt.",
+    "resyncHint": "Der Abgleich holt nach, wer der Gruppe nach der Zuweisung beigetreten ist. Es wird niemand entfernt und kein Versuch gelöscht.",
+    "cancel": "Zurückziehen",
+    "cancelled": "Zuweisung zurückgezogen.",
+    "cancelTitle": "Zuweisung zurückziehen",
+    "cancelBody": "Sie gilt für {code} nicht mehr. Bereits abgegebene Versuche bleiben erhalten.",
+    "cancelConfirm": "Geben Sie zur Bestätigung „{code}“ ein",
+    "withWork": "{count} bereits begonnen",
+    "dueAt": "Endet"
   },
   "errors": {
     "generic": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
@@ -683,7 +696,8 @@
       "year": "Schuljahr",
       "data": "Daten",
       "storage": "Dateien",
-      "phidias": "Phidias"
+      "phidias": "Phidias",
+      "calendar": "Kalender"
     },
     "roles": {
       "locked": "Gesperrt",
@@ -725,7 +739,9 @@
       "nextStep": "Nächster Schritt: mit Phidias synchronisieren, um die Einschreibung zu laden.",
       "purgeEvidence": "Auch die {count} Nachweise des endenden Jahres löschen",
       "purgeEvidenceHint": "Das Vorjahr behält seine Noten. Eine Note zu einem Nachweis, den es nicht mehr gibt, lässt sich später von niemandem mehr begründen.",
-      "evidenceDeleted": "{count} Nachweise des Vorjahres wurden gelöscht."
+      "evidenceDeleted": "{count} Nachweise des Vorjahres wurden gelöscht.",
+      "start": "Beginn",
+      "end": "Ende"
     },
     "data": {
       "backfillTitle": "Institutionelle E-Mails",
@@ -810,6 +826,19 @@
       "confirmHint": "Geben Sie „{word}“ ein, um die Änderungen zu übernehmen.",
       "apply": "Synchronisieren",
       "done": "Einschreibung synchronisiert."
+    },
+    "calendar": {
+      "title": "Schuljahre und Zeiträume",
+      "intro": "Das laufende Schuljahr und seine Abschnitte. Statistiken lassen sich nach Zeitraum filtern; ohne Abschnitte ist kein Trimester vom anderen zu trennen.",
+      "newYear": "Neues Schuljahr",
+      "current": "Laufend",
+      "addPeriod": "Zeitraum hinzufügen",
+      "noPeriods": "Dieses Jahr hat keine Zeiträume. Ohne sie lassen sich Statistiken nicht nach Trimester trennen.",
+      "markCurrent": "Als laufendes Jahr markieren",
+      "currentHint": "Das Jahr, in dem die ganze Schule arbeitet. Es kann nur eines geben.",
+      "position": "Reihenfolge",
+      "weight": "Gewicht",
+      "weightHint": "Anteil an der Endnote. 0, wenn nicht verwendet."
     }
   },
   "evidence": {

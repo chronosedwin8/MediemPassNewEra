@@ -442,7 +442,20 @@
     "notOpenYet": "Available from {date}",
     "closed": "Closed on {date}",
     "attemptsLeft": "{count} attempt left | {count} attempts left",
-    "noAttemptsLeft": "You have used all your attempts"
+    "noAttemptsLeft": "You have used all your attempts",
+    "existing": "Assignments",
+    "none": "Not assigned to any group yet.",
+    "recipients": "{count} recipients",
+    "resync": "Re-sync",
+    "resynced": "{count} student(s) added.",
+    "resyncHint": "Re-syncing picks up anyone who joined the group after assigning. It removes nobody and deletes no attempts.",
+    "cancel": "Cancel",
+    "cancelled": "Assignment cancelled.",
+    "cancelTitle": "Cancel the assignment",
+    "cancelBody": "It stops applying to {code}. Attempts already submitted are kept.",
+    "cancelConfirm": "Type \"{code}\" to confirm",
+    "withWork": "{count} already started",
+    "dueAt": "Closes"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -683,7 +696,8 @@
       "year": "Academic year",
       "data": "Data",
       "storage": "Files",
-      "phidias": "Phidias"
+      "phidias": "Phidias",
+      "calendar": "Calendar"
     },
     "roles": {
       "locked": "Locked",
@@ -725,7 +739,9 @@
       "nextStep": "Next step: sync with Phidias to bring in enrolment.",
       "purgeEvidence": "Also delete the {count} evidence files from the closing year",
       "purgeEvidenceHint": "The previous year keeps its grades. A grade given on evidence that no longer exists is a grade nobody can justify later.",
-      "evidenceDeleted": "{count} evidence files from the previous year were deleted."
+      "evidenceDeleted": "{count} evidence files from the previous year were deleted.",
+      "start": "Start",
+      "end": "End"
     },
     "data": {
       "backfillTitle": "Institutional emails",
@@ -810,6 +826,19 @@
       "confirmHint": "Type \"{word}\" to apply the changes to the database.",
       "apply": "Synchronise",
       "done": "Enrolment synchronised."
+    },
+    "calendar": {
+      "title": "Academic years and periods",
+      "intro": "The year the school works in and the terms it is split into. Statistics filter by period, so without any there is no way to separate one term from another.",
+      "newYear": "New academic year",
+      "current": "Current",
+      "addPeriod": "Add period",
+      "noPeriods": "This year has no periods. Without them, statistics cannot be separated by term.",
+      "markCurrent": "Mark as current",
+      "currentHint": "The year the whole school works in. There can be only one.",
+      "position": "Order",
+      "weight": "Weight",
+      "weightHint": "How much it counts towards the final grade. 0 if unused."
     }
   },
   "evidence": {

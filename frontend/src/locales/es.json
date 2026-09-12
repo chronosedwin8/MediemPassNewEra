@@ -442,7 +442,20 @@
     "notOpenYet": "Disponible a partir del {date}",
     "closed": "Cerró el {date}",
     "attemptsLeft": "Te queda {count} intento | Te quedan {count} intentos",
-    "noAttemptsLeft": "Has agotado tus intentos"
+    "noAttemptsLeft": "Has agotado tus intentos",
+    "existing": "Asignaciones",
+    "none": "Todavía no se ha asignado a ningún grupo.",
+    "recipients": "{count} destinatarios",
+    "resync": "Resincronizar",
+    "resynced": "{count} estudiante(s) añadido(s).",
+    "resyncHint": "Resincronizar recoge a quien entró al grupo después de asignar. No quita a nadie ni borra intentos.",
+    "cancel": "Cancelar",
+    "cancelled": "Asignación cancelada.",
+    "cancelTitle": "Cancelar la asignación",
+    "cancelBody": "Deja de estar asignada a {code}. Los intentos ya entregados se conservan.",
+    "cancelConfirm": "Escriba «{code}» para confirmar",
+    "withWork": "{count} con trabajo empezado",
+    "dueAt": "Cierra"
   },
   "errors": {
     "generic": "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
@@ -683,7 +696,8 @@
       "year": "Año lectivo",
       "data": "Datos",
       "storage": "Archivos",
-      "phidias": "Phidias"
+      "phidias": "Phidias",
+      "calendar": "Calendario"
     },
     "roles": {
       "locked": "Bloqueado",
@@ -725,7 +739,9 @@
       "nextStep": "Siguiente paso: sincronizar con Phidias para traer la matrícula.",
       "purgeEvidence": "Borrar también las {count} evidencias del año que se cierra",
       "purgeEvidenceHint": "El año anterior conserva sus notas. Una nota puesta sobre una evidencia que ya no existe es una nota que nadie puede volver a justificar.",
-      "evidenceDeleted": "Se eliminaron {count} evidencias del año anterior."
+      "evidenceDeleted": "Se eliminaron {count} evidencias del año anterior.",
+      "start": "Inicio",
+      "end": "Fin"
     },
     "data": {
       "backfillTitle": "Correos institucionales",
@@ -810,6 +826,19 @@
       "confirmHint": "Escriba «{word}» para aplicar los cambios a la base de datos.",
       "apply": "Sincronizar",
       "done": "Matrícula sincronizada."
+    },
+    "calendar": {
+      "title": "Años lectivos y periodos",
+      "intro": "El año en el que trabaja el colegio y los trimestres en que se divide. Las estadísticas se filtran por periodo, así que sin ninguno no se puede separar un trimestre de otro.",
+      "newYear": "Nuevo año lectivo",
+      "current": "Vigente",
+      "addPeriod": "Añadir periodo",
+      "noPeriods": "Este año no tiene periodos. Sin ellos, las estadísticas no se pueden separar por trimestre.",
+      "markCurrent": "Marcarlo como vigente",
+      "currentHint": "Es el año en el que trabajará todo el colegio. Solo puede haber uno.",
+      "position": "Orden",
+      "weight": "Peso",
+      "weightHint": "Cuánto pesa en la nota final. 0 si no se usa."
     }
   },
   "evidence": {
