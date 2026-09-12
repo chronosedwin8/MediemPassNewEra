@@ -455,6 +455,7 @@
     "CONFLICT": "The operation conflicts with the current state.",
     "DUPLICATE_RESOURCE": "A record with that data already exists.",
     "EMAIL_ALREADY_IN_USE": "That email is already in use.",
+    "LAST_ADMIN": "This administrator role cannot be removed: it is the last one, and nobody would be able to administer the platform.",
     "VERSION_IMMUTABLE": "A published version cannot be modified. Create a new version.",
     "ASSESSMENT_NOT_PUBLISHED": "Only a published version can be assigned.",
     "ASSESSMENT_HAS_NO_QUESTIONS": "An assessment cannot be published without questions.",
@@ -948,7 +949,15 @@
       "INACTIVE": "Inactive",
       "PENDING_ACTIVATION": "Not activated",
       "SUSPENDED": "Suspended"
-    }
+    },
+    "delete": "Remove access",
+    "deleted": "{name} no longer has access.",
+    "deleteTitle": "Remove an account",
+    "deleteSubtitle": "You are removing access for {name}. This cannot be undone from here.",
+    "deleteKeeps": "Their history is kept: assessments they graded and attempts they made stay in place, with their authorship.",
+    "deleteFrees": "Their username and email are released in case they need reassigning, and every open session is closed.",
+    "deleteConfirmLabel": "Type \"{username}\" to confirm",
+    "deleteConfirm": "Remove access"
   },
   "groupPasswords": {
     "confirm": "Type \"{code}\" to confirm",

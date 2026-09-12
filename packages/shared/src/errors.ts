@@ -50,6 +50,8 @@ export const ERROR_CODE = {
   CONFLICT: 'CONFLICT',
   DUPLICATE_RESOURCE: 'DUPLICATE_RESOURCE',
   EMAIL_ALREADY_IN_USE: 'EMAIL_ALREADY_IN_USE',
+  /** Quitar este rol dejaría la plataforma sin nadie que la administre. */
+  LAST_ADMIN: 'LAST_ADMIN',
   /** Una versión publicada es inmutable: hay que crear una versión nueva. */
   VERSION_IMMUTABLE: 'VERSION_IMMUTABLE',
   ASSESSMENT_NOT_PUBLISHED: 'ASSESSMENT_NOT_PUBLISHED',
@@ -170,6 +172,7 @@ export const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   SCALE_NOT_FOUND: 404,
 
   CONFLICT: 409,
+  LAST_ADMIN: 409,
   DUPLICATE_RESOURCE: 409,
   EMAIL_ALREADY_IN_USE: 409,
   VERSION_IMMUTABLE: 409,

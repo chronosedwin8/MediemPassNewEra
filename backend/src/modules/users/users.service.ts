@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import {
   AUDIT_ACTION,
   ERROR_CODE,
+  ROLE,
   USER_STATUS,
   type Language,
   type Paginated,
@@ -244,6 +245,36 @@ export async function updateUser(
   return toSummary(updated as UserRow);
 }
 
+/**
+ * Impide que la plataforma se quede sin nadie que pueda administrarla.
+ *
+ * El borrado ya estaba a salvo por otra razón: nadie puede borrarse a sí
+ * mismo, así que quien borra siempre sobrevive. Quitar roles no tenía esa
+ * protección, y un administrador que se quitara el suyo siendo el único
+ * dejaba la instalación sin forma de crear usuarios, asignar roles ni
+ * recuperar el acceso. Se arregla con base de datos, y eso en un colegio
+ * significa llamar a alguien un domingo.
+ */
+async function assertQuedaAlgunAdministrador(userId: string, nuevos: Role[]): Promise<void> {
+  if (nuevos.includes(ROLE.ADMIN)) return;
+
+  const loEra = await prisma.userRole.count({
+    where: { userId, role: { code: ROLE.ADMIN } },
+  });
+  if (loEra === 0) return;
+
+  const administradores = await prisma.user.count({
+    where: { deletedAt: null, roles: { some: { role: { code: ROLE.ADMIN } } } },
+  });
+
+  if (administradores <= 1) {
+    throw AppError.conflict(
+      ERROR_CODE.LAST_ADMIN,
+      'No se puede quitar el rol de administrador al único que queda',
+    );
+  }
+}
+
 export async function setUserRoles(
   id: string,
   roles: Role[],
@@ -254,6 +285,8 @@ export async function setUserRoles(
     select: { id: true },
   });
   if (!user) throw AppError.notFound(ERROR_CODE.USER_NOT_FOUND, { id });
+
+  await assertQuedaAlgunAdministrador(id, roles);
 
   const roleRows = await prisma.role.findMany({ where: { code: { in: roles } } });
   if (roleRows.length !== roles.length) {

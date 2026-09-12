@@ -455,6 +455,7 @@
     "CONFLICT": "La operación entra en conflicto con el estado actual.",
     "DUPLICATE_RESOURCE": "Ya existe un registro con esos datos.",
     "EMAIL_ALREADY_IN_USE": "Ese correo ya está en uso.",
+    "LAST_ADMIN": "No se puede quitar el rol de administrador: es el único que queda y nadie podría administrar la plataforma.",
     "VERSION_IMMUTABLE": "Una versión publicada no se puede modificar. Crea una versión nueva.",
     "ASSESSMENT_NOT_PUBLISHED": "Solo se puede asignar una versión publicada.",
     "ASSESSMENT_HAS_NO_QUESTIONS": "No se puede publicar una evaluación sin preguntas.",
@@ -948,7 +949,15 @@
       "INACTIVE": "Inactiva",
       "PENDING_ACTIVATION": "Sin activar",
       "SUSPENDED": "Suspendida"
-    }
+    },
+    "delete": "Dar de baja",
+    "deleted": "{name} ya no tiene acceso.",
+    "deleteTitle": "Dar de baja una cuenta",
+    "deleteSubtitle": "Va a retirar el acceso de {name}. No hay forma de deshacerlo desde aquí.",
+    "deleteKeeps": "Se conserva su historial: las evaluaciones que corrigió y los intentos que hizo siguen en su sitio, con su autor.",
+    "deleteFrees": "Se liberan su nombre de usuario y su correo, por si hay que reasignarlos, y se cierran todas sus sesiones abiertas.",
+    "deleteConfirmLabel": "Escriba «{username}» para confirmar",
+    "deleteConfirm": "Dar de baja"
   },
   "groupPasswords": {
     "confirm": "Escribe «{code}» para confirmar",

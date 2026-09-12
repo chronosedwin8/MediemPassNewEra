@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ROLE, type Role } from '@medienpass/shared';
+import { PERMISSION, ROLE, type Role } from '@medienpass/shared';
 import { http, ApiError } from '@/services/http';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
@@ -9,6 +9,8 @@ import BaseButton from '@/design-system/BaseButton.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
 import UserRolesDialog from './UserRolesDialog.vue';
+import UserDeleteDialog from './UserDeleteDialog.vue';
+import { useAuthStore } from '@/stores/auth';
 import { useToast } from '@/composables/useToast';
 
 /**
@@ -37,6 +39,7 @@ interface UserSummary {
 
 const { t, d } = useI18n();
 const toast = useToast();
+const auth = useAuthStore();
 
 const users = ref<UserSummary[]>([]);
 const total = ref(0);
@@ -56,6 +59,20 @@ const SCOPES = [
 ];
 
 const editing = ref<UserSummary | null>(null);
+const deleting = ref<UserSummary | null>(null);
+
+/**
+ * Quién ve el botón de dar de baja.
+ *
+ * El permiso es de administración y nadie más lo tiene, pero la propia cuenta
+ * queda fuera aunque lo tenga: el servidor rechaza que alguien se borre a sí
+ * mismo, y esa regla es lo único que garantiza que siempre quede alguien
+ * capaz de administrar la plataforma. Ofrecer un botón que va a fallar es
+ * peor que no ofrecerlo.
+ */
+function puedeEliminar(user: UserSummary): boolean {
+  return auth.can(PERMISSION.USER_DELETE) && user.id !== auth.user?.id;
+}
 const resettingId = ref<string | null>(null);
 /** Contraseña recién emitida. Se enseña una vez y no se vuelve a poder ver. */
 const issued = ref<{ name: string; password: string } | null>(null);
@@ -242,6 +259,15 @@ async function resetPassword(user: UserSummary): Promise<void> {
                   >
                     {{ t('users.resetPassword') }}
                   </BaseButton>
+                  <BaseButton
+                    v-if="puedeEliminar(user)"
+                    variant="ghost"
+                    size="sm"
+                    class="text-danger hover:text-danger"
+                    @click="deleting = user"
+                  >
+                    {{ t('users.delete') }}
+                  </BaseButton>
                 </span>
               </td>
             </tr>
@@ -258,6 +284,16 @@ async function resetPassword(user: UserSummary): Promise<void> {
         load();
       "
       @cancel="editing = null"
+    />
+
+    <UserDeleteDialog
+      v-if="deleting"
+      :user="deleting"
+      @deleted="
+        deleting = null;
+        load();
+      "
+      @cancel="deleting = null"
     />
   </div>
 </template>

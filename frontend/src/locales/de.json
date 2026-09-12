@@ -455,6 +455,7 @@
     "CONFLICT": "Der Vorgang steht im Widerspruch zum aktuellen Zustand.",
     "DUPLICATE_RESOURCE": "Ein Eintrag mit diesen Daten existiert bereits.",
     "EMAIL_ALREADY_IN_USE": "Diese E-Mail wird bereits verwendet.",
+    "LAST_ADMIN": "Die Administratorrolle kann nicht entzogen werden: Es ist die letzte, und niemand könnte die Plattform mehr verwalten.",
     "VERSION_IMMUTABLE": "Eine veröffentlichte Version kann nicht geändert werden. Lege eine neue Version an.",
     "ASSESSMENT_NOT_PUBLISHED": "Nur eine veröffentlichte Version kann zugewiesen werden.",
     "ASSESSMENT_HAS_NO_QUESTIONS": "Eine Prüfung ohne Aufgaben kann nicht veröffentlicht werden.",
@@ -948,7 +949,15 @@
       "INACTIVE": "Inaktiv",
       "PENDING_ACTIVATION": "Nicht aktiviert",
       "SUSPENDED": "Gesperrt"
-    }
+    },
+    "delete": "Zugang entziehen",
+    "deleted": "{name} hat keinen Zugang mehr.",
+    "deleteTitle": "Konto stilllegen",
+    "deleteSubtitle": "Sie entziehen {name} den Zugang. Von hier aus lässt sich das nicht rückgängig machen.",
+    "deleteKeeps": "Der Verlauf bleibt erhalten: korrigierte Beurteilungen und abgelegte Versuche bleiben mitsamt ihrer Urheberschaft bestehen.",
+    "deleteFrees": "Benutzername und E-Mail werden freigegeben, falls sie neu vergeben werden müssen, und alle offenen Sitzungen werden beendet.",
+    "deleteConfirmLabel": "Geben Sie zur Bestätigung „{username}“ ein",
+    "deleteConfirm": "Zugang entziehen"
   },
   "groupPasswords": {
     "confirm": "Tippe «{code}» zur Bestätigung",
