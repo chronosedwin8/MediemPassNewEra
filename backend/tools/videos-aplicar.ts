@@ -28,6 +28,15 @@ function urlPublica(guion: Guion): string {
   return `/media/capacitacion/${guion.moduleCode.toLowerCase()}.mp4`;
 }
 
+/**
+ * Copia el vídeo junto a la aplicación, si hace falta.
+ *
+ * En el servidor no hace falta: los ficheros ya viajan dentro de la imagen
+ * web, construida desde el repositorio. Aquí solo existe el contenedor de la
+ * API, sin la carpeta de origen ni la de destino, y eso no es un error —es el
+ * caso normal en producción—, así que se salta la copia y se sigue con lo
+ * único que queda por hacer allí: apuntar los módulos a su vídeo.
+ */
 async function copiar(guion: Guion): Promise<string | null> {
   const nombre = `${guion.moduleCode.toLowerCase()}.mp4`;
   const origen = path.join(ORIGEN, nombre);
@@ -35,10 +44,11 @@ async function copiar(guion: Guion): Promise<string | null> {
   try {
     await stat(origen);
   } catch {
-    console.warn(`  ⚠ Falta ${nombre}. Genérelo con: npm run -w backend videos`);
-    return null;
+    console.warn(`  · ${nombre}: no está aquí; se da por servido desde la imagen.`);
+    return urlPublica(guion);
   }
 
+  await mkdir(DESTINO, { recursive: true });
   await copyFile(origen, path.join(DESTINO, nombre));
   return urlPublica(guion);
 }
@@ -99,8 +109,6 @@ async function colocar(guion: Guion, url: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  await mkdir(DESTINO, { recursive: true });
-
   for (const guion of GUIONES) {
     const url = await copiar(guion);
     if (url) await colocar(guion, url);

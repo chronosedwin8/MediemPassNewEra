@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   ASSESSMENT_AUDIENCE,
+  ASSESSMENT_PURPOSE,
   ASSESSMENT_VERSION_STATUS,
   PERMISSION,
   hasPermission,
@@ -45,6 +46,19 @@ assessmentsRouter.use(authenticate);
 
 const listQuery = paginationQuery.extend({
   audience: z.enum([ASSESSMENT_AUDIENCE.STUDENT, ASSESSMENT_AUDIENCE.TEACHER]).optional(),
+  /*
+   * Filtrar por propósito hace falta para elegir la evaluación de un módulo de
+   * capacitación: solo valen las de audiencia docente Y propósito de
+   * capacitación, y sin este filtro la pantalla ofrecía también las que el
+   * servidor rechaza, de modo que la regla se descubría con un error en rojo.
+   */
+  purpose: z
+    .enum([
+      ASSESSMENT_PURPOSE.EVALUATION,
+      ASSESSMENT_PURPOSE.DIAGNOSTIC,
+      ASSESSMENT_PURPOSE.TRAINING,
+    ])
+    .optional(),
   subjectId: z.string().uuid().optional(),
   status: z
     .enum([

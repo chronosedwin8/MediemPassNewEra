@@ -8,6 +8,7 @@ import {
   type Paginated,
   type Role,
 } from '@medienpass/shared';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
@@ -142,6 +143,34 @@ async function assertIdentifiersFree(username: string, email: string | null): Pr
   throw AppError.conflict(ERROR_CODE.EMAIL_ALREADY_IN_USE, 'Email already in use', { email });
 }
 
+/**
+ * Garantiza la ficha de docente de quien tiene el rol.
+ *
+ * Un usuario con rol TEACHER y sin fila en `teachers` es un estado roto que
+ * no se ve hasta que estorba: no aparece en el listado de docentes, no se le
+ * pueden asignar materias ni áreas, y no se le puede elegir como director de
+ * curso. La cuenta existe, entra, y no sirve para nada de lo que se creó.
+ *
+ * Pasaba porque había dos puertas para crear a la misma persona —`POST
+ * /users` y `POST /teachers`— y solo una creaba las dos mitades. Ahora las
+ * dos dejan lo mismo detrás.
+ *
+ * Es idempotente a propósito: se llama al crear y al cambiar roles, y el
+ * segundo caso suele encontrarse la ficha ya hecha.
+ */
+async function ensureTeacherProfile(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  roles: Role[],
+): Promise<void> {
+  if (!roles.includes(ROLE.TEACHER)) return;
+
+  const existing = await tx.teacher.findUnique({ where: { userId }, select: { id: true } });
+  if (existing) return;
+
+  await tx.teacher.create({ data: { userId } });
+}
+
 export async function createUser(
   input: CreateUserInput,
   actorId: string,
@@ -159,20 +188,27 @@ export async function createUser(
     throw AppError.notFound(ERROR_CODE.NOT_FOUND, { message: 'Unknown role' });
   }
 
-  const created = await prisma.user.create({
-    data: {
-      username,
-      email,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      preferredLanguage: input.preferredLanguage,
-      status: password ? USER_STATUS.ACTIVE : USER_STATUS.PENDING_ACTIVATION,
-      passwordHash: password ? await hashPassword(password) : null,
-      passwordUpdatedAt: password ? new Date() : null,
-      mustChangePassword: Boolean(password),
-      roles: { create: roles.map((role) => ({ roleId: role.id })) },
-    },
-    select: userSelection,
+  const passwordHash = password ? await hashPassword(password) : null;
+
+  const created = await prisma.$transaction(async (tx) => {
+    const usuario = await tx.user.create({
+      data: {
+        username,
+        email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        preferredLanguage: input.preferredLanguage,
+        status: password ? USER_STATUS.ACTIVE : USER_STATUS.PENDING_ACTIVATION,
+        passwordHash,
+        passwordUpdatedAt: password ? new Date() : null,
+        mustChangePassword: Boolean(password),
+        roles: { create: roles.map((role) => ({ roleId: role.id })) },
+      },
+      select: userSelection,
+    });
+
+    await ensureTeacherProfile(tx, usuario.id, input.roles);
+    return usuario;
   });
 
   await recordAudit({
@@ -293,12 +329,17 @@ export async function setUserRoles(
     throw AppError.notFound(ERROR_CODE.NOT_FOUND, { message: 'Unknown role' });
   }
 
-  await prisma.$transaction([
-    prisma.userRole.deleteMany({ where: { userId: id } }),
-    prisma.userRole.createMany({
+  await prisma.$transaction(async (tx) => {
+    await tx.userRole.deleteMany({ where: { userId: id } });
+    await tx.userRole.createMany({
       data: roleRows.map((role) => ({ userId: id, roleId: role.id })),
-    }),
-  ]);
+    });
+
+    // Quien gana el rol docente gana su ficha. La contraria no se hace: al
+    // quitar el rol se conserva, porque de ella cuelgan las evaluaciones que
+    // esa persona creó y las materias que tuvo asignadas.
+    await ensureTeacherProfile(tx, id, roles);
+  });
 
   await recordAudit({
     userId: actorId,

@@ -8,6 +8,7 @@ import {
   ERROR_CODE,
   LANGUAGE,
   type AssessmentAudience,
+  type AssessmentPurpose,
   type LocalizedText,
   type Paginated,
   type QuestionType,
@@ -196,12 +197,18 @@ function scopeFor(actor: Actor, canReadAll: boolean): Record<string, unknown> {
 export async function listAssessments(
   actor: Actor,
   canReadAll: boolean,
-  query: PaginationQuery & { audience?: AssessmentAudience; subjectId?: string; status?: string },
+  query: PaginationQuery & {
+    audience?: AssessmentAudience;
+    purpose?: AssessmentPurpose;
+    subjectId?: string;
+    status?: string;
+  },
 ): Promise<Paginated<AssessmentSummary>> {
   const where = {
     deletedAt: null,
     ...scopeFor(actor, canReadAll),
     ...(query.audience ? { audience: query.audience } : {}),
+    ...(query.purpose ? { purpose: query.purpose } : {}),
     ...(query.subjectId ? { subjectId: query.subjectId } : {}),
     ...(query.search ? { title: { contains: query.search, mode: 'insensitive' as const } } : {}),
     ...(query.status ? { versions: { some: { status: query.status as never } } } : {}),

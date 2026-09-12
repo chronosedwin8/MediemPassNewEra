@@ -12,6 +12,7 @@ import EmptyState from '@/design-system/EmptyState.vue';
 import LocalizedField from '@/design-system/LocalizedField.vue';
 import { useToast } from '@/composables/useToast';
 import ContentBlockEditor from './ContentBlockEditor.vue';
+import ModuleAssessmentLink from './ModuleAssessmentLink.vue';
 
 /**
  * Redacción de un módulo de capacitación.
@@ -318,12 +319,16 @@ const inputClass =
     </section>
 
     <!-- Evaluación vinculada -->
-    <BaseCard>
-      <h2 class="text-lg font-semibold">{{ t('training.assessment') }}</h2>
-      <p v-if="module.assessment" class="mt-1 text-sm text-ink-muted">
-        {{ module.assessment.title }}
-      </p>
-      <p v-else class="mt-1 text-sm text-ink-muted">{{ t('training.admin.noAssessment') }}</p>
+    <BaseCard class="flex flex-col gap-3">
+      <div>
+        <h2 class="text-lg font-semibold">{{ t('training.assessment') }}</h2>
+        <p class="mt-1 text-sm text-ink-muted">{{ t('training.admin.assessmentHint') }}</p>
+      </div>
+      <ModuleAssessmentLink
+        :module-id="module.id"
+        :vinculada="module.assessment"
+        @changed="load()"
+      />
     </BaseCard>
   </div>
 </template>

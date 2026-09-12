@@ -76,8 +76,11 @@ onMounted(async () => {
   try {
     const [gradeLevels, subjectList, teacherList, ano] = await Promise.all([
       http.get<Opcion[]>('/academic/grade-levels'),
-      http.list<Opcion>('/subjects', { pageSize: 200 }),
-      http.list<Docente>('/teachers', { pageSize: 200 }),
+      // 100 es el tope que acepta el servidor; pedir más da un 422 que en la
+      // pantalla se lee como «hay datos incorrectos en el formulario», sin que
+      // haya ningún dato escrito todavía.
+      http.list<Opcion>('/subjects', { pageSize: 100 }),
+      http.list<Docente>('/teachers', { pageSize: 100 }),
       http.get<{ id: string }>('/academic/years/current'),
     ]);
     grados.value = gradeLevels;

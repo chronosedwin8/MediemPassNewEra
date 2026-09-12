@@ -630,7 +630,13 @@
         "DOCUMENT": "Document",
         "LINK": "Link",
         "ACTIVITY": "Activity"
-      }
+      },
+      "linked": "Linked",
+      "noCandidates": "There is no assessment with a teacher audience and a training purpose. Create one first under Assessments, with those two settings.",
+      "chooseAssessment": "Assessment that certifies the module",
+      "link": "Link",
+      "relink": "Change",
+      "assessmentHint": "Without an assessment the module can be read but not passed, and it does not count towards training statistics."
     }
   },
   "ai": {

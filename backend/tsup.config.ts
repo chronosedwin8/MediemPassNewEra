@@ -26,6 +26,10 @@ export default defineConfig({
     // Se compila y viaja en la imagen: crear el primer administrador es parte
     // del arranque de una instalación, no una tarea de desarrollo.
     admin: 'tools/crear-administrador.ts',
+    // Colocar los vídeos en sus módulos es parte del arranque de una
+    // instalación, no una tarea de desarrollo: en el servidor la base nace
+    // vacía y los módulos quedarían sin su presentación.
+    videos: 'tools/videos-aplicar.ts',
   },
   outDir: 'dist',
   format: ['esm'],

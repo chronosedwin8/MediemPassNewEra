@@ -630,7 +630,13 @@
         "DOCUMENT": "Documento",
         "LINK": "Enlace",
         "ACTIVITY": "Actividad"
-      }
+      },
+      "linked": "Vinculada",
+      "noCandidates": "No hay ninguna evaluación con audiencia docente y propósito de capacitación. Cree una primero en Evaluaciones, con esos dos ajustes.",
+      "chooseAssessment": "Evaluación que certifica el módulo",
+      "link": "Vincular",
+      "relink": "Cambiar",
+      "assessmentHint": "Sin evaluación, el módulo se puede leer pero no aprobar, y no cuenta para las estadísticas de capacitación."
     }
   },
   "ai": {

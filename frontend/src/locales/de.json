@@ -630,7 +630,13 @@
         "DOCUMENT": "Dokument",
         "LINK": "Link",
         "ACTIVITY": "Aktivität"
-      }
+      },
+      "linked": "Verknüpft",
+      "noCandidates": "Es gibt keine Beurteilung mit Zielgruppe Lehrkräfte und Zweck Fortbildung. Legen Sie zuerst eine unter Beurteilungen an, mit genau diesen beiden Einstellungen.",
+      "chooseAssessment": "Beurteilung, die das Modul zertifiziert",
+      "link": "Verknüpfen",
+      "relink": "Ändern",
+      "assessmentHint": "Ohne Beurteilung lässt sich das Modul lesen, aber nicht bestehen, und es zählt nicht für die Fortbildungsstatistik."
     }
   },
   "ai": {
