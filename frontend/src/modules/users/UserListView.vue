@@ -12,6 +12,7 @@ import UserRolesDialog from './UserRolesDialog.vue';
 import UserDeleteDialog from './UserDeleteDialog.vue';
 import UserCreateDialog from './UserCreateDialog.vue';
 import TeacherSubjectsDialog from './TeacherSubjectsDialog.vue';
+import UserEditDialog from './UserEditDialog.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useToast } from '@/composables/useToast';
 
@@ -64,6 +65,7 @@ const editing = ref<UserSummary | null>(null);
 const deleting = ref<UserSummary | null>(null);
 const creating = ref(false);
 const teaching = ref<{ id: string; nombre: string } | null>(null);
+const editingData = ref<UserSummary | null>(null);
 const teacherIdByUser = ref<Map<string, string>>(new Map());
 
 /**
@@ -271,6 +273,9 @@ async function resetPassword(user: UserSummary): Promise<void> {
               </td>
               <td class="px-3 py-2">
                 <span class="flex flex-wrap gap-2">
+                  <BaseButton variant="secondary" size="sm" @click="editingData = user">
+                    {{ t('users.edit') }}
+                  </BaseButton>
                   <BaseButton variant="secondary" size="sm" @click="editing = user">
                     {{ t('users.editRoles') }}
                   </BaseButton>
@@ -320,6 +325,16 @@ async function resetPassword(user: UserSummary): Promise<void> {
         load();
       "
       @cancel="editing = null"
+    />
+
+    <UserEditDialog
+      v-if="editingData"
+      :user="editingData"
+      @saved="
+        editingData = null;
+        load();
+      "
+      @cancel="editingData = null"
     />
 
     <TeacherSubjectsDialog

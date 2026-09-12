@@ -1063,7 +1063,9 @@
     "teaches": "Subjects",
     "teachesHint": "A teacher can take several: whoever teaches maths often teaches geometry and physics too.",
     "subjects": "Subjects",
-    "areas": "Areas"
+    "areas": "Areas",
+    "edit": "Edit",
+    "statusHint": "Suspending deletes nothing: the account keeps everything and simply cannot sign in."
   },
   "groupPasswords": {
     "confirm": "Type \"{code}\" to confirm",

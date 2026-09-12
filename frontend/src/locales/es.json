@@ -1063,7 +1063,9 @@
     "teaches": "Materias",
     "teachesHint": "Un docente puede dar varias: quien da matemáticas suele dar también geometría y física.",
     "subjects": "Materias",
-    "areas": "Áreas"
+    "areas": "Áreas",
+    "edit": "Editar",
+    "statusHint": "Suspender no borra nada: la cuenta sigue con todo lo suyo y deja de poder entrar."
   },
   "groupPasswords": {
     "confirm": "Escribe «{code}» para confirmar",

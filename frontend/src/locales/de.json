@@ -1063,7 +1063,9 @@
     "teaches": "Fächer",
     "teachesHint": "Eine Lehrkraft kann mehrere unterrichten: wer Mathematik gibt, gibt oft auch Geometrie und Physik.",
     "subjects": "Fächer",
-    "areas": "Fachbereiche"
+    "areas": "Fachbereiche",
+    "edit": "Bearbeiten",
+    "statusHint": "Sperren löscht nichts: Das Konto bleibt mit allem bestehen und kann sich nur nicht mehr anmelden."
   },
   "groupPasswords": {
     "confirm": "Tippe «{code}» zur Bestätigung",
