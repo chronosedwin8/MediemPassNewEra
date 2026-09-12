@@ -155,8 +155,12 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    ports:
-      - '${WEB_PORT:-8080}:80'
+    # Sin `ports`. El proxy del servidor llega por la red interna y es quien
+    # termina el TLS; publicar un puerto en el anfitrión, además de chocar con
+    # el 8080 que ya usa ese mismo proxy, dejaría la aplicación accesible por
+    # http://IP:puerto sin cifrar y saltándose el certificado.
+    expose:
+      - '80'
     networks: [interna]
     security_opt:
       - no-new-privileges:true

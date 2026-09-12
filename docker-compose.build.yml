@@ -19,3 +19,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.frontend
+    # En local no hay proxy delante, así que aquí sí se publica un puerto.
+    ports:
+      - '${WEB_PORT:-8099}:80'
