@@ -1,0 +1,116 @@
+# =============================================================================
+# Compilar aquí, desplegar allí.
+#
+# El servidor dejó de construir las imágenes. Lo hacía en tres `npm ci`
+# simultáneos sobre una instancia pequeña, peleándose por la memoria, y un
+# despliegue pasaba de cuarenta minutos sin llegar a terminar. Aquí hay
+# máquinas grandes y caché entre ejecuciones, y el servidor solo descarga.
+#
+# El otro motivo importa más que el tiempo: lo que se ejecuta en producción es
+# exactamente la imagen que pasó las pruebas, byte a byte, y no una
+# reconstrucción posterior que podría diferir por una dependencia que se movió.
+# =============================================================================
+
+name: Desplegar
+
+on:
+  push:
+    branches: [main]
+  # Para volver a desplegar sin tener que inventar un commit.
+  workflow_dispatch:
+
+env:
+  REGISTRO: ghcr.io
+  IMAGEN_BACKEND: ghcr.io/${{ github.repository_owner }}/medienpass-backend
+  IMAGEN_WEB: ghcr.io/${{ github.repository_owner }}/medienpass-web
+
+jobs:
+  # --- 1 · Que no se despliegue algo roto ------------------------------------
+  verificar:
+    name: Tipos y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --workspaces --include-workspace-root
+
+      - name: Compilar el paquete compartido
+        # Backend y frontend lo importan compilado; sin esto fallan los tipos
+        # de ambos por un motivo que no tiene nada que ver con ellos.
+        run: npm run build --workspace packages/shared
+
+      - run: npm run typecheck --workspace backend
+      - run: npm run typecheck --workspace frontend
+      - run: npm run lint
+
+      # Las de integración necesitan PostgreSQL y quedan fuera de este paso a
+      # propósito: aquí se busca una respuesta rápida. Se ejecutan aparte.
+      - run: npm run test:unit --workspace backend
+      - run: npm run test --workspace frontend
+
+  # --- 2 · Las imágenes -----------------------------------------------------
+  construir:
+    name: Construir y publicar
+    needs: verificar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Necesario para publicar en el registro de paquetes del propio
+      # repositorio: sin esto, el `push` falla con un 403 que no explica por qué.
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRO }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: true
+          # Dos etiquetas: `latest` es a la que apunta el compose, y la del
+          # commit permite volver a una versión concreta sin adivinar cuál era.
+          tags: |
+            ${{ env.IMAGEN_BACKEND }}:latest
+            ${{ env.IMAGEN_BACKEND }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.IMAGEN_WEB }}:latest
+            ${{ env.IMAGEN_WEB }}:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # --- 3 · Avisar al servidor ----------------------------------------------
+  desplegar:
+    name: Desplegar en Coolify
+    needs: construir
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar el despliegue
+        # POST, no GET: en las versiones recientes de Coolify un GET devuelve
+        # 404, que se lee como «esa aplicación no existe» y manda a buscar el
+        # problema donde no está.
+        run: |
+          curl --fail --silent --show-error \
+            -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy?uuid=${{ secrets.COOLIFY_APP_UUID }}&force=true" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"
