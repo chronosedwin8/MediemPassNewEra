@@ -41,7 +41,12 @@ Desktop.ini
 backend/prisma/*.db
 backend/prisma/migrations/dev.db*
 
-# Vídeos de la capacitación docente: material, no código. Se generan con
-# `npm run -w backend videos` y se despliegan aparte.
+# Los intermedios de la generación de vídeo: audio por escena, diapositivas,
+# fragmentos. Se rehacen con `npm run -w backend videos` y no aportan nada al
+# historial.
 media/
-frontend/public/media/
+
+# Los vídeos terminados SÍ se versionan. Son siete megas en total y el
+# servidor los sirve desde la propia aplicación: si no viajan con el código,
+# el despliegue deja seis módulos de capacitación con un reproductor vacío.
+!frontend/public/media/

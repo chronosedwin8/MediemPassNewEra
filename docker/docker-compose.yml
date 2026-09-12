@@ -84,6 +84,19 @@ services:
       AI_MAX_QUESTIONS_PER_REQUEST: ${AI_MAX_QUESTIONS_PER_REQUEST:-30}
       AI_RATE_LIMIT_PER_USER_PER_DAY: ${AI_RATE_LIMIT_PER_USER_PER_DAY:-50}
 
+      # Sin estas, el contenedor arranca con el almacenamiento en memoria y
+      # todo lo que suba alguien desaparece al reiniciar. Se declaran
+      # obligatorias cuando el driver es s3 para que el fallo sea al arrancar
+      # y no semanas después, al buscar una evidencia que ya no está.
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-memory}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      S3_UPLOAD_URL_TTL_SECONDS: ${S3_UPLOAD_URL_TTL_SECONDS:-300}
+      S3_DOWNLOAD_URL_TTL_SECONDS: ${S3_DOWNLOAD_URL_TTL_SECONDS:-300}
+      S3_MAX_UPLOAD_BYTES: ${S3_MAX_UPLOAD_BYTES:-26214400}
+
       CACHE_DRIVER: ${CACHE_DRIVER:-memory}
       REDIS_URL: ${REDIS_URL:-}
 
@@ -94,9 +107,22 @@ services:
     # Las migraciones se aplican al arrancar, antes de aceptar tráfico.
     # `migrate deploy` solo aplica lo pendiente: nunca borra ni reescribe, a
     # diferencia de `migrate dev`, que jamás debe correr aquí.
-    command: >
-      sh -c "npx prisma migrate deploy --schema backend/prisma/schema.prisma
-             && node backend/dist/server.js"
+    #
+    # En forma de lista y no de texto: con `ENTRYPOINT` en forma exec, un
+    # `command` escrito como cadena se parte por espacios y las comillas se
+    # pierden por el camino, de modo que `sh -c` recibía solo la primera
+    # palabra y el `&&` acababa suelto. El contenedor migraba, fallaba al
+    # arrancar el servidor y se reiniciaba en bucle.
+    #
+    # Se llama al binario directamente en lugar de a `npx`: prisma es una
+    # dependencia de ejecución, está en la imagen, y `npx` solo añadiría una
+    # búsqueda y el riesgo de intentar descargarlo.
+    command:
+      - sh
+      - -c
+      - >-
+        node_modules/.bin/prisma migrate deploy --schema backend/prisma/schema.prisma
+        && node backend/dist/server.js
 
     # Ni `ports` ni acceso directo: al backend se llega por nginx.
     networks: [interna]

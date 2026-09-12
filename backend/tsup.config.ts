@@ -20,7 +20,13 @@ export default defineConfig({
    * `dist/server.js` y `dist/seed.js`; con una lista, tsup conserva la ruta de
    * origen y los ficheros acabarían en `dist/src/` y `dist/prisma/seed/`.
    */
-  entry: { server: 'src/server.ts', seed: 'prisma/seed/index.ts' },
+  entry: {
+    server: 'src/server.ts',
+    seed: 'prisma/seed/index.ts',
+    // Se compila y viaja en la imagen: crear el primer administrador es parte
+    // del arranque de una instalación, no una tarea de desarrollo.
+    admin: 'tools/crear-administrador.ts',
+  },
   outDir: 'dist',
   format: ['esm'],
   target: 'node24',
