@@ -419,7 +419,9 @@
     "noCandidates": "Nobody matches that search.",
     "alreadyIn": "already in",
     "addSelected": "Add {count}",
-    "membersAdded": "{count} student(s) added."
+    "membersAdded": "{count} student(s) added.",
+    "memberRemoved": "No longer in the group.",
+    "delete": "Remove the group"
   },
   "assignment": {
     "title": "Assignments",

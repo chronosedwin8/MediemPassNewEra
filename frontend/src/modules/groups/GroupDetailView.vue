@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ENROLLMENT_STATUS, localize, type LocalizedText } from '@medienpass/shared';
 import { http } from '@/services/http';
+import { useToast } from '@/composables/useToast';
 import BaseCard from '@/design-system/BaseCard.vue';
+import BaseButton from '@/design-system/BaseButton.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
@@ -51,7 +53,9 @@ interface Member {
 }
 
 const route = useRoute();
+const router = useRouter();
 const { t, locale, d } = useI18n();
+const toast = useToast();
 
 const group = ref<Group | null>(null);
 const auth = useAuthStore();
@@ -71,6 +75,50 @@ const filtered = computed(() => {
 
 /** Un curso de treinta no se lee igual que uno de tres: conviene el recuento. */
 const withoutEmail = computed(() => members.value.filter((member) => !member.email).length);
+
+const quitando = ref<string | null>(null);
+const borrando = ref(false);
+const confirmaBorrado = ref('');
+
+/**
+ * Da de baja el grupo.
+ *
+ * No borra estudiantes ni intentos: el grupo deja de existir y sus miembros
+ * siguen matriculados en los suyos. Pide escribir el código porque, en una
+ * lista de K10A, K10B y K10C, el grupo equivocado está a un renglón.
+ */
+async function borrar(): Promise<void> {
+  borrando.value = true;
+  try {
+    await http.delete(`/groups/${route.params['id'] as string}`);
+    toast.success(t('group.deleted', { code: group.value?.code ?? '' }));
+    await router.push('/groups');
+  } catch (caught) {
+    toast.error(caught instanceof Error ? caught.message : t('errors.generic'));
+  } finally {
+    borrando.value = false;
+  }
+}
+
+/**
+ * Saca a alguien del grupo.
+ *
+ * No borra al estudiante ni sus intentos: deja de pertenecer, y eso basta
+ * porque una electiva se arma a mano y a mano se corrige. Sin esto, meter a
+ * quien no era obligaba a rehacer el grupo entero.
+ */
+async function quitar(member: Member): Promise<void> {
+  quitando.value = member.studentId;
+  try {
+    await http.delete(`/groups/${route.params['id'] as string}/members/${member.studentId}`);
+    toast.success(t('group.memberRemoved'));
+    await load();
+  } catch (caught) {
+    toast.error(caught instanceof Error ? caught.message : t('errors.generic'));
+  } finally {
+    quitando.value = null;
+  }
+}
 
 /** Con nombre para poder releer tras cambiar el claustro. */
 async function load(): Promise<void> {
@@ -163,6 +211,34 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
     </BaseCard>
 
     <!--
+      Dar de baja el grupo. Al final y en su propia tarjeta: es lo último que
+      alguien quiere encontrarse por accidente mientras administra miembros.
+    -->
+    <BaseCard v-if="group && auth.can('group:delete')" class="border-danger/40">
+      <h2 class="text-base font-semibold">{{ t('group.delete') }}</h2>
+      <p class="mt-1 text-sm text-ink-muted">
+        {{ t('group.deleteConfirm', { code: group.code }) }}
+      </p>
+      <div class="mt-3 flex flex-wrap items-end gap-2">
+        <input
+          v-model="confirmaBorrado"
+          type="text"
+          autocomplete="off"
+          :placeholder="group.code"
+          class="h-9 w-40 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
+        />
+        <BaseButton
+          variant="danger"
+          :disabled="confirmaBorrado.trim() !== group.code || borrando"
+          :loading="borrando"
+          @click="borrar"
+        >
+          {{ t('group.delete') }}
+        </BaseButton>
+      </div>
+    </BaseCard>
+
+    <!--
       Añadir estudiantes sueltos.
       
       Los cursos completos llegan de Phidias; esto es para lo que Phidias no
@@ -216,6 +292,7 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
               <th class="pb-2 pr-4 font-medium">{{ t('student.email') }}</th>
               <th class="pb-2 pr-4 font-medium">{{ t('student.status') }}</th>
               <th class="pb-2 font-medium">{{ t('group.joinedAt') }}</th>
+              <th v-if="auth.can('group:manage_members')" class="pb-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -236,6 +313,17 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
               </td>
               <td class="py-2 text-ink-muted tabular-nums">
                 {{ d(new Date(member.joinedAt), 'short') }}
+              </td>
+              <td v-if="auth.can('group:manage_members')" class="py-2 text-right">
+                <BaseButton
+                  variant="ghost"
+                  size="sm"
+                  class="text-danger hover:text-danger"
+                  :loading="quitando === member.studentId"
+                  @click="quitar(member)"
+                >
+                  {{ t('common.remove') }}
+                </BaseButton>
               </td>
             </tr>
           </tbody>

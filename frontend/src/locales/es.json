@@ -419,7 +419,9 @@
     "noCandidates": "Nadie coincide con esa búsqueda.",
     "alreadyIn": "ya está",
     "addSelected": "Añadir {count}",
-    "membersAdded": "{count} estudiante(s) añadido(s)."
+    "membersAdded": "{count} estudiante(s) añadido(s).",
+    "memberRemoved": "Ya no pertenece al grupo.",
+    "delete": "Dar de baja el grupo"
   },
   "assignment": {
     "title": "Asignaciones",

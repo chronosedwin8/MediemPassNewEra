@@ -419,7 +419,9 @@
     "noCandidates": "Niemand passt zu dieser Suche.",
     "alreadyIn": "bereits dabei",
     "addSelected": "{count} hinzufügen",
-    "membersAdded": "{count} Lernende hinzugefügt."
+    "membersAdded": "{count} Lernende hinzugefügt.",
+    "memberRemoved": "Gehört der Gruppe nicht mehr an.",
+    "delete": "Gruppe stilllegen"
   },
   "assignment": {
     "title": "Zuweisungen",
