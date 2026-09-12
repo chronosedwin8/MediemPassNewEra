@@ -1056,5 +1056,9 @@
     "ADVANCED": "Avanzada",
     "BASIC": "Básica",
     "INTERMEDIATE": "Intermedia"
+  },
+  "statistics": {
+    "teacher": "Docente",
+    "period": "Periodo"
   }
 }

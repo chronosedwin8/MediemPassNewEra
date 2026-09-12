@@ -1056,5 +1056,9 @@
     "ADVANCED": "Fortgeschritten",
     "BASIC": "Grundlegend",
     "INTERMEDIATE": "Mittel"
+  },
+  "statistics": {
+    "teacher": "Lehrkraft",
+    "period": "Zeitraum"
   }
 }

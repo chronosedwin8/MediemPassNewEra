@@ -57,7 +57,7 @@ const loading = ref(true);
 const subjects = ref<Option[]>([]);
 const groups = ref<Option[]>([]);
 
-const filters = ref({ subjectId: '', groupId: '', studentId: '' });
+const filters = ref({ subjectId: '', groupId: '', studentId: '', teacherId: '', periodId: '' });
 
 /**
  * Por qué dimensión se desglosa. Por grupo de partida: es la comparación que
@@ -97,6 +97,8 @@ const query = computed(() => ({
   subjectId: filters.value.subjectId || undefined,
   groupId: filters.value.groupId || undefined,
   studentId: filters.value.studentId || undefined,
+  teacherId: filters.value.teacherId || undefined,
+  periodId: filters.value.periodId || undefined,
 }));
 
 async function load(): Promise<void> {
@@ -131,13 +133,24 @@ function clearFocus(): void {
   focusedStudent.value = null;
 }
 
+const teachers = ref<Array<{ userId: string; firstName: string; lastName: string }>>([]);
+const periods = ref<Array<{ id: string; code: string }>>([]);
+
 onMounted(async () => {
-  const [subjectList, groupList] = await Promise.all([
+  const [subjectList, groupList, teacherList, year] = await Promise.all([
     http.list<Option>('/subjects', { pageSize: 100 }),
     http.list<Option>('/groups', { pageSize: 100 }),
+    http.list<{ userId: string; firstName: string; lastName: string }>('/teachers', {
+      pageSize: 100,
+    }),
+    // Los periodos cuelgan del año vigente: filtrar por «segundo trimestre»
+    // sin decir de qué año no significa nada.
+    http.get<{ periods?: Array<{ id: string; code: string }> }>('/academic/years/current'),
   ]);
   subjects.value = subjectList.items;
   groups.value = groupList.items;
+  teachers.value = teacherList.items;
+  periods.value = year.periods ?? [];
   await load();
 });
 
@@ -174,6 +187,28 @@ const selectClass =
           <option v-for="group in groups" :key="group.id" :value="group.id">
             {{ group.code }}
           </option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-ink-muted" for="filter-teacher">
+          {{ t('statistics.teacher') }}
+        </label>
+        <select id="filter-teacher" v-model="filters.teacherId" :class="selectClass">
+          <option value="">{{ t('common.none') }}</option>
+          <option v-for="d in teachers" :key="d.userId" :value="d.userId">
+            {{ d.lastName }}, {{ d.firstName }}
+          </option>
+        </select>
+      </div>
+
+      <div v-if="periods.length > 0" class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-ink-muted" for="filter-period">
+          {{ t('statistics.period') }}
+        </label>
+        <select id="filter-period" v-model="filters.periodId" :class="selectClass">
+          <option value="">{{ t('common.none') }}</option>
+          <option v-for="p in periods" :key="p.id" :value="p.id">{{ p.code }}</option>
         </select>
       </div>
 
