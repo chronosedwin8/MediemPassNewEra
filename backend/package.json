@@ -20,6 +20,8 @@
     "db:seed:dist": "node dist/seed.js",
     "phidias:probe": "tsx --env-file=../.env tools/phidias-probe.ts",
     "phidias:fixtures": "tsx --env-file=../.env tools/build-fixtures.ts",
+    "videos": "tsx --env-file=../.env tools/heygen-videos.ts",
+    "videos:avatares": "tsx --env-file=../.env tools/heygen-videos.ts --avatares",
     "test:all": "npm run test:unit && npm run test:integration"
   },
   "prisma": {

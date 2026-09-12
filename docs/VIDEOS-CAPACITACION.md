@@ -17,7 +17,9 @@ hacen el material y la evaluación.
 
 ## Ajustes comunes
 
-Valen para los seis. Conviene fijarlos una vez y no repetirlos en cada prompt.
+Valen para los seis, y no hay que repetirlos: los fija la herramienta.
+Se recogen aquí para que el criterio quede escrito en algún sitio, no solo
+en el código que lo aplica.
 
 | Ajuste       | Valor                               | Motivo                                                                                                                  |
 | ------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -28,145 +30,67 @@ Valen para los seis. Conviene fijarlos una vez y no repetirlos en cada prompt.
 | Avatar y voz | El mismo en los seis                | Seis presentadores distintos se leen como seis materiales sueltos; uno solo, como un programa.                          |
 | Subtítulos   | Activados, en español               | Se ven en salas de profesores y en el móvil, a menudo sin sonido.                                                       |
 
-## Los seis guiones
+## Dónde están los guiones
 
-### KMK 1 — Buscar, procesar y archivar en el aula
+En [`backend/tools/guiones-capacitacion.ts`](../backend/tools/guiones-capacitacion.ts), uno
+por módulo, divididos en escenas.
 
-> Esta competencia no trata de saber usar un buscador. Trata de algo que se nos
-> escapa con frecuencia: formular la pregunta antes de buscarla.
->
-> Un estudiante que copia el primer resultado no ha ejercido esta competencia,
-> aunque el resultado sea correcto. Lo que queremos que aprenda es a mirar quién
-> firma lo que encontró, con qué fecha y con qué respaldo.
->
-> En este módulo verá cuatro operadores de búsqueda que cambian por completo la
-> calidad de un trabajo escolar: comillas para frase exacta, «site dos puntos»
-> para restringir a un dominio, el guion para excluir un término y los filtros
-> de fecha. Son solo cuatro, y merecen una sesión entera.
->
-> Encontrará también una actividad para contrastar tres fuentes sobre un mismo
-> hecho, y la estrategia de la Conferencia de Ministros de Educación alemana,
-> que es de donde sale todo este marco.
->
-> Al terminar el material le espera la evaluación del módulo. Dedíquele los
-> cuarenta y cinco minutos: es la que certifica la competencia.
+Están en código y no aquí abajo por un motivo concreto: ese archivo es lo que
+se envía a generar. Un guion copiado en la documentación se desincroniza en
+silencio del que se grabó, y acaba habiendo dos versiones sin que nadie sepa
+cuál se usó. Para revisarlos o retocarlos antes de generar, se edita ese
+archivo.
 
-### KMK 2 — Comunicar y colaborar con medios digitales
+Cada guion resume el módulo que acompaña y usa sus mismos ejemplos —los cuatro
+operadores de búsqueda en el M1, el cibermobbing en el M2, la regla de derechos
+de autor en el M3— para que el vídeo y el material escrito no se contradigan.
+Si se reescribe un módulo en `prisma/seed/training.ts`, se reescribe su guion y
+se vuelve a generar.
 
-> Colaborar no es repartirse el trabajo. Cuatro estudiantes que se dividen un
-> documento en cuatro partes y las pegan al final no han colaborado: han
-> trabajado en paralelo.
->
-> La diferencia está en si se leen entre ellos, si comentan el texto del otro,
-> si el resultado es mejor que la suma de las partes. Eso es lo que esta
-> competencia pide que enseñemos, y no aparece solo porque la herramienta
-> permita edición simultánea.
->
-> En este módulo trabajaremos las normas de convivencia que conviene acordar
-> antes de abrir un espacio compartido, y qué hacer cuando aparece el
-> cibermobbing, que aparece. Hay material de klicksafe listo para llevar al
-> aula.
->
-> Una advertencia: este es el módulo donde más fácil resulta quedarse en la
-> teoría. Pruebe la actividad con un curso real antes de presentarse a la
-> evaluación.
+## Cómo se generan
 
-### KMK 3 — Producir y presentar contenidos propios
+Un comando, y el mismo resultado cada vez. No pasa por el conector MCP de
+HeyGen: ese sirve para pedir un vídeo suelto en una conversación, y esto tiene
+que poder repetirse dentro de dos años por alguien que no estuvo en la
+conversación.
 
-> Reunir imágenes ajenas en una diapositiva no es producir.
->
-> Producir es decidir qué se quiere transmitir, elegir el formato adecuado y
-> construir algo con criterio propio, aunque reutilice piezas. La diferencia la
-> notará enseguida cuando pida el mismo contenido en tres formatos distintos:
-> texto, esquema y audio breve. Sus estudiantes descubrirán que el formato no es
-> decoración, porque cambia qué se puede decir y qué se pierde.
->
-> Este módulo incluye lo más aplicable de toda la capacitación: una guía de tres
-> formatos de vídeo explicativo y cómo grabarlos con una tableta o un móvil, que
-> es lo que ya tenemos.
->
-> Y una regla práctica que funciona con adolescentes, sobre derechos de autor:
-> si no sabes de dónde salió y no puedes citarlo, no lo uses. Enséñela desde el
-> principio; corregirlo después cuesta mucho más.
+**Preparación, una sola vez.** Crear una clave en HeyGen, en Settings → API →
+New API key, y ponerla en `.env` como `HEYGEN_API_KEY`. No va al repositorio:
+`.env` está en `.gitignore` y `.env.example` solo lleva el nombre de la
+variable.
 
-### KMK 4 — Proteger y actuar de forma segura
+**Elegir presentador y voz.**
 
-> Empecemos por lo incómodo: la contraseña de su cuenta institucional protege
-> también los datos de sus estudiantes.
->
-> En este módulo veremos qué protege de verdad una cuenta, que es menos de lo
-> que solemos creer, y el criterio de la mínima información aplicado a los datos
-> del alumnado: recoger solo lo que se va a usar, guardarlo solo mientras haga
-> falta.
->
-> Dedicaremos una parte a reconocer un intento de suplantación. No son los
-> correos con faltas de ortografía de hace diez años: hoy llegan bien escritos,
-> con el logotipo correcto y con prisa. La prisa es la señal.
->
-> Este es el módulo que más directamente afecta a terceros. Lo que aquí se
-> aprende no protege un archivo: protege a un menor.
+```bash
+npm run -w backend videos:avatares
+```
 
-### KMK 5 — Resolver problemas y actuar con herramientas digitales
+Lista los avatares de la cuenta y las voces en español. Copiar un `avatar_id` y
+un `voice_id` a `HEYGEN_AVATAR_ID` y `HEYGEN_VOICE_ID` en `.env`. El mismo en
+los seis: seis presentadores distintos se leen como seis materiales sueltos.
 
-> La herramienta adecuada, no la de moda.
->
-> Esta competencia se malinterpreta con facilidad. No mide cuántas aplicaciones
-> conoce un docente, sino si sabe elegir la que resuelve el problema que tiene
-> delante, y si sabe reconocer cuándo ninguna lo resuelve.
->
-> Trabajaremos el pensamiento algorítmico sin programar: descomponer una tarea
-> en pasos, detectar el paso ambiguo, corregirlo. La actividad del módulo pide
-> escribir instrucciones a prueba de malentendidos, y suele ser reveladora. Lo
-> que parecía claro deja de serlo en cuanto otra persona intenta seguirlo.
->
-> Encontrará además un currículo completo de ciudadanía digital organizado por
-> edades, útil para planear el año entero y no solo una sesión.
+**Una prueba antes de los seis.**
 
-### KMK 6 — Analizar y reflexionar sobre los medios
+```bash
+npm run -w backend videos -- --modulo KMK-M1
+```
 
-> Detrás de cada contenido hay una intención. Detrás de cada recomendación,
-> también.
->
-> Este módulo cierra la capacitación con la competencia más transversal:
-> analizar quién produce lo que consumimos, con qué propósito y quién lo paga. Y
-> una pieza que solemos dejar fuera, el algoritmo, que no es un conducto neutral
-> sino un medio más, con sus propios criterios sobre qué merece verse.
->
-> Verá el marco de competencia digital docente del INTEF, que le servirá para
-> situar su propio nivel más allá de esta plataforma.
->
-> Una recomendación final: haga este módulo al final, pero vuelva a él. Es el
-> que más cambia según lo que haya practicado en los otros cinco.
+Genera uno solo y deja la URL en pantalla, sin tocar la base de datos. Sirve
+para ver el avatar, la voz y el ritmo antes de comprometer los otros cinco.
 
-## Cómo generarlos con HeyGen
+**Los seis, y colocados en sus módulos.**
 
-HeyGen se conecta a Claude Code como servidor MCP. La autorización pasa por un
-inicio de sesión en el navegador, así que **estos tres primeros pasos los tiene
-que dar usted**: yo no puedo autenticarme en su cuenta.
+```bash
+npm run -w backend videos -- --aplicar
+```
 
-1. En una terminal —fuera de Claude Code—, añadir el servidor para todos los
-   proyectos:
+Cada vídeo queda como **primer** contenido de su módulo, porque es una
+presentación y detrás del material ya no presenta nada. El resto de contenidos
+se desplaza una posición. Volver a ejecutarlo actualiza el vídeo que ya
+encabezaba el módulo en lugar de añadir otro, así que es seguro repetirlo.
 
-   ```bash
-   claude mcp add --transport http -s user heygen https://mcp.heygen.com/mcp/v1/
-   ```
-
-2. Abrir Claude Code y ejecutar `/mcp`. Seguir el inicio de sesión en el
-   navegador con la cuenta `tecnologia@colegioaleman.edu.co`.
-
-3. Comprobar que aparece como conectado, otra vez con `/mcp` o con
-   `claude mcp list`.
-
-A partir de ahí puedo generar los vídeos yo. El prompt por módulo, con el guion
-de este archivo:
-
-> Genera un vídeo con HeyGen. Idioma: español. Formato 16:9, 1080p. Duración
-> objetivo 100 segundos. Un solo avatar presentador, tono profesional cercano,
-> subtítulos en español activados. Fondo neutro, sin música. El guion es
-> exactamente este, sin añadir ni resumir: «…»
-
-Repetir con el mismo avatar y la misma voz en los seis. Los vídeos terminados
-quedan en la página de Proyectos del panel de HeyGen.
+La generación tarda unos minutos por vídeo; la herramienta consulta el estado
+cada quince segundos e informa del avance.
 
 ## Cómo quedan dentro de la capacitación
 
