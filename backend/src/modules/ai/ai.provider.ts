@@ -61,6 +61,16 @@ const TYPE_GUIDANCE: Record<AiQuestionType, string> = {
     'Sin respuesta cerrada. La retroalimentación debe describir qué se espera que mencione.',
   [QUESTION_TYPE.ORDERING]:
     'orderedItems: los elementos ya escritos en su orden correcto, de 3 a 6.',
+  [QUESTION_TYPE.LONG_ANSWER]:
+    'Sin respuesta cerrada y más extensa que OPEN_TEXT: pide argumentar, comparar o justificar, no enumerar.',
+  [QUESTION_TYPE.SMART_GOAL]:
+    'El enunciado delimita el ámbito sobre el que el estudiante formulará SU objetivo SMART. No escribas tú el objetivo ni des un ejemplo resuelto.',
+  [QUESTION_TYPE.SELFIE]:
+    'Se responde con una foto tomada en el momento. guidance: qué debe verse en ella para darla por válida.',
+  [QUESTION_TYPE.VIDEO_RESPONSE]:
+    'Se responde grabando un vídeo breve. guidance: qué tiene que explicar o mostrar, y en qué se fijará quien corrija.',
+  [QUESTION_TYPE.AUDIO_RESPONSE]:
+    'Se responde con una nota de voz; sirve para lo que se demuestra hablando. guidance: qué debe oírse en la grabación.',
 };
 
 /**
@@ -199,6 +209,7 @@ const GEMINI_RESPONSE_SCHEMA = {
           correctBoolean: { type: 'boolean' },
           acceptedAnswers: { type: 'array', items: { type: 'string' } },
           orderedItems: { type: 'array', items: { type: 'string' } },
+          guidance: { type: 'string' },
         },
         required: [
           'type',
@@ -386,6 +397,17 @@ export class MockAiProvider implements AiProvider {
           };
         case QUESTION_TYPE.ORDERING:
           return { ...base, orderedItems: ['Primer paso', 'Segundo paso', 'Tercer paso'] };
+        case QUESTION_TYPE.LONG_ANSWER:
+          return {
+            ...base,
+            feedbackCorrect: 'Se espera un texto argumentado con al menos dos ejemplos propios.',
+          };
+        case QUESTION_TYPE.SMART_GOAL:
+          return { ...base, statement: base.statement + '. Formula tu objetivo SMART.' };
+        case QUESTION_TYPE.SELFIE:
+        case QUESTION_TYPE.VIDEO_RESPONSE:
+        case QUESTION_TYPE.AUDIO_RESPONSE:
+          return { ...base, guidance: 'Debe apreciarse el material de trabajo y tu explicación.' };
         default:
           return {
             ...base,

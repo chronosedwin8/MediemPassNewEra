@@ -30,6 +30,7 @@ interface Capabilities {
   simulated: boolean;
   model: string;
   supportedQuestionTypes: string[];
+  defaultQuestionTypes: string[];
   maxQuestions: number;
   dailyLimit: number;
 }
@@ -98,8 +99,12 @@ onMounted(async () => {
     competencies.value = kmk;
     subjects.value = subjectList.items;
     gradeLevels.value = grades;
-    // Por defecto se ofrecen todos los tipos que el servidor admite.
-    form.questionTypes = [...caps.supportedQuestionTypes];
+    /*
+     * Se ofrecen todos los tipos admitidos, pero vienen marcados solo los que
+     * el servidor propone. Quién marca qué no es un detalle: pedir grabaciones
+     * a un curso entero es una decisión del docente, no del formulario.
+     */
+    form.questionTypes = [...caps.defaultQuestionTypes];
     form.questionCount = Math.min(10, caps.maxQuestions);
   } finally {
     loading.value = false;

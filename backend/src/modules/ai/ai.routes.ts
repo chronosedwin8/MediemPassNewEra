@@ -7,7 +7,7 @@ import { aiRateLimit } from '../../middleware/rate-limit.js';
 import { validate } from '../../middleware/validate.js';
 import { env } from '../../config/env.js';
 import { getAiProvider } from './ai.provider.js';
-import { AI_SUPPORTED_TYPES } from './ai.schema.js';
+import { AI_DEFAULT_TYPES, AI_SUPPORTED_TYPES } from './ai.schema.js';
 import {
   generateAssessment,
   generateSchema,
@@ -40,6 +40,7 @@ aiRouter.get(
       simulated: getAiProvider().id === 'mock',
       model: env.AI_MODEL,
       supportedQuestionTypes: AI_SUPPORTED_TYPES,
+      defaultQuestionTypes: AI_DEFAULT_TYPES,
       maxQuestions: env.AI_MAX_QUESTIONS_PER_REQUEST,
       dailyLimit: env.AI_RATE_LIMIT_PER_USER_PER_DAY,
     });

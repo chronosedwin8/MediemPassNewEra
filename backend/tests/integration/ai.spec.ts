@@ -4,6 +4,7 @@ import {
   ASSESSMENT_AUDIENCE,
   ASSESSMENT_VERSION_STATUS,
   ERROR_CODE,
+  MEDIA_MAX_SECONDS,
   QUESTION_TYPE,
   SCALE_KIND,
 } from '@medienpass/shared';
@@ -210,6 +211,103 @@ describe('generación', () => {
   });
 });
 
+describe('tipos que se responden grabando', () => {
+  /** Una respuesta del modelo con un único tipo de pregunta. */
+  function respond(question: Record<string, unknown>): string {
+    return JSON.stringify({
+      assessment: {
+        title: 'Evaluación con captura',
+        description: 'Descripción',
+        instructions: 'Instrucciones',
+        difficulty: 'INTERMEDIATE',
+        language: 'es',
+      },
+      questions: [
+        {
+          points: 3,
+          difficulty: 'INTERMEDIATE',
+          competencyCode: '1',
+          feedbackCorrect: 'La grabación muestra lo que se pedía.',
+          feedbackIncorrect: 'Vuelve a grabar mostrando el proceso completo.',
+          ...question,
+        },
+      ],
+    });
+  }
+
+  it('genera un vídeo con su tope de duración y su indicación', async () => {
+    provider.nextResponse = respond({
+      type: QUESTION_TYPE.VIDEO_RESPONSE,
+      statement: 'Explica en vídeo cómo resolviste el sistema de ecuaciones',
+      guidance: 'Debe verse el papel con el procedimiento mientras explicas cada paso.',
+    });
+
+    const response = await request(app)
+      .post('/api/ai/generate')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ ...baseRequest(), questionCount: 1 });
+
+    expect(response.status).toBe(200);
+
+    const question = await prisma.question.findFirstOrThrow({
+      where: { assessmentVersionId: response.body.data.versionId },
+    });
+
+    expect(question.type).toBe(QUESTION_TYPE.VIDEO_RESPONSE);
+    // El tope viene del tipo, no del modelo: es un límite de almacenamiento y
+    // de atención de quien corrige, no una preferencia que se pueda negociar.
+    expect(question.payload).toMatchObject({
+      kind: QUESTION_TYPE.VIDEO_RESPONSE,
+      maxSeconds: MEDIA_MAX_SECONDS[QUESTION_TYPE.VIDEO_RESPONSE],
+      guidance: 'Debe verse el papel con el procedimiento mientras explicas cada paso.',
+    });
+  });
+
+  it('rechaza una grabación sin decir qué debe verse', async () => {
+    /*
+     * «Grábate hablando del tema» cumple el contrato y no es evaluable: quien
+     * responde no sabe a qué apuntar y quien corrige no tiene con qué
+     * comparar. Es exactamente lo que esta capa debe detener.
+     */
+    provider.nextResponse = respond({
+      type: QUESTION_TYPE.AUDIO_RESPONSE,
+      statement: 'Graba una nota de voz sobre el tema visto en clase',
+      guidance: 'Habla.',
+    });
+
+    const response = await request(app)
+      .post('/api/ai/generate')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ ...baseRequest(), questionCount: 1 });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.details.issues[0].rule).toBe('MISSING_GUIDANCE');
+    expect(await prisma.assessment.count()).toBe(0);
+  });
+
+  it('genera un objetivo SMART con la rúbrica a la vista', async () => {
+    provider.nextResponse = respond({
+      type: QUESTION_TYPE.SMART_GOAL,
+      statement: 'Formula tu objetivo SMART para mejorar en resolución de ecuaciones',
+    });
+
+    const response = await request(app)
+      .post('/api/ai/generate')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ ...baseRequest(), questionCount: 1 });
+
+    expect(response.status).toBe(200);
+
+    const question = await prisma.question.findFirstOrThrow({
+      where: { assessmentVersionId: response.body.data.versionId },
+    });
+
+    // La rúbrica se enseña: es lo que se está evaluando, y esconderla
+    // convertiría el ejercicio en adivinar.
+    expect(question.payload).toMatchObject({ kind: QUESTION_TYPE.SMART_GOAL, showRubric: true });
+  });
+});
+
 describe('validación de la respuesta del modelo', () => {
   it('rechaza una respuesta que no es JSON y no crea nada', async () => {
     provider.nextResponse = 'Claro, aquí tienes tu evaluación: primero...';
@@ -379,6 +477,15 @@ describe('límites y permisos', () => {
     // No son los trece: un modelo de texto no puede inventar coordenadas de
     // una zona sobre una imagen que no existe.
     expect(response.body.data.supportedQuestionTypes).toContain(QUESTION_TYPE.SINGLE_CHOICE);
+    expect(response.body.data.supportedQuestionTypes).toContain(QUESTION_TYPE.VIDEO_RESPONSE);
     expect(response.body.data.supportedQuestionTypes).not.toContain(QUESTION_TYPE.HOTSPOT);
+
+    /*
+     * Admitido no es lo mismo que marcado. Pedir grabaciones a un curso entero
+     * es una decisión del docente, así que los tipos de captura se ofrecen
+     * pero no vienen puestos.
+     */
+    expect(response.body.data.defaultQuestionTypes).toContain(QUESTION_TYPE.SINGLE_CHOICE);
+    expect(response.body.data.defaultQuestionTypes).not.toContain(QUESTION_TYPE.VIDEO_RESPONSE);
   });
 });
