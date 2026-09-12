@@ -31,7 +31,8 @@
     "required": "Required",
     "optional": "Optional",
     "noResults": "No results",
-    "showingPage": "Page {page} of {total}"
+    "showingPage": "Page {page} of {total}",
+    "choose": "Choose one"
   },
   "auth": {
     "signIn": "Sign in",
@@ -398,7 +399,15 @@
     "detail": "View students",
     "noStudents": "This group has no students yet.",
     "joinedAt": "Since",
-    "withoutEmail": "{count} students without an institutional email. They cannot sign in until one is assigned."
+    "withoutEmail": "{count} students without an institutional email. They cannot sign in until one is assigned.",
+    "create": "Create group",
+    "edit": "Edit group",
+    "formHint": "The code is what teachers and students see. For example, K10A.",
+    "codeRule": "Upper case and digits only, 2 to 20 characters",
+    "gradeLevel": "Grade",
+    "homeroomHint": "Without a homeroom teacher, nobody can assign assessments to this group.",
+    "deleteConfirm": "Delete group {code}? Students are not deleted, they simply stop belonging to it.",
+    "deleted": "Group {code} deleted."
   },
   "assignment": {
     "title": "Assignments",
@@ -655,7 +664,8 @@
       "settings": "Settings",
       "year": "Academic year",
       "data": "Data",
-      "storage": "Files"
+      "storage": "Files",
+      "phidias": "Phidias"
     },
     "roles": {
       "locked": "Locked",
@@ -757,6 +767,31 @@
         "QUESTION_MEDIA": "Question images",
         "TRAINING_MEDIA": "Training material"
       }
+    },
+    "phidias": {
+      "title": "Enrolment from Phidias",
+      "intro": "Students are not created by hand: they come from Phidias, and groups and enrolments come with them.",
+      "ready": "Connected",
+      "notConfigured": "Not configured",
+      "mode": "Mode",
+      "mockWarning": "In simulated mode the data is test data and does not match the real enrolment.",
+      "previewTitle": "First, see what it would do",
+      "previewHint": "Runs the whole process without writing anything and reports exactly what would change.",
+      "preview": "See what it would do",
+      "wouldDoTitle": "This is what it would do",
+      "appliedTitle": "This is what it did",
+      "sections": "Sections",
+      "groupsCreated": "New groups",
+      "groupsMatched": "Existing groups",
+      "studentsCreated": "New students",
+      "studentsUpdated": "Updated",
+      "studentsDeactivated": "Deactivated",
+      "memberships": "Enrolments",
+      "skipped": "Unresolved",
+      "issues": "Issues ({count})",
+      "confirmHint": "Type \"{word}\" to apply the changes to the database.",
+      "apply": "Synchronise",
+      "done": "Enrolment synchronised."
     }
   },
   "evidence": {

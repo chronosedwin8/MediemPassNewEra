@@ -10,6 +10,7 @@ import { useToast } from '@/composables/useToast';
 import RolePermissionsPanel from './RolePermissionsPanel.vue';
 import AcademicYearPanel from './AcademicYearPanel.vue';
 import StoragePanel from './StoragePanel.vue';
+import PhidiasPanel from './PhidiasPanel.vue';
 
 /**
  * Administración de la plataforma.
@@ -24,7 +25,7 @@ import StoragePanel from './StoragePanel.vue';
  * hacerlas con conocimiento de causa.
  */
 
-type TabKey = 'roles' | 'settings' | 'year' | 'storage' | 'data';
+type TabKey = 'roles' | 'settings' | 'year' | 'phidias' | 'storage' | 'data';
 
 interface SettingsPayload {
   [key: string]: unknown;
@@ -53,6 +54,7 @@ const TABS: Array<{ key: TabKey; labelKey: string }> = [
   { key: 'roles', labelKey: 'admin.tabs.roles' },
   { key: 'settings', labelKey: 'admin.tabs.settings' },
   { key: 'year', labelKey: 'admin.tabs.year' },
+  { key: 'phidias', labelKey: 'admin.tabs.phidias' },
   { key: 'storage', labelKey: 'admin.tabs.storage' },
   { key: 'data', labelKey: 'admin.tabs.data' },
 ];
@@ -202,6 +204,8 @@ const inputClass =
     </div>
 
     <AcademicYearPanel v-else-if="tab === 'year'" />
+
+    <PhidiasPanel v-else-if="tab === 'phidias'" />
 
     <StoragePanel v-else-if="tab === 'storage'" />
 

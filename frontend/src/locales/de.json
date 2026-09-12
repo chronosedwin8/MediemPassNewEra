@@ -31,7 +31,8 @@
     "required": "Pflichtfeld",
     "optional": "Optional",
     "noResults": "Keine Ergebnisse",
-    "showingPage": "Seite {page} von {total}"
+    "showingPage": "Seite {page} von {total}",
+    "choose": "Bitte wählen"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -398,7 +399,15 @@
     "detail": "Schüler ansehen",
     "noStudents": "Diese Gruppe hat noch keine Schüler.",
     "joinedAt": "Seit",
-    "withoutEmail": "{count} Schüler ohne institutionelle E-Mail. Sie können sich erst anmelden, wenn eine zugewiesen wurde."
+    "withoutEmail": "{count} Schüler ohne institutionelle E-Mail. Sie können sich erst anmelden, wenn eine zugewiesen wurde.",
+    "create": "Gruppe anlegen",
+    "edit": "Gruppe bearbeiten",
+    "formHint": "Das Kürzel sehen Lehrkräfte und Lernende, zum Beispiel K10A.",
+    "codeRule": "Nur Großbuchstaben und Ziffern, 2 bis 20 Zeichen",
+    "gradeLevel": "Jahrgang",
+    "homeroomHint": "Ohne Klassenleitung kann dieser Gruppe niemand Beurteilungen zuweisen.",
+    "deleteConfirm": "Gruppe {code} löschen? Die Lernenden werden nicht gelöscht, sie gehören ihr nur nicht mehr an.",
+    "deleted": "Gruppe {code} gelöscht."
   },
   "assignment": {
     "title": "Zuweisungen",
@@ -655,7 +664,8 @@
       "settings": "Einstellungen",
       "year": "Schuljahr",
       "data": "Daten",
-      "storage": "Dateien"
+      "storage": "Dateien",
+      "phidias": "Phidias"
     },
     "roles": {
       "locked": "Gesperrt",
@@ -757,6 +767,31 @@
         "QUESTION_MEDIA": "Aufgabenbilder",
         "TRAINING_MEDIA": "Fortbildungsmaterial"
       }
+    },
+    "phidias": {
+      "title": "Einschreibung aus Phidias",
+      "intro": "Lernende werden nicht von Hand angelegt: Sie kommen aus Phidias, zusammen mit Gruppen und Einschreibungen.",
+      "ready": "Verbunden",
+      "notConfigured": "Nicht eingerichtet",
+      "mode": "Modus",
+      "mockWarning": "Im Simulationsmodus sind die Daten Testdaten und entsprechen nicht der echten Einschreibung.",
+      "previewTitle": "Zuerst ansehen, was passieren würde",
+      "previewHint": "Führt den gesamten Ablauf aus, ohne etwas zu schreiben, und zeigt genau die Änderungen.",
+      "preview": "Vorschau ansehen",
+      "wouldDoTitle": "Das würde passieren",
+      "appliedTitle": "Das ist passiert",
+      "sections": "Abschnitte",
+      "groupsCreated": "Neue Gruppen",
+      "groupsMatched": "Bestehende Gruppen",
+      "studentsCreated": "Neue Lernende",
+      "studentsUpdated": "Aktualisiert",
+      "studentsDeactivated": "Deaktiviert",
+      "memberships": "Einschreibungen",
+      "skipped": "Ungeklärt",
+      "issues": "Hinweise ({count})",
+      "confirmHint": "Geben Sie „{word}“ ein, um die Änderungen zu übernehmen.",
+      "apply": "Synchronisieren",
+      "done": "Einschreibung synchronisiert."
     }
   },
   "evidence": {

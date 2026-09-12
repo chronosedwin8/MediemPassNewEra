@@ -31,7 +31,8 @@
     "required": "Obligatorio",
     "optional": "Opcional",
     "noResults": "Sin resultados",
-    "showingPage": "Página {page} de {total}"
+    "showingPage": "Página {page} de {total}",
+    "choose": "Elija una opción"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -398,7 +399,15 @@
     "detail": "Ver estudiantes",
     "noStudents": "Este grupo todavía no tiene estudiantes.",
     "joinedAt": "Desde",
-    "withoutEmail": "{count} estudiantes sin correo institucional. No podrán entrar hasta que se les asigne uno."
+    "withoutEmail": "{count} estudiantes sin correo institucional. No podrán entrar hasta que se les asigne uno.",
+    "create": "Crear grupo",
+    "edit": "Editar grupo",
+    "formHint": "El código es el que verán docentes y estudiantes. Por ejemplo, K10A.",
+    "codeRule": "Solo mayúsculas y números, de 2 a 20 caracteres",
+    "gradeLevel": "Grado",
+    "homeroomHint": "Sin director de curso, nadie puede asignar evaluaciones a este grupo.",
+    "deleteConfirm": "¿Eliminar el grupo {code}? Los estudiantes no se borran, solo dejan de pertenecer a él.",
+    "deleted": "Grupo {code} eliminado."
   },
   "assignment": {
     "title": "Asignaciones",
@@ -655,7 +664,8 @@
       "settings": "Ajustes",
       "year": "Año lectivo",
       "data": "Datos",
-      "storage": "Archivos"
+      "storage": "Archivos",
+      "phidias": "Phidias"
     },
     "roles": {
       "locked": "Bloqueado",
@@ -757,6 +767,31 @@
         "QUESTION_MEDIA": "Imágenes de enunciados",
         "TRAINING_MEDIA": "Material de capacitación"
       }
+    },
+    "phidias": {
+      "title": "Matrícula desde Phidias",
+      "intro": "Los estudiantes no se dan de alta a mano: vienen de Phidias, y con ellos llegan los grupos y las matrículas.",
+      "ready": "Conectado",
+      "notConfigured": "Sin configurar",
+      "mode": "Modo",
+      "mockWarning": "En modo simulado los datos son de prueba y no corresponden a la matrícula real del colegio.",
+      "previewTitle": "Primero, ver qué haría",
+      "previewHint": "Ejecuta el proceso completo sin escribir nada y devuelve exactamente lo que cambiaría.",
+      "preview": "Ver qué haría",
+      "wouldDoTitle": "Esto es lo que haría",
+      "appliedTitle": "Esto es lo que hizo",
+      "sections": "Secciones",
+      "groupsCreated": "Grupos nuevos",
+      "groupsMatched": "Grupos ya existentes",
+      "studentsCreated": "Estudiantes nuevos",
+      "studentsUpdated": "Actualizados",
+      "studentsDeactivated": "Desactivados",
+      "memberships": "Matrículas",
+      "skipped": "Sin resolver",
+      "issues": "Incidencias ({count})",
+      "confirmHint": "Escriba «{word}» para aplicar los cambios a la base de datos.",
+      "apply": "Sincronizar",
+      "done": "Matrícula sincronizada."
     }
   },
   "evidence": {
