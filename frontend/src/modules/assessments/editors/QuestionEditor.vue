@@ -21,6 +21,7 @@ import ChoiceEditor from './ChoiceEditor.vue';
 import ListEditor from './ListEditor.vue';
 import HotspotEditor from './HotspotEditor.vue';
 import MediaResponseEditor from './MediaResponseEditor.vue';
+import SmartGoalEditor from './SmartGoalEditor.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
 
 /**
@@ -279,6 +280,12 @@ const inputClass =
         :payload="payload"
         @update:payload="payload = $event"
       />
+      <SmartGoalEditor
+        v-else-if="type === QUESTION_TYPE.SMART_GOAL"
+        :payload="payload"
+        @update:payload="payload = $event"
+      />
+
       <MediaResponseEditor
         v-else-if="MEDIA_FAMILY.includes(type)"
         :type="type"

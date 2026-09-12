@@ -5,5 +5,6 @@ export * from './media.js';
 export * from './permissions.js';
 export * from './rich-text.js';
 export * from './settings.js';
+export * from './smart.js';
 export * from './grading/index.js';
 export * from './schemas/index.js';

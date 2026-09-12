@@ -138,6 +138,24 @@ const audioResponseBase = z.object({
   guidance: z.string().trim().max(500).optional(),
 });
 
+/**
+ * Objetivo SMART.
+ *
+ * El enunciado plantea el ámbito —«formula tu objetivo para el proyecto de
+ * medios»— y aquí solo se acota la extensión y si se enseña la rúbrica
+ * mientras se escribe. Enseñarla es el caso normal: la rúbrica es lo que se
+ * está enseñando, y esconderla convertiría el ejercicio en adivinar.
+ */
+const smartGoalBase = z.object({
+  kind: z.literal(QUESTION_TYPE.SMART_GOAL),
+  /** Caracteres mínimos para dar el objetivo por redactado. */
+  minChars: z.number().int().min(0).max(2000).default(80),
+  /** Muestra las cinco dimensiones junto al campo de escritura. */
+  showRubric: z.boolean().default(true),
+  /** Ejemplo de objetivo bien formulado, si el docente quiere darlo. */
+  example: z.string().trim().max(500).optional(),
+});
+
 const fillBlankBase = z.object({
   kind: z.literal(QUESTION_TYPE.FILL_BLANK),
   /** Texto con marcadores `{{id}}` en el lugar de cada hueco. */
@@ -262,6 +280,7 @@ export const questionPayloadSchema = z.discriminatedUnion('kind', [
   selfieBase,
   videoResponseBase,
   audioResponseBase,
+  smartGoalBase,
 ]);
 
 export type QuestionPayload = z.infer<typeof questionPayloadSchema>;
@@ -452,6 +471,7 @@ export const QUESTION_PAYLOAD_SCHEMAS = {
   [QUESTION_TYPE.SELFIE]: selfieBase,
   [QUESTION_TYPE.VIDEO_RESPONSE]: videoResponseBase,
   [QUESTION_TYPE.AUDIO_RESPONSE]: audioResponseBase,
+  [QUESTION_TYPE.SMART_GOAL]: smartGoalBase,
   [QUESTION_TYPE.FILL_BLANK]: fillBlankPayload,
   [QUESTION_TYPE.MATCHING]: matchingPayload,
   [QUESTION_TYPE.GROUPING]: groupingPayload,

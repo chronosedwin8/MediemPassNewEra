@@ -324,6 +324,72 @@ export const en: PublicContent = {
       ],
     },
 
+    smart: {
+      title: 'Writing the goal is assessed too',
+      lead: 'Before measuring whether someone improved there is something earlier: being able to say what they want to improve. The platform treats that as a competence of its own and assesses it with the SMART rubric.',
+      caveat:
+        'SMART is not an assessment criterion: it is a framework for formulating goals. So what is judged here is not whether the goal was met — that happens or not six weeks from now — but how it is written. A goal can be impeccably formulated and still not be reached; those are two different judgements and the rubric only makes the first.',
+      columns: { dimension: 'Dimension', indicator: 'What is observed' },
+      rows: [
+        {
+          letter: 'S',
+          name: 'Specific',
+          indicator: 'States clearly what will be done, what for and, where relevant, how.',
+        },
+        {
+          letter: 'M',
+          name: 'Measurable',
+          indicator:
+            'Includes a quantity, percentage, frequency or something that lets the result be checked.',
+        },
+        {
+          letter: 'A',
+          name: 'Achievable',
+          indicator: 'Is possible with the time, resources and knowledge available.',
+        },
+        {
+          letter: 'R',
+          name: 'Relevant',
+          indicator: 'Has a clear purpose and answers a need or a goal.',
+        },
+        {
+          letter: 'T',
+          name: 'Time-bound',
+          indicator: 'Sets a deadline or a specific period.',
+        },
+      ],
+      scale: {
+        title: 'How it is scored',
+        lead: 'Each dimension is scored from 0 to 4, so a goal is worth 20 points. Five levels and not two: with "met or not met" the whole middle band — the goal that mentions a vague deadline, or measures something without saying how much — falls on the same side, and that is where almost every student sits.',
+        levels: [
+          '0 · Not met: the criterion is absent',
+          '1 · Starting: there is minimal evidence',
+          '2 · Basic: partially met',
+          '3 · Adequate: met with small gaps',
+          '4 · Excellent: fully met',
+        ],
+        bands: [
+          { range: '18–20', label: 'Excellent' },
+          { range: '15–17', label: 'High' },
+          { range: '11–14', label: 'Basic' },
+          { range: '6–10', label: 'Low' },
+          { range: '0–5', label: 'Starting' },
+        ],
+      },
+      example: {
+        title: 'The same intention, two wordings',
+        weak: {
+          goal: 'I want to get better at maths.',
+          verdict:
+            'Specific 1, Measurable 0, Achievable 2, Relevant 3, Time-bound 0. Total 6 out of 20: no aspect named, no indicator, no deadline.',
+        },
+        strong: {
+          goal: 'Raise my maths score from 70 to 85 in the next assessment by studying 30 minutes a day for the next 6 weeks.',
+          verdict:
+            'All five dimensions are verifiable: what improves, by how much, with what effort, what for and by when.',
+        },
+      },
+    },
     access: {
       title: 'Entering the platform',
       lead: 'Everyone signs in the same way, with their school email. What differs is what waits inside. If you are not sure, just sign in — the platform will take you where you belong.',
@@ -732,6 +798,45 @@ export const en: PublicContent = {
           {
             title: 'Stored files',
             body: 'What exists, how much space it takes and by year. To delete: choose the scope, simulate, review, confirm. What is deleted has no copy.',
+          },
+        ],
+      },
+
+      {
+        id: 'smart',
+        title: 'SMART goals',
+        audience: 'all',
+        lead: 'A question answered by writing a goal and marked with a five-dimension rubric. What is assessed is how it is worded, not whether it was achieved.',
+        steps: [
+          {
+            title: 'Understand what is being measured',
+            body: 'SMART is a framework for formulating goals, not a marking criterion. The rubric judges the wording: whether it says what, how much, with what means, what for and by when. A goal can be impeccable and still not be reached; that is a different conversation, six weeks from now.',
+          },
+          {
+            title: 'Write with the rubric in front of you',
+            body: 'The answer field shows the five dimensions with their indicator. The letters that light up as you write are a writing aid, not your grade: they detect that there is a number or a time unit, not that the deadline makes sense.',
+            tip: 'Compare "I want to get better at maths" with "raise my score from 70 to 85 by studying 30 minutes a day for 6 weeks". The second is not longer for decoration: each part answers a dimension.',
+          },
+          {
+            title: 'Mark it dimension by dimension',
+            body: 'Under "Marking" the five dimensions appear from 0 to 4. The total out of 20, the band and the points for the question are computed for you, and nothing saves until all five are scored: half a rubric would make the statistics mix fully assessed goals with half-assessed ones.',
+            tip: 'Zero is not a punishment, it is "the criterion is absent". A goal with no date at all gets a zero in time-bound even if the rest is fine, and that is exactly what needs to be visible later.',
+          },
+          {
+            title: 'Read the breakdown in statistics',
+            body: 'The average of each dimension out of 4 says where the class fails. It is almost always the same two: the measurable indicator and the deadline. With the score out of 20 alone you would only know goals are so-so; with the breakdown you know what to teach again.',
+          },
+        ],
+        faq: [
+          {
+            question: 'Why 0–20 and not the school scale?',
+            answer:
+              'Because they measure different things. The rubric scores that question out of 20 and those points enter the assessment like any other question; the final grade still comes out on the German scale. Two scales for two things, not two grades for the same one.',
+          },
+          {
+            question: 'Can I change the dimensions or the levels?',
+            answer:
+              'No, deliberately. If every teacher redefined the rubric, one class\'s average for "time-bound" could not be compared with another\'s and the per-dimension statistics would stop being useful. What you do decide is the scope, in the question itself.',
           },
         ],
       },

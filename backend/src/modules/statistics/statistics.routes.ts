@@ -7,6 +7,7 @@ import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
 import { statisticsFiltersSchema, type StatisticsFilters } from './filters.js';
 import { getAssessmentReport } from './assessment-report.service.js';
 import { breakdownQuerySchema, getKmkBreakdown } from './kmk-breakdown.service.js';
+import { getSmartReport } from './smart.service.js';
 import { getStudentPanel } from './student-panel.service.js';
 import { getTeacherPanel } from './teacher-panel.service.js';
 import {
@@ -59,6 +60,22 @@ statisticsRouter.get(
   asyncHandler(async (req, res) => {
     const query = getQuery<StatisticsFilters & { dimension: 'subject' | 'group' | 'student' }>(req);
     ok(res, await getKmkBreakdown(requireAuth(req), query.dimension, query));
+  }),
+);
+
+/**
+ * Objetivos SMART, dimensión a dimensión.
+ *
+ * Responde a la pregunta que los puntos no contestan: no «qué tal se les dan
+ * los objetivos» sino en qué dimensión concreta fallan, que casi siempre es el
+ * plazo y el indicador medible.
+ */
+statisticsRouter.get(
+  '/smart',
+  requireAnyPermission(...ANY_STATS_PERMISSION),
+  validate({ query: statisticsFiltersSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await getSmartReport(requireAuth(req), getQuery<StatisticsFilters>(req)));
   }),
 );
 

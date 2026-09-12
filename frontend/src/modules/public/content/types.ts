@@ -38,6 +38,34 @@ export interface CrosswalkRow {
   practice: string;
 }
 
+/** Una fila de la rúbrica SMART tal como se enseña en la portada. */
+export interface SmartRow {
+  letter: string;
+  name: string;
+  /** Lo que se observa, no lo que se define: es la diferencia que la hace evaluable. */
+  indicator: string;
+}
+
+export interface SmartContent {
+  title: string;
+  lead: string;
+  /** La precisión que cambia el uso: SMART formula metas, no las evalúa. */
+  caveat: string;
+  columns: { dimension: string; indicator: string };
+  rows: SmartRow[];
+  scale: {
+    title: string;
+    lead: string;
+    levels: string[];
+    bands: Array<{ range: string; label: string }>;
+  };
+  example: {
+    title: string;
+    weak: { goal: string; verdict: string };
+    strong: { goal: string; verdict: string };
+  };
+}
+
 export interface HomeContent {
   hero: {
     eyebrow: string;
@@ -70,6 +98,7 @@ export interface HomeContent {
     lead: string;
     levels: Highlight[];
   };
+  smart: SmartContent;
   access: {
     title: string;
     lead: string;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PERMISSION } from '@medienpass/shared';
+import { PERMISSION, SMART_DIMENSIONS, type SmartScores } from '@medienpass/shared';
 import { asyncHandler, created, ok } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
 import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
@@ -167,10 +167,23 @@ attemptsRouter.post(
     body: z.object({
       points: z.number().min(0).max(100),
       feedback: z.string().trim().max(2000).nullable().optional(),
+      /*
+       * Desglose de la rúbrica, cuando la pregunta se corrige con una. Se
+       * acepta parcial a propósito: un docente puede guardar cuatro
+       * dimensiones y dejar la quinta para pensarla, y la interfaz ya le
+       * impide enviar la nota sin completarla.
+       */
+      rubricScores: z
+        .record(z.enum(SMART_DIMENSIONS as [string, ...string[]]), z.number().int().min(0).max(4))
+        .optional(),
     }),
   }),
   asyncHandler(async (req, res) => {
-    const { points, feedback } = req.body as { points: number; feedback?: string | null };
+    const { points, feedback, rubricScores } = req.body as {
+      points: number;
+      feedback?: string | null;
+      rubricScores?: SmartScores;
+    };
     const auth = requireAuth(req);
 
     // El permiso dice que corrige; esto decide qué. Sin la comprobación,
@@ -185,6 +198,7 @@ attemptsRouter.post(
         req.params['questionId']!,
         points,
         feedback ?? null,
+        rubricScores ?? null,
       ),
     );
   }),

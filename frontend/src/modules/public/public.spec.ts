@@ -64,7 +64,7 @@ describe('guía de uso', () => {
   it('muestra todas las secciones sin filtrar', () => {
     const wrapper = mount(WikiView, options);
 
-    expect(wrapper.findAll('article')).toHaveLength(10);
+    expect(wrapper.findAll('article')).toHaveLength(11);
   });
 
   it('al filtrar por estudiante conserva lo que vale para cualquiera', async () => {

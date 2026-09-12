@@ -8,6 +8,7 @@ import WhySection from './sections/WhySection.vue';
 import FrameworksSection from './sections/FrameworksSection.vue';
 import CrosswalkSection from './sections/CrosswalkSection.vue';
 import IbLevelsSection from './sections/IbLevelsSection.vue';
+import SmartSection from './sections/SmartSection.vue';
 import AccessSection from './sections/AccessSection.vue';
 
 /**
@@ -34,6 +35,7 @@ const content = computed(() => publicContent(locale.value as Language).home);
     <FrameworksSection :frameworks="content.frameworks" />
     <CrosswalkSection :crosswalk="content.crosswalk" />
     <IbLevelsSection :ib-levels="content.ibLevels" />
+    <SmartSection :smart="content.smart" />
     <AccessSection :access="content.access" />
   </div>
 </template>

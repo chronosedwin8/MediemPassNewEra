@@ -82,6 +82,12 @@ const audioResponseAnswer = z.object({
   durationSeconds: z.number().int().min(0).max(MEDIA_MAX_SECONDS.AUDIO_RESPONSE!).nullable(),
 });
 
+/** El objetivo tal como lo redactó quien responde. */
+const smartGoalAnswer = z.object({
+  kind: z.literal(QUESTION_TYPE.SMART_GOAL),
+  text: z.string().max(2000),
+});
+
 const fillBlankAnswer = z.object({
   kind: z.literal(QUESTION_TYPE.FILL_BLANK),
   blanks: z.array(z.object({ id: optionId, text: z.string().max(300) })).max(20),
@@ -130,6 +136,7 @@ export const answerSchema = z.discriminatedUnion('kind', [
   selfieAnswer,
   videoResponseAnswer,
   audioResponseAnswer,
+  smartGoalAnswer,
 ]);
 
 export type Answer = z.infer<typeof answerSchema>;
@@ -152,6 +159,7 @@ export const ANSWER_SCHEMAS = {
   [QUESTION_TYPE.SELFIE]: selfieAnswer,
   [QUESTION_TYPE.VIDEO_RESPONSE]: videoResponseAnswer,
   [QUESTION_TYPE.AUDIO_RESPONSE]: audioResponseAnswer,
+  [QUESTION_TYPE.SMART_GOAL]: smartGoalAnswer,
 } as const;
 
 export function parseAnswer(type: QuestionType, value: unknown): Answer {
@@ -208,6 +216,8 @@ export function emptyAnswer(type: QuestionType): Answer {
       return { kind: QUESTION_TYPE.VIDEO_RESPONSE, fileId: null, durationSeconds: null };
     case QUESTION_TYPE.AUDIO_RESPONSE:
       return { kind: QUESTION_TYPE.AUDIO_RESPONSE, fileId: null, durationSeconds: null };
+    case QUESTION_TYPE.SMART_GOAL:
+      return { kind: QUESTION_TYPE.SMART_GOAL, text: '' };
   }
 }
 
@@ -241,6 +251,8 @@ export function isAnswerEmpty(answer: Answer): boolean {
     case QUESTION_TYPE.VIDEO_RESPONSE:
     case QUESTION_TYPE.AUDIO_RESPONSE:
       return answer.fileId === null;
+    case QUESTION_TYPE.SMART_GOAL:
+      return answer.text.trim().length === 0;
   }
 }
 /* eslint-enable complexity */

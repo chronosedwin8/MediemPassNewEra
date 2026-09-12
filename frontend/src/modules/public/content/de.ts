@@ -328,6 +328,72 @@ export const de: PublicContent = {
       ],
     },
 
+    smart: {
+      title: 'Auch das Formulieren des Ziels wird bewertet',
+      lead: 'Bevor man misst, ob jemand besser geworden ist, kommt etwas anderes: sagen zu können, worin man besser werden will. Die Plattform behandelt das als eigene Kompetenz und bewertet sie mit dem SMART-Raster.',
+      caveat:
+        'SMART ist kein Bewertungskriterium, sondern ein Rahmen zum Formulieren von Zielen. Deshalb wird hier nicht bewertet, ob das Ziel erreicht wurde – das entscheidet sich in sechs Wochen –, sondern wie es geschrieben ist. Ein Ziel kann tadellos formuliert und trotzdem nicht erreicht werden; das sind zwei Urteile, und das Raster fällt nur das erste.',
+      columns: { dimension: 'Dimension', indicator: 'Was beobachtet wird' },
+      rows: [
+        {
+          letter: 'S',
+          name: 'Spezifisch',
+          indicator: 'Sagt klar, was getan wird, wozu und gegebenenfalls wie.',
+        },
+        {
+          letter: 'M',
+          name: 'Messbar',
+          indicator:
+            'Enthält Menge, Prozent, Häufigkeit oder etwas, woran sich das Erreichen prüfen lässt.',
+        },
+        {
+          letter: 'A',
+          name: 'Erreichbar',
+          indicator: 'Ist mit der verfügbaren Zeit, den Mitteln und dem Wissen möglich.',
+        },
+        {
+          letter: 'R',
+          name: 'Relevant',
+          indicator: 'Hat einen klaren Zweck und antwortet auf einen Bedarf oder ein Ziel.',
+        },
+        {
+          letter: 'T',
+          name: 'Terminiert',
+          indicator: 'Legt eine Frist oder einen konkreten Zeitraum fest.',
+        },
+      ],
+      scale: {
+        title: 'Wie bewertet wird',
+        lead: 'Jede Dimension wird von 0 bis 4 bewertet, ein Ziel zählt also 20 Punkte. Fünf Stufen und nicht zwei: bei «erfüllt oder nicht» fällt der ganze Mittelbereich – das Ziel mit vager Frist oder das, was etwas misst, ohne zu sagen wie viel – auf dieselbe Seite, und dort sind fast alle Lernenden.',
+        levels: [
+          '0 · Nicht erfüllt: das Kriterium fehlt',
+          '1 · Anfang: es gibt einen minimalen Beleg',
+          '2 · Grundlegend: teilweise erfüllt',
+          '3 · Angemessen: erfüllt mit kleinen Mängeln',
+          '4 · Ausgezeichnet: vollständig erfüllt',
+        ],
+        bands: [
+          { range: '18–20', label: 'Ausgezeichnet' },
+          { range: '15–17', label: 'Hoch' },
+          { range: '11–14', label: 'Grundlegend' },
+          { range: '6–10', label: 'Niedrig' },
+          { range: '0–5', label: 'Anfang' },
+        ],
+      },
+      example: {
+        title: 'Dieselbe Absicht, zwei Formulierungen',
+        weak: {
+          goal: 'Ich will in Mathematik besser werden.',
+          verdict:
+            'Spezifisch 1, Messbar 0, Erreichbar 2, Relevant 3, Terminiert 0. Gesamt 6 von 20: kein Aspekt genannt, kein Indikator, keine Frist.',
+        },
+        strong: {
+          goal: 'In der nächsten Prüfung in Mathematik von 70 auf 85 Punkte kommen, indem ich in den nächsten 6 Wochen täglich 30 Minuten übe.',
+          verdict:
+            'Alle fünf Dimensionen sind überprüfbar: was besser wird, um wie viel, mit welchem Aufwand, wozu und bis wann.',
+        },
+      },
+    },
     access: {
       title: 'Zur Plattform',
       lead: 'Der Zugang ist für alle gleich – mit der schulischen E-Mail. Was sich unterscheidet, ist, was drinnen wartet. Wenn du unsicher bist: einfach anmelden, die Plattform bringt dich an die richtige Stelle.',
@@ -740,6 +806,45 @@ export const de: PublicContent = {
           {
             title: 'Gespeicherte Dateien',
             body: 'Was es gibt, wie viel Platz und pro Jahr. Zum Löschen: Umfang wählen, simulieren, prüfen, bestätigen. Vom Gelöschten gibt es keine Kopie.',
+          },
+        ],
+      },
+
+      {
+        id: 'smart',
+        title: 'SMART-Ziele',
+        audience: 'all',
+        lead: 'Eine Frage, die durch das Schreiben eines Ziels beantwortet und mit einem Raster aus fünf Dimensionen bewertet wird. Bewertet wird die Formulierung, nicht ob das Ziel erreicht wurde.',
+        steps: [
+          {
+            title: 'Versteh, was gemessen wird',
+            body: 'SMART ist ein Rahmen zum Formulieren von Zielen, kein Bewertungskriterium. Das Raster beurteilt die Formulierung: ob sie sagt was, wie viel, mit welchen Mitteln, wozu und bis wann. Ein Ziel kann tadellos sein und nicht erreicht werden; das ist ein anderes Gespräch, in sechs Wochen.',
+          },
+          {
+            title: 'Beim Schreiben das Raster vor Augen',
+            body: 'Das Antwortfeld zeigt die fünf Dimensionen mit ihrem Indikator. Die Buchstaben, die sich beim Schreiben hervorheben, sind eine Schreibhilfe, nicht deine Note: sie erkennen eine Zahl oder eine Zeitangabe, nicht ob die Frist Sinn ergibt.',
+            tip: 'Vergleiche «ich will in Mathe besser werden» mit «von 70 auf 85 Punkte kommen, mit täglich 30 Minuten Übung über 6 Wochen». Das zweite ist nicht aus Schmuck länger: jeder Teil beantwortet eine Dimension.',
+          },
+          {
+            title: 'Beim Korrigieren Dimension für Dimension',
+            body: 'Unter «Korrigieren» erscheinen die fünf Dimensionen von 0 bis 4. Gesamtwert von 20, Stufe und Punkte der Frage rechnen sich von selbst, und gespeichert wird erst, wenn alle fünf da sind: ein halbes Raster würde in der Statistik ganz bewertete Ziele mit halben mischen.',
+            tip: 'Null ist keine Strafe, sondern «das Kriterium fehlt». Ein Ziel ohne jedes Datum bekommt bei «terminiert» eine Null, auch wenn der Rest stimmt – und genau das soll man später sehen können.',
+          },
+          {
+            title: 'Schau in die Aufschlüsselung',
+            body: 'Der Schnitt jeder Dimension von 4 sagt, woran die Klasse scheitert. Fast immer sind es dieselben zwei: der messbare Indikator und die Frist. Mit der Note von 20 allein wüsste man nur, dass es mittelmäßig läuft; mit der Aufschlüsselung weiß man, was neu zu erklären ist.',
+          },
+        ],
+        faq: [
+          {
+            question: 'Warum 0–20 und nicht die Schulskala?',
+            answer:
+              'Weil sie Verschiedenes messen. Das Raster bewertet diese Frage von 20, und diese Punkte gehen wie bei jeder anderen Frage in die Prüfung ein; die Endnote kommt weiter auf der deutschen Skala heraus. Zwei Skalen für zwei Dinge, nicht zwei Noten für dasselbe.',
+          },
+          {
+            question: 'Kann ich Dimensionen oder Stufen ändern?',
+            answer:
+              'Nein, und das mit Absicht. Würde jede Lehrkraft das Raster neu definieren, ließe sich der Schnitt von «terminiert» einer Klasse nicht mit dem einer anderen vergleichen und die Statistik nach Dimension wäre nutzlos. Was du bestimmst, ist der Rahmen – im Aufgabentext.',
           },
         ],
       },

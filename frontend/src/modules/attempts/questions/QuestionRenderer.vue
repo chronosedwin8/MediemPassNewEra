@@ -8,6 +8,7 @@ import PairingQuestion from './PairingQuestion.vue';
 import FillBlankQuestion from './FillBlankQuestion.vue';
 import HotspotQuestion from './HotspotQuestion.vue';
 import MediaResponseQuestion from './MediaResponseQuestion.vue';
+import SmartGoalQuestion from './SmartGoalQuestion.vue';
 
 /**
  * Selecciona el componente que corresponde a cada tipo de pregunta.
@@ -103,6 +104,13 @@ const component = computed(() => ({
 
   <HotspotQuestion
     v-else-if="type === QUESTION_TYPE.HOTSPOT"
+    :payload="payload"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+  />
+
+  <SmartGoalQuestion
+    v-else-if="type === QUESTION_TYPE.SMART_GOAL"
     :payload="payload"
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"

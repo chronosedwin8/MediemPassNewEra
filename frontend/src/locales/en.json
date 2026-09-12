@@ -250,7 +250,8 @@
       "LONG_ANSWER": "Long answer",
       "SELFIE": "Take a selfie",
       "VIDEO_RESPONSE": "Answer with a video",
-      "AUDIO_RESPONSE": "Answer with a voice note"
+      "AUDIO_RESPONSE": "Answer with a voice note",
+      "SMART_GOAL": "SMART goal"
     },
     "media": {
       "guidance": "Note for whoever answers",
@@ -259,6 +260,15 @@
       "maxSeconds": "Maximum duration (seconds)",
       "maxSecondsHint": "You can ask for less, never more than {seconds} s. The limit protects storage and the time of whoever marks it.",
       "secureContextNote": "Camera and microphone only work over HTTPS or on this computer. Over a network address without a certificate the browser blocks them."
+    },
+    "smart": {
+      "example": "Example of a well-formed goal",
+      "examplePlaceholder": "Raise my maths score from 70 to 85 by studying 30 minutes a day for 6 weeks",
+      "minChars": "Minimum length (characters)",
+      "minCharsHint": "Only a prompt for the writer; it does not block submitting.",
+      "rubricFixed": "The rubric is fixed and worth {max} points. It is not configured per question: if every teacher redefined it, the per-dimension statistics could no longer be added up across classes.",
+      "showRubric": "Show the rubric while writing",
+      "showRubricHint": "Recommended. The rubric is what is being taught; hiding it turns the task into guessing."
     }
   },
   "editor": {
@@ -838,5 +848,62 @@
     "save": "Save mark",
     "studentPhoto": "Student photo",
     "title": "Marking queue"
+  },
+  "smart": {
+    "averageScore": "Average out of {max}",
+    "charsRemaining": "{count} characters short of the minimum length.",
+    "evaluated": "Goals marked",
+    "example": "Example",
+    "incomplete": "Some dimensions are still unscored",
+    "levelLegend": "0 not met · 4 excellent",
+    "longEnough": "Long enough. Check that all five dimensions are there.",
+    "noData": "No SMART goals have been marked with the rubric yet.",
+    "notAGoalHint": "SMART does not assess whether the goal was met, but how it is written. A goal can be impeccable and still not be reached.",
+    "placeholder": "Write your goal here. For example: \"Raise my maths score from 70 to 85 by studying 30 minutes a day for the next 6 weeks.\"",
+    "pointsFromRubric": "{points} of {max} points for this question",
+    "rubricHint": "The marks are a writing aid, not your grade: whoever marks it scores each dimension from 0 to 4.",
+    "rubricTitle": "SMART rubric",
+    "statsHint": "The average of each dimension out of 4. It says what needs teaching again: usually the deadline and the measurable indicator.",
+    "statsTitle": "SMART goals by dimension",
+    "strongest": "Strongest dimension",
+    "title": "SMART goals",
+    "total": "Total",
+    "weakest": "Weakest dimension",
+    "dimension": {
+      "SPECIFIC": {
+        "name": "Specific",
+        "indicator": "States clearly what will be done, what for and, where relevant, how"
+      },
+      "MEASURABLE": {
+        "name": "Measurable",
+        "indicator": "Includes a quantity, percentage, frequency or something that lets the result be checked"
+      },
+      "ACHIEVABLE": {
+        "name": "Achievable",
+        "indicator": "Is possible with the time, resources and knowledge available"
+      },
+      "RELEVANT": {
+        "name": "Relevant",
+        "indicator": "Has a clear purpose and answers a need or a goal"
+      },
+      "TIME_BOUND": {
+        "name": "Time-bound",
+        "indicator": "Sets a deadline or a specific period"
+      }
+    },
+    "level": {
+      "0": "Not met",
+      "1": "Starting",
+      "2": "Basic",
+      "3": "Adequate",
+      "4": "Excellent"
+    },
+    "band": {
+      "ALTO": "High",
+      "BAJO": "Low",
+      "BASICO": "Basic",
+      "EXCELENTE": "Excellent",
+      "INICIAL": "Starting"
+    }
   }
 }

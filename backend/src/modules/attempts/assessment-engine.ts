@@ -14,6 +14,7 @@ import {
   type AttemptStatus,
   type LocalizedText,
   type QuestionType,
+  type SmartScores,
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -257,6 +258,14 @@ export function stripSolution(type: QuestionType, payload: unknown): unknown {
     case QUESTION_TYPE.SELFIE:
     case QUESTION_TYPE.VIDEO_RESPONSE:
     case QUESTION_TYPE.AUDIO_RESPONSE:
+      return data;
+
+    /*
+     * El objetivo SMART tampoco esconde nada, y con motivo: la rúbrica es lo
+     * que se está enseñando. Ocultarla convertiría el ejercicio en adivinar
+     * qué se espera, que es lo contrario de formular un objetivo claro.
+     */
+    case QUESTION_TYPE.SMART_GOAL:
       return data;
   }
 }
@@ -1289,6 +1298,14 @@ export async function gradeAnswerManually(
   questionId: string,
   points: number,
   feedback: string | null,
+  /**
+   * Desglose por dimensión cuando la pregunta se corrige con rúbrica.
+   *
+   * Los puntos siguen siendo la autoridad sobre la nota; esto se guarda al
+   * lado porque responde a otra pregunta —en qué falló— y es lo que después
+   * permite que la estadística diga qué dimensión se atraganta en un curso.
+   */
+  rubricScores: SmartScores | null = null,
 ): Promise<AttemptResult> {
   const answer = await prisma.attemptAnswer.findUnique({
     where: { attemptId_questionId: { attemptId, questionId } },
@@ -1317,6 +1334,7 @@ export async function gradeAnswerManually(
       teacherFeedback: feedback,
       gradedById: graderId,
       gradedAt: new Date(),
+      ...(rubricScores ? { rubricScores: rubricScores as object } : {}),
     },
   });
 

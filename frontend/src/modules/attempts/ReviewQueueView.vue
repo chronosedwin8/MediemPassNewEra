@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { QUESTION_TYPE, localize, type LocalizedText, type QuestionType } from '@medienpass/shared';
+import {
+  QUESTION_TYPE,
+  isSmartScoreComplete,
+  localize,
+  smartScoreToPoints,
+  type LocalizedText,
+  type QuestionType,
+  type SmartScores,
+} from '@medienpass/shared';
 import { http, ApiError } from '@/services/http';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
@@ -9,6 +17,7 @@ import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
 import RichTextView from '@/design-system/RichTextView.vue';
+import SmartRubricScorer from './SmartRubricScorer.vue';
 import { useToast } from '@/composables/useToast';
 
 /**
@@ -47,8 +56,36 @@ const pending = ref<PendingAnswer[]>([]);
 const loading = ref(true);
 const savingKey = ref<string | null>(null);
 
-/** Puntos y comentario que el docente está escribiendo, por respuesta. */
-const drafts = ref<Map<string, { points: number; feedback: string }>>(new Map());
+interface Draft {
+  points: number;
+  feedback: string;
+  /** Solo en las preguntas con rúbrica; los puntos salen de aquí. */
+  rubric: SmartScores;
+}
+
+/** Lo que el docente está escribiendo, por respuesta. */
+const drafts = ref<Map<string, Draft>>(new Map());
+
+const isSmart = (item: PendingAnswer): boolean => item.question.type === QUESTION_TYPE.SMART_GOAL;
+
+/**
+ * Con rúbrica, los puntos no se escriben: se calculan.
+ *
+ * Dejar el campo de puntos editable al lado de la rúbrica permitiría guardar
+ * un 18 sobre 20 con tres puntos, y entonces ni la nota ni la estadística por
+ * dimensión dirían la verdad.
+ */
+function effectivePoints(item: PendingAnswer): number {
+  const draft = draftFor(item);
+  return isSmart(item)
+    ? smartScoreToPoints(draft.rubric, item.question.pointsPossible)
+    : draft.points;
+}
+
+/** Con rúbrica hacen falta las cinco dimensiones para poder guardar. */
+function canSubmit(item: PendingAnswer): boolean {
+  return !isSmart(item) || isSmartScoreComplete(draftFor(item).rubric);
+}
 
 const keyOf = (item: PendingAnswer): string => `${item.attemptId}:${item.questionId}`;
 
@@ -56,7 +93,9 @@ async function load(): Promise<void> {
   loading.value = true;
   try {
     pending.value = await http.get<PendingAnswer[]>('/attempts/review/pending');
-    drafts.value = new Map(pending.value.map((item) => [keyOf(item), { points: 0, feedback: '' }]));
+    drafts.value = new Map(
+      pending.value.map((item) => [keyOf(item), { points: 0, feedback: '', rubric: {} }]),
+    );
   } finally {
     loading.value = false;
   }
@@ -64,11 +103,11 @@ async function load(): Promise<void> {
 
 onMounted(load);
 
-function draftFor(item: PendingAnswer): { points: number; feedback: string } {
-  return drafts.value.get(keyOf(item)) ?? { points: 0, feedback: '' };
+function draftFor(item: PendingAnswer): Draft {
+  return drafts.value.get(keyOf(item)) ?? { points: 0, feedback: '', rubric: {} };
 }
 
-function updateDraft(item: PendingAnswer, patch: Partial<{ points: number; feedback: string }>) {
+function updateDraft(item: PendingAnswer, patch: Partial<Draft>): void {
   drafts.value.set(keyOf(item), { ...draftFor(item), ...patch });
 }
 
@@ -78,8 +117,9 @@ async function submit(item: PendingAnswer): Promise<void> {
 
   try {
     await http.post(`/attempts/${item.attemptId}/answers/${item.questionId}/grade`, {
-      points: draft.points,
+      points: effectivePoints(item),
       feedback: draft.feedback.trim() || null,
+      ...(isSmart(item) ? { rubricScores: draft.rubric } : {}),
     });
 
     // Se retira de la lista en lugar de recargarla entera: recargar movería
@@ -169,8 +209,15 @@ const inputClass =
             </p>
           </div>
 
+          <SmartRubricScorer
+            v-if="isSmart(item)"
+            :scores="draftFor(item).rubric"
+            :question-points="item.question.pointsPossible"
+            @update:scores="updateDraft(item, { rubric: $event })"
+          />
+
           <div class="flex flex-wrap items-end gap-3">
-            <label class="flex flex-col gap-1.5">
+            <label v-if="!isSmart(item)" class="flex flex-col gap-1.5">
               <span class="text-xs font-medium text-ink-muted">
                 {{ t('review.points', { max: item.question.pointsPossible }) }}
               </span>
@@ -199,7 +246,11 @@ const inputClass =
               />
             </label>
 
-            <BaseButton :loading="savingKey === keyOf(item)" @click="submit(item)">
+            <BaseButton
+              :loading="savingKey === keyOf(item)"
+              :disabled="!canSubmit(item)"
+              @click="submit(item)"
+            >
               {{ t('review.save') }}
             </BaseButton>
           </div>

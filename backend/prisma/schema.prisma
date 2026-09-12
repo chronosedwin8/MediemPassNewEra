@@ -107,6 +107,10 @@ enum QuestionType {
   SELFIE
   VIDEO_RESPONSE
   AUDIO_RESPONSE
+
+  /// Formular un objetivo SMART. Se corrige con su rúbrica de cinco
+  /// dimensiones: lo que se evalúa es cómo está escrito, no si se cumplió.
+  SMART_GOAL
 }
 
 enum AssignmentTargetType {
@@ -1093,6 +1097,14 @@ model AttemptAnswer {
   teacherFeedback String?   @map("teacher_feedback")
   gradedById      String?   @map("graded_by_id")
   gradedAt        DateTime? @map("graded_at")
+
+  /// Puntuación por dimensión cuando la pregunta se corrige con rúbrica.
+  ///
+  /// Se guarda aparte de `pointsEarned` porque responde a otra pregunta: los
+  /// puntos dicen cuánto valió la respuesta, y esto dice **en qué** falló. Sin
+  /// el desglose, la estadística solo podría decir que los objetivos SMART se
+  /// dan regular; con él dice que lo que falta casi siempre es el plazo.
+  rubricScores Json? @map("rubric_scores")
 
   answeredAt DateTime @default(now()) @map("answered_at")
   updatedAt  DateTime @updatedAt @map("updated_at")

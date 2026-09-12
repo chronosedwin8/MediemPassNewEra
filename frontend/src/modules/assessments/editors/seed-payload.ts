@@ -47,5 +47,9 @@ export function seedPayload(questionType: QuestionType): Record<string, unknown>
     case QUESTION_TYPE.VIDEO_RESPONSE:
     case QUESTION_TYPE.AUDIO_RESPONSE:
       return { kind: questionType, maxSeconds: MEDIA_MAX_SECONDS[questionType] };
+
+    // La rúbrica se enseña por defecto: es lo que se está enseñando.
+    case QUESTION_TYPE.SMART_GOAL:
+      return { kind: questionType, minChars: 80, showRubric: true };
   }
 }

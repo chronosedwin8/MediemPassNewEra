@@ -19,6 +19,7 @@ import {
   fillBlankGrader,
   longAnswerGrader,
   openTextGrader,
+  smartGoalGrader,
   shortAnswerGrader,
 } from './text.graders.js';
 import {
@@ -56,6 +57,7 @@ const GRADERS: { [T in QuestionType]: Grader<T> } = {
   [QUESTION_TYPE.SELFIE]: selfieGrader,
   [QUESTION_TYPE.VIDEO_RESPONSE]: videoResponseGrader,
   [QUESTION_TYPE.AUDIO_RESPONSE]: audioResponseGrader,
+  [QUESTION_TYPE.SMART_GOAL]: smartGoalGrader,
 };
 
 export function getGrader<T extends QuestionType>(type: T): Grader<T> {

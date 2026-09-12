@@ -250,7 +250,8 @@
       "LONG_ANSWER": "Lange Antwort",
       "SELFIE": "Mach ein Selfie",
       "VIDEO_RESPONSE": "Antworte per Video",
-      "AUDIO_RESPONSE": "Antworte per Sprachnachricht"
+      "AUDIO_RESPONSE": "Antworte per Sprachnachricht",
+      "SMART_GOAL": "SMART-Ziel"
     },
     "media": {
       "guidance": "Hinweis für die antwortende Person",
@@ -259,6 +260,15 @@
       "maxSeconds": "Maximale Dauer (Sekunden)",
       "maxSecondsHint": "Du kannst weniger verlangen, nie mehr als {seconds} s. Das Limit schützt den Speicher und die Zeit der korrigierenden Person.",
       "secureContextNote": "Kamera und Mikrofon funktionieren nur über HTTPS oder auf dem eigenen Rechner. Über eine Netzwerkadresse ohne Zertifikat blockiert der Browser sie."
+    },
+    "smart": {
+      "example": "Beispiel für ein gut formuliertes Ziel",
+      "examplePlaceholder": "In Mathematik von 70 auf 85 Punkte kommen, mit täglich 30 Minuten Übung über 6 Wochen",
+      "minChars": "Mindestlänge (Zeichen)",
+      "minCharsHint": "Nur ein Hinweis beim Schreiben; die Abgabe wird nicht blockiert.",
+      "rubricFixed": "Das Raster ist fest und zählt {max} Punkte. Es wird nicht pro Frage konfiguriert: würde es jede Lehrkraft neu definieren, ließe sich die Statistik nach Dimension nicht mehr über Klassen hinweg addieren.",
+      "showRubric": "Raster beim Schreiben anzeigen",
+      "showRubricHint": "Empfohlen. Das Raster ist das, was gelehrt wird; es zu verstecken macht die Aufgabe zum Raten."
     }
   },
   "editor": {
@@ -838,5 +848,62 @@
     "save": "Note speichern",
     "studentPhoto": "Foto der lernenden Person",
     "title": "Korrekturliste"
+  },
+  "smart": {
+    "averageScore": "Schnitt von {max}",
+    "charsRemaining": "Dir fehlen noch {count} Zeichen bis zur Mindestlänge.",
+    "evaluated": "Korrigierte Ziele",
+    "example": "Beispiel",
+    "incomplete": "Es fehlen noch Dimensionen",
+    "levelLegend": "0 nicht erfüllt · 4 ausgezeichnet",
+    "longEnough": "Länge reicht. Prüfe, ob alle fünf Dimensionen da sind.",
+    "noData": "Es wurden noch keine SMART-Ziele mit dem Raster korrigiert.",
+    "notAGoalHint": "SMART bewertet nicht, ob das Ziel erreicht wurde, sondern wie es formuliert ist. Ein Ziel kann tadellos sein und nicht erreicht werden.",
+    "placeholder": "Schreibe hier dein Ziel. Zum Beispiel: «In Mathematik von 70 auf 85 Punkte kommen, indem ich in den nächsten 6 Wochen täglich 30 Minuten übe».",
+    "pointsFromRubric": "{points} von {max} Punkten der Frage",
+    "rubricHint": "Die Markierungen sind eine Schreibhilfe, nicht deine Note: wer korrigiert, bewertet jede Dimension von 0 bis 4.",
+    "rubricTitle": "SMART-Raster",
+    "statsHint": "Der Schnitt jeder Dimension von 4. Er sagt, was noch einmal erklärt werden muss: meistens die Frist und der messbare Indikator.",
+    "statsTitle": "SMART-Ziele nach Dimension",
+    "strongest": "Stärkste Dimension",
+    "title": "SMART-Ziele",
+    "total": "Gesamt",
+    "weakest": "Schwächste Dimension",
+    "dimension": {
+      "SPECIFIC": {
+        "name": "Spezifisch",
+        "indicator": "Sagt klar, was getan wird, wozu und gegebenenfalls wie"
+      },
+      "MEASURABLE": {
+        "name": "Messbar",
+        "indicator": "Enthält Menge, Prozent, Häufigkeit oder etwas, woran sich das Erreichen prüfen lässt"
+      },
+      "ACHIEVABLE": {
+        "name": "Erreichbar",
+        "indicator": "Ist mit der verfügbaren Zeit, den Mitteln und dem Wissen möglich"
+      },
+      "RELEVANT": {
+        "name": "Relevant",
+        "indicator": "Hat einen klaren Zweck und antwortet auf einen Bedarf oder ein Ziel"
+      },
+      "TIME_BOUND": {
+        "name": "Terminiert",
+        "indicator": "Legt eine Frist oder einen konkreten Zeitraum fest"
+      }
+    },
+    "level": {
+      "0": "Nicht erfüllt",
+      "1": "Anfang",
+      "2": "Grundlegend",
+      "3": "Angemessen",
+      "4": "Ausgezeichnet"
+    },
+    "band": {
+      "ALTO": "Hoch",
+      "BAJO": "Niedrig",
+      "BASICO": "Grundlegend",
+      "EXCELENTE": "Ausgezeichnet",
+      "INICIAL": "Anfang"
+    }
   }
 }

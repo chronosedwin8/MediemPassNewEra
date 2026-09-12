@@ -1368,6 +1368,185 @@ describe('cola de corrección', () => {
   });
 });
 
+describe('objetivos SMART', () => {
+  /** Publica una evaluación con una única pregunta de objetivo SMART. */
+  async function publishSmartAssessment(
+    points = 10,
+  ): Promise<{ versionId: string; questionId: string }> {
+    const created = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Tu objetivo del trimestre', subjectId: fixture.subjectId });
+
+    const versionId = created.body.data.versionId as string;
+
+    const question = await request(app)
+      .post(`/api/assessments/versions/${versionId}/questions`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        type: 'SMART_GOAL',
+        statement: 'Formula tu objetivo para el proyecto de medios',
+        points,
+        kmkCompetencyId: fixture.competencyIds[0],
+        payload: { kind: 'SMART_GOAL', minChars: 40, showRubric: true },
+      });
+    expect(question.status).toBe(201);
+
+    await request(app)
+      .post(`/api/assessments/versions/${versionId}/publish`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .expect(200);
+
+    return { versionId, questionId: question.body.data.id as string };
+  }
+
+  /** Responde con un objetivo y lo entrega. */
+  async function answerGoal(versionId: string, questionId: string, text: string): Promise<string> {
+    await assignToGroup(fixture, versionId);
+    const { attempt } = await startAttempt(fixture);
+    const attemptId = attempt.body.data.id as string;
+
+    await request(app)
+      .put(`/api/attempts/${attemptId}/answers/${questionId}`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`)
+      .send({ response: { kind: 'SMART_GOAL', text } })
+      .expect(200);
+
+    await request(app)
+      .post(`/api/attempts/${attemptId}/submit`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    return attemptId;
+  }
+
+  it('queda pendiente de corrección: no hay clave con la que compararlo', async () => {
+    const { versionId, questionId } = await publishSmartAssessment();
+    const attemptId = await answerGoal(versionId, questionId, 'Quiero mejorar en matemáticas.');
+
+    const result = await request(app)
+      .get(`/api/attempts/${attemptId}/result`)
+      .set('Authorization', `Bearer ${fixture.studentToken}`);
+
+    expect(result.body.data.status).toBe('PENDING_REVIEW');
+    expect(result.body.data.requiresManualGrading).toBe(true);
+  });
+
+  it('la rúbrica se convierte en los puntos de la pregunta', async () => {
+    const { versionId, questionId } = await publishSmartAssessment(10);
+    const attemptId = await answerGoal(
+      versionId,
+      questionId,
+      'Subir de 70 a 85 puntos en matemáticas estudiando 30 minutos diarios durante 6 semanas.',
+    );
+
+    /*
+     * 4+4+3+4+3 = 18 sobre 20. La pregunta vale 10, así que le corresponden 9.
+     * Es la proporción que permite que SMART conviva con la escala alemana sin
+     * competir con ella: la rúbrica puntúa esta pregunta, no la evaluación.
+     */
+    const graded = await request(app)
+      .post(`/api/attempts/${attemptId}/answers/${questionId}/grade`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        points: 9,
+        feedback: 'Muy bien definido; el plazo podría ser más concreto.',
+        rubricScores: {
+          SPECIFIC: 4,
+          MEASURABLE: 4,
+          ACHIEVABLE: 3,
+          RELEVANT: 4,
+          TIME_BOUND: 3,
+        },
+      });
+
+    expect(graded.status).toBe(200);
+    expect(graded.body.data.status).toBe('GRADED');
+
+    const answer = await prisma.attemptAnswer.findFirst({
+      where: { attemptId, questionId },
+      select: { pointsEarned: true, rubricScores: true },
+    });
+
+    expect(Number(answer!.pointsEarned)).toBe(9);
+    // El desglose se guarda aparte de los puntos: responde a otra pregunta.
+    expect(answer!.rubricScores).toMatchObject({ TIME_BOUND: 3, MEASURABLE: 4 });
+  });
+
+  it('rechaza un nivel fuera de la escala de la rúbrica', async () => {
+    const { versionId, questionId } = await publishSmartAssessment();
+    const attemptId = await answerGoal(versionId, questionId, 'Un objetivo cualquiera.');
+
+    const response = await request(app)
+      .post(`/api/attempts/${attemptId}/answers/${questionId}/grade`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ points: 5, rubricScores: { SPECIFIC: 7 } });
+
+    // La escala es 0–4; un 7 no significa nada y no debe poder guardarse.
+    expect(response.status).toBe(422);
+  });
+
+  it('la estadística dice en qué dimensión falla el curso', async () => {
+    const { versionId, questionId } = await publishSmartAssessment();
+    const attemptId = await answerGoal(versionId, questionId, 'Quiero mejorar en matemáticas.');
+
+    await request(app)
+      .post(`/api/attempts/${attemptId}/answers/${questionId}/grade`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        points: 3,
+        /*
+         * Sin empates en el mínimo: con dos dimensiones a cero, «la más floja»
+         * depende del orden y la prueba estaría comprobando el desempate en
+         * lugar del cálculo.
+         */
+        rubricScores: {
+          SPECIFIC: 1,
+          MEASURABLE: 0,
+          ACHIEVABLE: 2,
+          RELEVANT: 3,
+          TIME_BOUND: 1,
+        },
+      })
+      .expect(200);
+
+    const report = await request(app)
+      .get('/api/statistics/smart')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(report.status).toBe(200);
+    expect(report.body.data.evaluated).toBe(1);
+    // 1+0+2+3+1 = 7 sobre 20, que cae en la banda baja.
+    expect(report.body.data.averageScore).toBe(7);
+    expect(report.body.data.bands).toContainEqual({ band: 'BAJO', count: 1 });
+
+    const byDimension = new Map(
+      report.body.data.dimensions.map((entry: { dimension: string }) => [entry.dimension, entry]),
+    );
+    expect(byDimension.get('MEASURABLE')).toMatchObject({ average: 0 });
+    expect(byDimension.get('RELEVANT')).toMatchObject({ average: 3 });
+
+    /*
+     * Lo que hace útil todo esto: la estadística no dice «los objetivos se dan
+     * regular», dice cuál es la dimensión que hay que volver a enseñar.
+     */
+    expect(report.body.data.strongest).toBe('RELEVANT');
+    expect(report.body.data.weakest).toBe('MEASURABLE');
+  });
+
+  it('no cuenta los objetivos que nadie ha corregido todavía', async () => {
+    const { versionId, questionId } = await publishSmartAssessment();
+    await answerGoal(versionId, questionId, 'Un objetivo sin corregir.');
+
+    const report = await request(app)
+      .get('/api/statistics/smart')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    // Sin rúbrica no hay nada que promediar, y contarlo como cero sería
+    // atribuir a un estudiante una valoración que nadie ha hecho.
+    expect(report.body.data.evaluated).toBe(0);
+  });
+});
+
 describe('integridad histórica', () => {
   it('editar la evaluación después no altera un resultado ya emitido', async () => {
     const { assessmentId, versionId, questionIds } = await createPublishedAssessment(fixture);

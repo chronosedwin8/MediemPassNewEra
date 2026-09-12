@@ -93,3 +93,17 @@ export const longAnswerGrader: Grader<typeof QUESTION_TYPE.LONG_ANSWER> = {
   requiresManualGrading: true,
   grade: (_payload, answer): GradeOutcome => gradeOpenAnswer(answer.text),
 };
+
+/**
+ * Objetivo SMART.
+ *
+ * Se comporta como una redacción: el motor no puede decidir si un objetivo
+ * está bien formulado, así que lo deja pendiente y alguien lo puntúa con la
+ * rúbrica de cinco dimensiones. Lo único automático sigue siendo el campo
+ * vacío, que vale cero sin necesidad de que nadie lo lea.
+ */
+export const smartGoalGrader: Grader<typeof QUESTION_TYPE.SMART_GOAL> = {
+  type: QUESTION_TYPE.SMART_GOAL,
+  requiresManualGrading: true,
+  grade: (_payload, answer): GradeOutcome => gradeOpenAnswer(answer.text),
+};

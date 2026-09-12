@@ -5,6 +5,7 @@ import { localize, type LocalizedText } from '@medienpass/shared';
 import { http } from '@/services/http';
 import KmkChart from './KmkChart.vue';
 import KmkBreakdownTable from './KmkBreakdownTable.vue';
+import SmartPanel from './SmartPanel.vue';
 import type { BreakdownRow, Dimension } from './breakdown-types';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
@@ -255,6 +256,13 @@ const selectClass =
         </ul>
       </BaseCard>
     </template>
+
+    <!--
+      Los objetivos SMART van aparte del desglose KMK porque miden otra cosa:
+      no una competencia digital sino cómo se formula una meta. Comparten los
+      filtros, que es lo que permite preguntarse las dos cosas del mismo curso.
+    -->
+    <SmartPanel :filters="query" />
 
     <!--
       El desglose se pinta aunque el agregado esté vacío por los filtros: es

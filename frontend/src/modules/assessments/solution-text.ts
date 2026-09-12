@@ -89,6 +89,8 @@ const SOLUTION_TEXT: Record<QuestionType, (data: Payload, labels: BooleanLabels)
   [QUESTION_TYPE.SELFIE]: () => [],
   [QUESTION_TYPE.VIDEO_RESPONSE]: () => [],
   [QUESTION_TYPE.AUDIO_RESPONSE]: () => [],
+  // Tampoco tiene clave: lo que hay es una rúbrica con la que se puntúa.
+  [QUESTION_TYPE.SMART_GOAL]: () => [],
 };
 
 function orderedItems(data: Payload): string[] {
@@ -103,6 +105,7 @@ export const MANUAL_TYPES: readonly QuestionType[] = [
   QUESTION_TYPE.SELFIE,
   QUESTION_TYPE.VIDEO_RESPONSE,
   QUESTION_TYPE.AUDIO_RESPONSE,
+  QUESTION_TYPE.SMART_GOAL,
   QUESTION_TYPE.OPEN_TEXT,
   QUESTION_TYPE.LONG_ANSWER,
 ];

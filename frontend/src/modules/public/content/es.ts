@@ -328,6 +328,72 @@ export const es: PublicContent = {
       ],
     },
 
+    smart: {
+      title: 'Formular la meta también se evalúa',
+      lead: 'Antes de medir si alguien mejoró hay algo anterior: saber decir en qué quiere mejorar. La plataforma trata eso como una competencia más y la evalúa con la rúbrica SMART.',
+      caveat:
+        'SMART no es un criterio de evaluación: es un marco para formular objetivos. Por eso aquí no se valora si la meta se cumplió —eso pasará o no dentro de seis semanas— sino cómo está escrita. Un objetivo puede estar impecablemente formulado y no lograrse; son dos juicios distintos y la rúbrica solo emite el primero.',
+      columns: { dimension: 'Dimensión', indicator: 'Qué se observa' },
+      rows: [
+        {
+          letter: 'S',
+          name: 'Específico',
+          indicator: 'Dice claramente qué se hará, para qué y, si aplica, cómo.',
+        },
+        {
+          letter: 'M',
+          name: 'Medible',
+          indicator:
+            'Incluye cantidad, porcentaje, frecuencia o algo que permita comprobar el logro.',
+        },
+        {
+          letter: 'A',
+          name: 'Alcanzable',
+          indicator: 'Es posible con el tiempo, los recursos y los conocimientos disponibles.',
+        },
+        {
+          letter: 'R',
+          name: 'Relevante',
+          indicator: 'Tiene una finalidad clara y responde a una necesidad o a un propósito.',
+        },
+        {
+          letter: 'T',
+          name: 'Temporal',
+          indicator: 'Fija una fecha límite o un periodo concreto.',
+        },
+      ],
+      scale: {
+        title: 'Cómo se puntúa',
+        lead: 'Cada dimensión se valora de 0 a 4, de modo que un objetivo vale 20 puntos. Cinco niveles y no dos: con «cumple o no cumple», toda la franja intermedia —la meta que menciona un plazo vago, o que mide algo sin decir cuánto— cae del mismo lado, y ahí está casi todo el alumnado.',
+        levels: [
+          '0 · No cumple: el criterio está ausente',
+          '1 · Inicial: hay una evidencia mínima',
+          '2 · Básico: cumple parcialmente',
+          '3 · Adecuado: cumple con pequeñas deficiencias',
+          '4 · Excelente: cumple por completo',
+        ],
+        bands: [
+          { range: '18–20', label: 'Excelente' },
+          { range: '15–17', label: 'Alto' },
+          { range: '11–14', label: 'Básico' },
+          { range: '6–10', label: 'Bajo' },
+          { range: '0–5', label: 'Inicial' },
+        ],
+      },
+      example: {
+        title: 'La misma intención, dos formulaciones',
+        weak: {
+          goal: 'Quiero mejorar en matemáticas.',
+          verdict:
+            'Específico 1, Medible 0, Alcanzable 2, Relevante 3, Temporal 0. Total 6 de 20: no dice qué aspecto, no hay indicador y no hay plazo.',
+        },
+        strong: {
+          goal: 'Aumentar mi resultado en matemáticas de 70 a 85 puntos en la próxima evaluación, estudiando 30 minutos diarios durante las próximas 6 semanas.',
+          verdict:
+            'Las cinco dimensiones son verificables: qué mejora, cuánto, con qué esfuerzo, para qué y cuándo.',
+        },
+      },
+    },
     access: {
       title: 'Entrar a la plataforma',
       lead: 'El acceso es el mismo para todos —con el correo institucional— y lo que cambia es lo que se encuentra dentro. Si no sabes cuál es tu caso, entra y la plataforma te llevará a donde corresponde.',
@@ -741,6 +807,45 @@ export const es: PublicContent = {
           {
             title: 'Archivos guardados',
             body: 'Qué hay, cuánto ocupa y por año. Para borrar: elegir alcance, simular, revisar y confirmar. No hay copia de lo que se elimina.',
+          },
+        ],
+      },
+
+      {
+        id: 'smart',
+        title: 'Objetivos SMART',
+        audience: 'all',
+        lead: 'Una pregunta que se responde escribiendo una meta y se corrige con una rúbrica de cinco dimensiones. Lo que se evalúa es cómo está formulada, no si se cumplió.',
+        steps: [
+          {
+            title: 'Entiende qué se está midiendo',
+            body: 'SMART es un marco para formular objetivos, no un criterio de calificación. La rúbrica juzga la redacción: si dice qué, cuánto, con qué medios, para qué y para cuándo. Un objetivo puede estar impecable y no lograrse; eso es otra conversación, dentro de seis semanas.',
+          },
+          {
+            title: 'Al escribir, ten la rúbrica delante',
+            body: 'El campo de respuesta muestra las cinco dimensiones con su indicador. Las letras que se resaltan mientras escribes son una ayuda de redacción, no tu nota: detectan que hay un número o una unidad de tiempo, no que el plazo tenga sentido.',
+            tip: 'Compara «quiero mejorar en matemáticas» con «subir de 70 a 85 puntos estudiando 30 minutos diarios durante 6 semanas». La segunda no es más larga por adorno: cada parte responde a una dimensión.',
+          },
+          {
+            title: 'Al corregir, puntúa dimensión a dimensión',
+            body: 'En «Corregir» aparecen las cinco dimensiones de 0 a 4. El total sobre 20, la banda y los puntos de la pregunta se calculan solos, y no se puede guardar hasta que están las cinco: media rúbrica haría que la estadística mezclara objetivos valorados enteros con otros a medias.',
+            tip: 'Cero no es un castigo, es «el criterio está ausente». Un objetivo sin ninguna fecha tiene un cero en temporal aunque el resto esté bien, y eso es justo lo que hay que poder ver después.',
+          },
+          {
+            title: 'Mira el desglose en estadísticas',
+            body: 'La media de cada dimensión sobre 4 dice en qué falla el curso. Casi siempre son las mismas dos: el indicador medible y el plazo. Con solo la nota sobre 20 se sabría que los objetivos se dan regular; con el desglose se sabe qué volver a enseñar.',
+          },
+        ],
+        faq: [
+          {
+            question: '¿Por qué 0–20 y no la escala del colegio?',
+            answer:
+              'Porque miden cosas distintas. La rúbrica puntúa esa pregunta sobre 20 y esos puntos entran en la evaluación como los de cualquier otra; la nota final sigue saliendo en la escala alemana. Dos escalas para dos cosas, no dos notas para la misma.',
+          },
+          {
+            question: '¿Puedo cambiar las dimensiones o los niveles?',
+            answer:
+              'No, y es deliberado. Si cada docente redefiniera la rúbrica, la media de «temporal» de un curso no se podría comparar con la de otro y la estadística por dimensión dejaría de servir. Lo que sí decides es el ámbito, en el enunciado.',
           },
         ],
       },

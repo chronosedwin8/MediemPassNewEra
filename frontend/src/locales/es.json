@@ -250,7 +250,8 @@
       "LONG_ANSWER": "Respuesta larga",
       "SELFIE": "Tómate una selfie",
       "VIDEO_RESPONSE": "Responde en vídeo",
-      "AUDIO_RESPONSE": "Responde con nota de voz"
+      "AUDIO_RESPONSE": "Responde con nota de voz",
+      "SMART_GOAL": "Objetivo SMART"
     },
     "media": {
       "guidance": "Indicación para quien responde",
@@ -259,6 +260,15 @@
       "maxSeconds": "Duración máxima (segundos)",
       "maxSecondsHint": "Puedes pedir menos, nunca más de {seconds} s. El límite protege el almacenamiento y el tiempo de quien corrige.",
       "secureContextNote": "La cámara y el micrófono solo funcionan si la plataforma se abre por HTTPS o desde el propio equipo. Por una dirección de red sin certificado, el navegador los bloquea."
+    },
+    "smart": {
+      "example": "Ejemplo de objetivo bien formulado",
+      "examplePlaceholder": "Subir de 70 a 85 puntos en matemáticas estudiando 30 minutos diarios durante 6 semanas",
+      "minChars": "Extensión mínima (caracteres)",
+      "minCharsHint": "Solo es un aviso para quien escribe; no impide entregar.",
+      "rubricFixed": "La rúbrica es fija y vale {max} puntos. No se configura por pregunta: si cada docente la redefiniera, la estadística por dimensión dejaría de poder sumarse entre cursos.",
+      "showRubric": "Enseñar la rúbrica mientras se escribe",
+      "showRubricHint": "Recomendado. La rúbrica es lo que se está enseñando; esconderla convierte el ejercicio en adivinar."
     }
   },
   "editor": {
@@ -838,5 +848,62 @@
     "save": "Guardar nota",
     "studentPhoto": "Foto del estudiante",
     "title": "Cola de corrección"
+  },
+  "smart": {
+    "averageScore": "Media sobre {max}",
+    "charsRemaining": "Te faltan {count} caracteres para la extensión mínima.",
+    "evaluated": "Objetivos corregidos",
+    "example": "Ejemplo",
+    "incomplete": "Faltan dimensiones por puntuar",
+    "levelLegend": "0 no cumple · 4 excelente",
+    "longEnough": "Extensión suficiente. Revisa que estén las cinco dimensiones.",
+    "noData": "Todavía no hay objetivos SMART corregidos con la rúbrica.",
+    "notAGoalHint": "SMART no evalúa si la meta se cumplió, sino cómo está formulada. Un objetivo puede estar impecable y no lograrse.",
+    "placeholder": "Escribe aquí tu objetivo. Por ejemplo: «Subir de 70 a 85 puntos en matemáticas estudiando 30 minutos diarios durante las próximas 6 semanas».",
+    "pointsFromRubric": "{points} de {max} puntos de la pregunta",
+    "rubricHint": "Las marcas son una ayuda mientras escribes, no tu nota: quien corrige puntúa cada dimensión de 0 a 4.",
+    "rubricTitle": "Rúbrica SMART",
+    "statsHint": "La media de cada dimensión sobre 4. Es lo que dice qué hay que volver a enseñar: casi siempre el plazo y el indicador medible.",
+    "statsTitle": "Objetivos SMART por dimensión",
+    "strongest": "Mejor dimensión",
+    "title": "Objetivos SMART",
+    "total": "Total",
+    "weakest": "Dimensión más floja",
+    "dimension": {
+      "SPECIFIC": {
+        "name": "Específico",
+        "indicator": "Dice claramente qué se hará, para qué y, si aplica, cómo"
+      },
+      "MEASURABLE": {
+        "name": "Medible",
+        "indicator": "Incluye cantidad, porcentaje, frecuencia o algo que permita comprobar el logro"
+      },
+      "ACHIEVABLE": {
+        "name": "Alcanzable",
+        "indicator": "Es posible con el tiempo, los recursos y los conocimientos disponibles"
+      },
+      "RELEVANT": {
+        "name": "Relevante",
+        "indicator": "Tiene una finalidad clara y responde a una necesidad o a un propósito"
+      },
+      "TIME_BOUND": {
+        "name": "Temporal",
+        "indicator": "Fija una fecha límite o un periodo concreto"
+      }
+    },
+    "level": {
+      "0": "No cumple",
+      "1": "Inicial",
+      "2": "Básico",
+      "3": "Adecuado",
+      "4": "Excelente"
+    },
+    "band": {
+      "ALTO": "Alto",
+      "BAJO": "Bajo",
+      "BASICO": "Básico",
+      "EXCELENTE": "Excelente",
+      "INICIAL": "Inicial"
+    }
   }
 }

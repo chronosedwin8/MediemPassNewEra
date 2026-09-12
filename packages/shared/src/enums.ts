@@ -131,6 +131,13 @@ export const QUESTION_TYPE = {
   SELFIE: 'SELFIE',
   VIDEO_RESPONSE: 'VIDEO_RESPONSE',
   AUDIO_RESPONSE: 'AUDIO_RESPONSE',
+
+  /*
+   * Formular un objetivo SMART. Se corrige con su propia rúbrica de cinco
+   * dimensiones, no con una clave: lo que se evalúa es cómo está escrito el
+   * objetivo, no si se cumplió.
+   */
+  SMART_GOAL: 'SMART_GOAL',
 } as const;
 export type QuestionType = (typeof QUESTION_TYPE)[keyof typeof QUESTION_TYPE];
 
@@ -141,6 +148,7 @@ export const MANUALLY_GRADED_QUESTION_TYPES: readonly QuestionType[] = [
   QUESTION_TYPE.SELFIE,
   QUESTION_TYPE.VIDEO_RESPONSE,
   QUESTION_TYPE.AUDIO_RESPONSE,
+  QUESTION_TYPE.SMART_GOAL,
 ];
 
 export const ASSIGNMENT_TARGET_TYPE = {
