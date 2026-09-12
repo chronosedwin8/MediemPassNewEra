@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  AUDIT_ACTION,
   ERROR_CODE,
   ROLE,
   type LocalizedText,
@@ -7,6 +8,7 @@ import {
   type Role,
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
+import { recordAudit } from '../audit/audit.service.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
 import { assertInScope, isAdmin } from '../../middleware/authorize.js';
@@ -64,14 +66,30 @@ interface Actor {
 /**
  * Restricción de alcance para un actor.
  *
- * Un administrador no lleva restricción. Un docente ve los grupos de los que
- * es titular. Un estudiante ve aquellos a los que pertenece.
+ * Un administrador no lleva restricción. Un estudiante ve los grupos a los que
+ * pertenece.
+ *
+ * Un docente ve dos cosas: los grupos de los que es titular y aquellos en los
+ * que consta como docente. Antes era solo lo primero, y eso describía mal un
+ * colegio: solo cabe un titular por grupo, así que quien da una materia en
+ * cinco cursos sin ser titular de ninguno no veía ni un grupo y no podía
+ * asignar nada.
+ *
+ * Se notó al traer la matrícula de Phidias. Sus secciones son grupos de clase
+ * y llegan sin titular, de modo que después de sincronizar mil estudiantes no
+ * había un solo docente capaz de verlos: la plataforma quedaba operable
+ * únicamente por administración.
  */
 function scopeFor(actor: Actor): Record<string, unknown> {
   if (isAdmin(actor)) return {};
 
   if (actor.roles.includes(ROLE.TEACHER)) {
-    return { homeroomTeacherId: actor.userId };
+    return {
+      OR: [
+        { homeroomTeacherId: actor.userId },
+        { teachers: { some: { teacherId: actor.userId } } },
+      ],
+    };
   }
 
   return { memberships: { some: { student: { userId: actor.userId }, active: true } } };
@@ -82,6 +100,12 @@ const groupInclude = {
   gradeLevel: { select: { id: true, code: true, name: true } },
   subject: { select: { id: true, code: true, name: true } },
   homeroomTeacher: { select: { id: true, firstName: true, lastName: true } },
+  teachers: {
+    select: {
+      subject: { select: { id: true, code: true } },
+      teacher: { select: { id: true, firstName: true, lastName: true } },
+    },
+  },
   _count: { select: { memberships: { where: { active: true } } } },
 } as const;
 
@@ -156,6 +180,65 @@ export async function assertGroupAccess(actor: Actor, groupId: string): Promise<
   });
 
   assertInScope(actor, Boolean(group), { groupId });
+}
+
+/**
+ * Quién da clase a este grupo.
+ *
+ * Se reemplaza la lista entera en lugar de añadir y quitar uno a uno: es como
+ * se piensa —«este año a 10A le dan estos cuatro»— y evita que dos personas
+ * editando a la vez dejen el claustro a medias.
+ *
+ * No hace falta protección extra contra que alguien se cuele en un grupo
+ * ajeno: llegar hasta aquí exige `assertGroupAccess`, y un docente solo pasa
+ * ese filtro en los grupos que ya enseña o de los que es titular. Quien mete a
+ * otros es administración, el titular, o alguien que ya da clase allí.
+ */
+export const teachingStaffSchema = z.object({
+  teachers: z
+    .array(
+      z.object({
+        teacherId: z.string().uuid(),
+        subjectId: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .max(30),
+});
+
+export type TeachingStaffInput = z.infer<typeof teachingStaffSchema>;
+
+export async function setTeachingStaff(
+  actor: Actor,
+  groupId: string,
+  input: TeachingStaffInput,
+): Promise<void> {
+  await assertGroupAccess(actor, groupId);
+
+  const ids = input.teachers.map((entry) => entry.teacherId);
+  if (new Set(ids).size !== ids.length) {
+    throw AppError.conflict(ERROR_CODE.DUPLICATE_RESOURCE, 'Un docente no puede figurar dos veces');
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.groupTeacher.deleteMany({ where: { groupId } });
+    if (input.teachers.length === 0) return;
+
+    await tx.groupTeacher.createMany({
+      data: input.teachers.map((entry) => ({
+        groupId,
+        teacherId: entry.teacherId,
+        subjectId: entry.subjectId ?? null,
+      })),
+    });
+  });
+
+  await recordAudit({
+    userId: actor.userId,
+    action: AUDIT_ACTION.UPDATE_SETTINGS,
+    entityType: 'group',
+    entityId: groupId,
+    metadata: { teachers: ids.length },
+  });
 }
 
 export async function getGroup(actor: Actor, id: string): Promise<GroupView> {

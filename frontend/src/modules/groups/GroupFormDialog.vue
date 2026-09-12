@@ -26,8 +26,10 @@ interface Opcion {
   name: LocalizedText;
 }
 
+/** `id` es el de la ficha docente; el grupo apunta a la persona, o sea `userId`. */
 interface Docente {
   id: string;
+  userId: string;
   firstName: string;
   lastName: string;
 }
@@ -183,7 +185,7 @@ const campo =
           <span class="text-sm font-medium">{{ t('group.homeroomTeacher') }}</span>
           <select v-model="form.homeroomTeacherId" :class="campo" :disabled="cargando">
             <option value="">{{ t('common.none') }}</option>
-            <option v-for="d in docentes" :key="d.id" :value="d.id">
+            <option v-for="d in docentes" :key="d.userId" :value="d.userId">
               {{ d.lastName }}, {{ d.firstName }}
             </option>
           </select>

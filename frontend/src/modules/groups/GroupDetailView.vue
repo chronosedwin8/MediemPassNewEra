@@ -9,6 +9,8 @@ import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
 import GroupPasswordsPanel from './GroupPasswordsPanel.vue';
+import GroupTeachersPanel from './GroupTeachersPanel.vue';
+import GroupMembersPicker from './GroupMembersPicker.vue';
 import { useAuthStore } from '@/stores/auth';
 
 /**
@@ -30,6 +32,10 @@ interface Group {
   gradeLevel: { code: string; name: LocalizedText };
   subject: { code: string } | null;
   homeroomTeacher: { firstName: string; lastName: string } | null;
+  teachers?: Array<{
+    teacher: { id: string; firstName: string; lastName: string };
+    subject: { id: string; code: string } | null;
+  }>;
   academicYear?: { code: string } | null;
 }
 
@@ -66,7 +72,8 @@ const filtered = computed(() => {
 /** Un curso de treinta no se lee igual que uno de tres: conviene el recuento. */
 const withoutEmail = computed(() => members.value.filter((member) => !member.email).length);
 
-onMounted(async () => {
+/** Con nombre para poder releer tras cambiar el claustro. */
+async function load(): Promise<void> {
   const id = route.params['id'] as string;
   try {
     const [groupData, memberData] = await Promise.all([
@@ -80,7 +87,9 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(load);
 
 /**
  * Color de la insignia según la matrícula.
@@ -135,6 +144,37 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
     -->
     <BaseCard v-if="withoutEmail > 0" class="border-warning/40 bg-warning/5">
       <p class="text-sm">{{ t('group.withoutEmail', { count: withoutEmail }) }}</p>
+    </BaseCard>
+
+    <!--
+      Quién da clase aquí.
+      
+      Es lo que decide qué grupos ve cada docente, así que vive en la ficha del
+      grupo y no escondido en administración: lo sabe quien lleva el curso.
+    -->
+    <BaseCard v-if="group && auth.can('group:update')" class="flex flex-col gap-3">
+      <h2 class="text-lg font-semibold">{{ t('group.teachers') }}</h2>
+      <GroupTeachersPanel
+        :key="group.teachers?.length ?? 0"
+        :group-id="group.id"
+        :iniciales="group.teachers ?? []"
+        @saved="load()"
+      />
+    </BaseCard>
+
+    <!--
+      Añadir estudiantes sueltos.
+      
+      Los cursos completos llegan de Phidias; esto es para lo que Phidias no
+      sabe: una electiva que junta gente de varios cursos.
+    -->
+    <BaseCard v-if="group && auth.can('group:manage_members')" class="flex flex-col gap-3">
+      <h2 class="text-lg font-semibold">{{ t('group.addStudents') }}</h2>
+      <GroupMembersPicker
+        :group-id="group.id"
+        :ya-dentro="members.map((m) => m.studentId)"
+        @added="load()"
+      />
     </BaseCard>
 
     <!--

@@ -32,7 +32,8 @@
     "optional": "Optional",
     "noResults": "Keine Ergebnisse",
     "showingPage": "Seite {page} von {total}",
-    "choose": "Bitte wählen"
+    "choose": "Bitte wählen",
+    "remove": "Entfernen"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -394,7 +395,7 @@
     "students": "Schüler/innen",
     "studentCount": "{count} Schüler/innen",
     "homeroomTeacher": "Klassenlehrkraft",
-    "addStudents": "Schüler/innen hinzufügen",
+    "addStudents": "Lernende hinzufügen",
     "empty": "Du hast noch keine Klassen",
     "detail": "Schüler ansehen",
     "noStudents": "Diese Gruppe hat noch keine Schüler.",
@@ -407,7 +408,18 @@
     "gradeLevel": "Jahrgang",
     "homeroomHint": "Ohne Klassenleitung kann dieser Gruppe niemand Beurteilungen zuweisen.",
     "deleteConfirm": "Gruppe {code} löschen? Die Lernenden werden nicht gelöscht, sie gehören ihr nur nicht mehr an.",
-    "deleted": "Gruppe {code} gelöscht."
+    "deleted": "Gruppe {code} gelöscht.",
+    "teachers": "Lehrkräfte der Gruppe",
+    "teacher": "Lehrkraft",
+    "teachersHint": "Jede hier eingetragene Lehrkraft sieht diese Gruppe und kann ihr Beurteilungen zuweisen. Eine Gruppe hat mehrere Fächer, also dürfen es mehrere sein.",
+    "noTeachers": "Noch keine Lehrkraft eingetragen. Ohne Eintrag sieht nur die Klassenleitung diese Gruppe.",
+    "addTeacher": "Lehrkraft hinzufügen",
+    "pickerHint": "Für Wahlfächer und Gruppen aus mehreren Klassen. Vollständige Klassen kommen von selbst aus Phidias.",
+    "searchStudents": "Nach Name oder Code suchen",
+    "noCandidates": "Niemand passt zu dieser Suche.",
+    "alreadyIn": "bereits dabei",
+    "addSelected": "{count} hinzufügen",
+    "membersAdded": "{count} Lernende hinzugefügt."
   },
   "assignment": {
     "title": "Zuweisungen",
@@ -1014,7 +1026,11 @@
     "signInWithSso": "Mit dem Schulkonto",
     "signInWithSsoHint": "Es wird kein Passwort gespeichert. Das Konto wird bei der ersten Anmeldung mit Microsoft aktiviert.",
     "signInWithPassword": "Mit einem vorläufigen Passwort",
-    "signInWithPasswordHint": "Für Personen ohne Schulkonto."
+    "signInWithPasswordHint": "Für Personen ohne Schulkonto.",
+    "teaches": "Fächer",
+    "teachesHint": "Eine Lehrkraft kann mehrere unterrichten: wer Mathematik gibt, gibt oft auch Geometrie und Physik.",
+    "subjects": "Fächer",
+    "areas": "Fachbereiche"
   },
   "groupPasswords": {
     "confirm": "Tippe «{code}» zur Bestätigung",

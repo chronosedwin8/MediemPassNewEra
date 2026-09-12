@@ -16,6 +16,8 @@ import {
   listMembers,
   membershipSchema,
   removeMember,
+  setTeachingStaff,
+  teachingStaffSchema,
   updateGroup,
   updateGroupSchema,
 } from './groups.service.js';
@@ -110,6 +112,17 @@ groupsRouter.post(
  * y no quedan en ningún registro; quien la lanza tiene que copiarlas antes de
  * cerrar la pantalla.
  */
+/** Quién da clase aquí. Es lo que decide qué grupos ve cada docente. */
+groupsRouter.put(
+  '/:id/teachers',
+  requirePermission(PERMISSION.GROUP_UPDATE),
+  validate({ params: uuidParam(), body: teachingStaffSchema }),
+  asyncHandler(async (req, res) => {
+    await setTeachingStaff(requireAuth(req), req.params['id']!, req.body);
+    noContent(res);
+  }),
+);
+
 groupsRouter.post(
   '/:id/reset-student-passwords',
   requirePermission(PERMISSION.USER_RESET_PASSWORD),

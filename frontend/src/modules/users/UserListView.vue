@@ -11,6 +11,7 @@ import EmptyState from '@/design-system/EmptyState.vue';
 import UserRolesDialog from './UserRolesDialog.vue';
 import UserDeleteDialog from './UserDeleteDialog.vue';
 import UserCreateDialog from './UserCreateDialog.vue';
+import TeacherSubjectsDialog from './TeacherSubjectsDialog.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useToast } from '@/composables/useToast';
 
@@ -62,6 +63,8 @@ const SCOPES = [
 const editing = ref<UserSummary | null>(null);
 const deleting = ref<UserSummary | null>(null);
 const creating = ref(false);
+const teaching = ref<{ id: string; nombre: string } | null>(null);
+const teacherIdByUser = ref<Map<string, string>>(new Map());
 
 /**
  * Quién ve el botón de dar de baja.
@@ -91,6 +94,20 @@ async function load(): Promise<void> {
     });
     users.value = result.items;
     total.value = result.meta.total;
+
+    /*
+     * El puente entre persona y ficha docente.
+     *
+     * El listado devuelve usuarios y las materias cuelgan de la ficha, que
+     * tiene otro identificador. Se trae una vez y se cruza, en lugar de pedir
+     * la ficha al abrir cada diálogo.
+     */
+    if (scope.value !== ROLE.STUDENT) {
+      const docentes = await http.list<{ id: string; userId: string }>('/teachers', {
+        pageSize: 100,
+      });
+      teacherIdByUser.value = new Map(docentes.items.map((d) => [d.userId, d.id]));
+    }
   } finally {
     loading.value = false;
   }
@@ -266,6 +283,19 @@ async function resetPassword(user: UserSummary): Promise<void> {
                     {{ t('users.resetPassword') }}
                   </BaseButton>
                   <BaseButton
+                    v-if="user.roles.includes(ROLE.TEACHER) && teacherIdByUser.get(user.id)"
+                    variant="secondary"
+                    size="sm"
+                    @click="
+                      teaching = {
+                        id: teacherIdByUser.get(user.id)!,
+                        nombre: `${user.lastName}, ${user.firstName}`,
+                      }
+                    "
+                  >
+                    {{ t('users.teaches') }}
+                  </BaseButton>
+                  <BaseButton
                     v-if="puedeEliminar(user)"
                     variant="ghost"
                     size="sm"
@@ -290,6 +320,14 @@ async function resetPassword(user: UserSummary): Promise<void> {
         load();
       "
       @cancel="editing = null"
+    />
+
+    <TeacherSubjectsDialog
+      v-if="teaching"
+      :teacher-id="teaching.id"
+      :nombre="teaching.nombre"
+      @saved="teaching = null"
+      @cancel="teaching = null"
     />
 
     <UserCreateDialog

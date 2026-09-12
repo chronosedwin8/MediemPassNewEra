@@ -32,7 +32,8 @@
     "optional": "Opcional",
     "noResults": "Sin resultados",
     "showingPage": "Página {page} de {total}",
-    "choose": "Elija una opción"
+    "choose": "Elija una opción",
+    "remove": "Quitar"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -407,7 +408,18 @@
     "gradeLevel": "Grado",
     "homeroomHint": "Sin director de curso, nadie puede asignar evaluaciones a este grupo.",
     "deleteConfirm": "¿Eliminar el grupo {code}? Los estudiantes no se borran, solo dejan de pertenecer a él.",
-    "deleted": "Grupo {code} eliminado."
+    "deleted": "Grupo {code} eliminado.",
+    "teachers": "Docentes del grupo",
+    "teacher": "Docente",
+    "teachersHint": "Cada docente que figure aquí verá este grupo y podrá asignarle evaluaciones. Un grupo ve varias materias, así que puede haber varios.",
+    "noTeachers": "Todavía no hay ningún docente. Sin ninguno, solo el director de curso verá este grupo.",
+    "addTeacher": "Añadir docente",
+    "pickerHint": "Para electivas y grupos que juntan estudiantes de varios cursos. Los cursos completos llegan solos desde Phidias.",
+    "searchStudents": "Buscar por nombre o código",
+    "noCandidates": "Nadie coincide con esa búsqueda.",
+    "alreadyIn": "ya está",
+    "addSelected": "Añadir {count}",
+    "membersAdded": "{count} estudiante(s) añadido(s)."
   },
   "assignment": {
     "title": "Asignaciones",
@@ -1014,7 +1026,11 @@
     "signInWithSso": "Con su cuenta del colegio",
     "signInWithSsoHint": "No se guarda ninguna contraseña. La cuenta se activa la primera vez que entre con Microsoft.",
     "signInWithPassword": "Con una contraseña temporal",
-    "signInWithPasswordHint": "Para quien no tiene cuenta institucional."
+    "signInWithPasswordHint": "Para quien no tiene cuenta institucional.",
+    "teaches": "Materias",
+    "teachesHint": "Un docente puede dar varias: quien da matemáticas suele dar también geometría y física.",
+    "subjects": "Materias",
+    "areas": "Áreas"
   },
   "groupPasswords": {
     "confirm": "Escribe «{code}» para confirmar",

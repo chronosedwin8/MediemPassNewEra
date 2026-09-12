@@ -24,6 +24,12 @@ studentsRouter.use(authenticate);
 
 const listQuery = paginationQuery.extend({
   groupId: z.string().uuid().optional(),
+  /*
+   * Buscar candidatos para un grupo. Una electiva reúne estudiantes de varios
+   * cursos, así que armarla exige ver más allá del alumnado propio; la
+   * apertura va atada a tener acceso a ese grupo concreto.
+   */
+  availableForGroupId: z.string().uuid().optional(),
   gradeLevelId: z.string().uuid().optional(),
   enrollmentStatus: z
     .enum([

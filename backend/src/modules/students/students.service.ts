@@ -16,6 +16,7 @@ import {
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
+import { assertGroupAccess } from '../groups/groups.service.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
 import { hashPassword } from '../../shared/security/password.js';
 import { isAdmin } from '../../middleware/authorize.js';
@@ -156,15 +157,47 @@ interface Actor {
  */
 function scopeFor(actor: Actor): Record<string, unknown> {
   if (isAdmin(actor)) return {};
+
   if (actor.roles.includes(ROLE.TEACHER)) {
+    // Los de los grupos que dirige y los de aquellos en los que da clase. Solo
+    // lo primero dejaba sin ver a su propio alumnado a quien enseña una
+    // materia sin dirigir el curso, que es la mayoría del claustro.
     return {
       memberships: {
-        some: { active: true, group: { homeroomTeacherId: actor.userId, deletedAt: null } },
+        some: {
+          active: true,
+          group: {
+            deletedAt: null,
+            OR: [
+              { homeroomTeacherId: actor.userId },
+              { teachers: { some: { teacherId: actor.userId } } },
+            ],
+          },
+        },
       },
     };
   }
+
   // Un estudiante solo se ve a sí mismo.
   return { user: { id: actor.userId } };
+}
+
+/**
+ * Buscar a quién meter en un grupo.
+ *
+ * Una materia de electiva reúne estudiantes de varios cursos, así que para
+ * armarla hace falta ver más allá del alumnado propio. La apertura va atada a
+ * un grupo concreto —y a tener acceso a ese grupo— en lugar de ensancharse
+ * para todo: quien puede administrar los miembros de 11-ELECTIVA puede buscar
+ * candidatos en todo el colegio, y quien no, sigue viendo solo lo suyo.
+ *
+ * La alternativa era relajar el alcance general, y eso deja la matrícula
+ * entera a la vista de cualquiera con rol docente para siempre, en lugar de
+ * durante la tarea que lo justifica.
+ */
+async function scopeForCandidates(actor: Actor, groupId: string): Promise<Record<string, unknown>> {
+  await assertGroupAccess(actor, groupId);
+  return { user: { deletedAt: null } };
 }
 
 export async function listStudents(
@@ -174,11 +207,18 @@ export async function listStudents(
     gradeLevelId?: string;
     enrollmentStatus?: EnrollmentStatus;
     evaluableOnly?: boolean;
+    availableForGroupId?: string;
   },
 ): Promise<Paginated<StudentView>> {
+  // `availableForGroupId` cambia a quién se busca, no qué se devuelve de cada
+  // quien: los campos son los mismos y la minimización de datos se mantiene.
+  const alcance = query.availableForGroupId
+    ? await scopeForCandidates(actor, query.availableForGroupId)
+    : scopeFor(actor);
+
   const where = {
     user: { deletedAt: null },
-    ...scopeFor(actor),
+    ...alcance,
     ...(query.groupId ? { memberships: { some: { groupId: query.groupId, active: true } } } : {}),
     ...(query.gradeLevelId ? { gradeLevelId: query.gradeLevelId } : {}),
     ...(query.enrollmentStatus ? { enrollmentStatus: query.enrollmentStatus } : {}),

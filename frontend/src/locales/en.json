@@ -32,7 +32,8 @@
     "optional": "Optional",
     "noResults": "No results",
     "showingPage": "Page {page} of {total}",
-    "choose": "Choose one"
+    "choose": "Choose one",
+    "remove": "Remove"
   },
   "auth": {
     "signIn": "Sign in",
@@ -407,7 +408,18 @@
     "gradeLevel": "Grade",
     "homeroomHint": "Without a homeroom teacher, nobody can assign assessments to this group.",
     "deleteConfirm": "Delete group {code}? Students are not deleted, they simply stop belonging to it.",
-    "deleted": "Group {code} deleted."
+    "deleted": "Group {code} deleted.",
+    "teachers": "Teachers of this group",
+    "teacher": "Teacher",
+    "teachersHint": "Every teacher listed here sees this group and can assign it assessments. A group takes several subjects, so there may be several.",
+    "noTeachers": "No teachers yet. Without any, only the homeroom teacher will see this group.",
+    "addTeacher": "Add teacher",
+    "pickerHint": "For electives and groups that mix students from several courses. Whole courses arrive from Phidias on their own.",
+    "searchStudents": "Search by name or code",
+    "noCandidates": "Nobody matches that search.",
+    "alreadyIn": "already in",
+    "addSelected": "Add {count}",
+    "membersAdded": "{count} student(s) added."
   },
   "assignment": {
     "title": "Assignments",
@@ -1014,7 +1026,11 @@
     "signInWithSso": "With their school account",
     "signInWithSsoHint": "No password is stored. The account activates the first time they sign in with Microsoft.",
     "signInWithPassword": "With a temporary password",
-    "signInWithPasswordHint": "For people without an institutional account."
+    "signInWithPasswordHint": "For people without an institutional account.",
+    "teaches": "Subjects",
+    "teachesHint": "A teacher can take several: whoever teaches maths often teaches geometry and physics too.",
+    "subjects": "Subjects",
+    "areas": "Areas"
   },
   "groupPasswords": {
     "confirm": "Type \"{code}\" to confirm",
