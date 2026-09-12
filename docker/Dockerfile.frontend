@@ -9,11 +9,12 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY packages/shared/package.json ./packages/shared/
 
-RUN npm ci --workspaces --include-workspace-root
+# Igual que en la imagen de la API, al revés: compilar la web no necesita
+# Prisma, ni Express, ni el cliente de S3.
+RUN npm ci --workspace frontend --workspace packages/shared --include-workspace-root
 
 COPY tsconfig.base.json ./
 COPY packages/shared ./packages/shared

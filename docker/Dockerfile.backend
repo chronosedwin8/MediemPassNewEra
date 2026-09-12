@@ -14,10 +14,16 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
 COPY packages/shared/package.json ./packages/shared/
 
-RUN npm ci --workspaces --include-workspace-root
+# Solo los espacios de trabajo que esta imagen necesita.
+#
+# Antes ponía `--workspaces`, que instala también el frontend: Vite, Vue,
+# ECharts, Tiptap y el resto de la cadena de compilación web, dentro de la
+# imagen de la API, que no usa ni una de esas dependencias. En un servidor
+# pequeño eso no es solo tiempo, es memoria que compite con las otras etapas
+# que se construyen a la vez.
+RUN npm ci --workspace backend --workspace packages/shared --include-workspace-root
 
 
 # --- 2 · Compilación ---------------------------------------------------------

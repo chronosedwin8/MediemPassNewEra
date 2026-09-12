@@ -1,7 +1,18 @@
 # =============================================================================
 # Medienpass — despliegue completo
 #
-#   docker compose --env-file .env up -d --build
+# El servidor NO compila: descarga las imágenes que GitHub Actions ya
+# construyó y probó. Compilar en el servidor significaba tres `npm ci` a la
+# vez peleándose por la memoria de una instancia pequeña, y un despliegue que
+# pasaba de cuarenta minutos sin llegar a terminar. Además, la imagen que se
+# ejecuta pasa a ser exactamente la que se verificó, y no una reconstrucción
+# que podría diferir.
+#
+# En el servidor:
+#   docker compose --env-file .env up -d
+#
+# En local, añadiendo las instrucciones de compilación:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 #
 # Los secretos salen del `.env` de la raíz. Ninguno está escrito aquí, y este
 # fichero sí se versiona: por eso cada valor sensible se declara como
@@ -44,9 +55,7 @@ services:
 
   # --- API -------------------------------------------------------------------
   backend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.backend
+    image: ghcr.io/chronosedwin8/medienpass-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -141,9 +150,7 @@ services:
 
   # --- Aplicación web --------------------------------------------------------
   web:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.frontend
+    image: ghcr.io/chronosedwin8/medienpass-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       backend:
