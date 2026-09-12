@@ -66,7 +66,7 @@ la validación de entorno se hace con Zod al inicio, no al primer uso.
 ### 2 · Arranque
 
 ```bash
-docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+docker compose --env-file .env up -d --build
 ```
 
 El backend aplica las migraciones pendientes al arrancar (`prisma migrate
@@ -80,7 +80,7 @@ La primera vez hay que sembrar el marco KMK, los roles, la escala de
 calificación y la cuenta de administración:
 
 ```bash
-docker compose -f docker/docker-compose.yml exec backend \
+docker compose exec backend \
   node --experimental-strip-types backend/prisma/seed/index.ts
 ```
 
@@ -120,11 +120,11 @@ contenedores de aplicación: se pueden destruir y reconstruir sin pérdida.
 
 ```bash
 # Copia
-docker compose -f docker/docker-compose.yml exec -T postgres \
+docker compose exec -T postgres \
   pg_dump -U "$POSTGRES_USER" -Fc medienpass > medienpass-$(date +%F).dump
 
 # Restauración
-docker compose -f docker/docker-compose.yml exec -T postgres \
+docker compose exec -T postgres \
   pg_restore -U "$POSTGRES_USER" -d medienpass --clean --if-exists < medienpass-2026-09-09.dump
 ```
 
@@ -140,7 +140,7 @@ Dos advertencias que conviene leer antes de necesitarlas:
 
 ```bash
 git pull
-docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+docker compose --env-file .env up -d --build
 ```
 
 Las migraciones se aplican solas al arrancar el backend. Antes de una
@@ -149,7 +149,7 @@ actualización que toque el esquema, hacer copia.
 ## Registros
 
 ```bash
-docker compose -f docker/docker-compose.yml logs -f backend
+docker compose logs -f backend
 ```
 
 Los registros son JSON estructurado (pino). Lo que **nunca** aparece en ellos,

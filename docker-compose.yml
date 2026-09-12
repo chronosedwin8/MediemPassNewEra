@@ -1,12 +1,18 @@
 # =============================================================================
 # Medienpass — despliegue completo
 #
-#   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+#   docker compose --env-file .env up -d --build
 #
 # Los secretos salen del `.env` de la raíz. Ninguno está escrito aquí, y este
 # fichero sí se versiona: por eso cada valor sensible se declara como
 # `${VARIABLE:?mensaje}`, que hace fallar el arranque si falta en lugar de
 # levantar el sistema con un valor por defecto inseguro.
+#
+# Vive en la raíz y no en `docker/` a propósito. Con el compose en una
+# subcarpeta hace falta `context: ..`, y hay plataformas de despliegue que no
+# saben resolver un contexto que sale hacia arriba: copian el repositorio,
+# buscan el Dockerfile relativo al compose y no lo encuentran. La raíz es
+# donde todo el mundo lo espera.
 # =============================================================================
 
 name: medienpass
@@ -39,7 +45,7 @@ services:
   # --- API -------------------------------------------------------------------
   backend:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.backend
     restart: unless-stopped
     depends_on:
@@ -136,7 +142,7 @@ services:
   # --- Aplicación web --------------------------------------------------------
   web:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.frontend
     restart: unless-stopped
     depends_on:
