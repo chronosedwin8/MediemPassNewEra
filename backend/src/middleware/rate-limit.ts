@@ -34,7 +34,13 @@ export const generalRateLimit = buildLimiter(
   ERROR_CODE.RATE_LIMIT_EXCEEDED,
 );
 
-/** Ventana amplia y cupo corto: lo que desalienta la fuerza bruta. */
+/**
+ * Solo para el arranque de SSO.
+ *
+ * Ya no cubre entrar ni cambiar la contraseña: un cupo por dirección IP no
+ * sirve donde un colegio entero comparte una. De eso se ocupa el bloqueo por
+ * cuenta, en `auth.service.ts`, que es independiente de la IP.
+ */
 export const authRateLimit = buildLimiter(
   env.RATE_LIMIT_AUTH_MAX,
   15 * 60 * 1000,

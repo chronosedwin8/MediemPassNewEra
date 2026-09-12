@@ -17,22 +17,35 @@ import {
 
 export const authRouter: Router = Router();
 
-// El límite estricto cubre login y cambio de contraseña, que son las dos
-// rutas donde probar repetidamente tiene sentido para un atacante.
-authRouter.post(
-  '/login',
-  authRateLimit,
-  validate({ body: loginSchema }),
-  asyncHandler(loginController),
-);
+/*
+ * Entrar no se limita por IP, y es deliberado.
+ *
+ * El colegio entero sale a internet por una sola dirección: mil estudiantes
+ * y cien docentes comparten IP. Un cupo por dirección no distingue a un
+ * atacante de la clase de séptimo entrando a primera hora, y con diez
+ * intentos cada cuarto de hora el centro se quedaba fuera antes del segundo
+ * timbre. Nos pasó aquí mismo, con dos personas.
+ *
+ * Lo que de verdad frena adivinar una contraseña es el bloqueo por cuenta:
+ * cinco fallos y esa cuenta queda cerrada quince minutos, sin afectar a
+ * nadie más. Está en `auth.service.ts` y es independiente de la IP, que es
+ * justo lo que hace falta aquí.
+ *
+ * El límite general —trescientas peticiones por minuto— sigue aplicando y
+ * acota una inundación del endpoint.
+ */
+authRouter.post('/login', validate({ body: loginSchema }), asyncHandler(loginController));
 
 authRouter.post('/refresh', asyncHandler(refreshController));
 authRouter.post('/logout', asyncHandler(logoutController));
 authRouter.get('/me', authenticate, asyncHandler(meController));
 
+// Cambiar la contraseña ya exige haber entrado, así que no es una vía para
+// adivinar nada. Compartía cupo con el login, y el efecto era absurdo: a
+// quien se le obliga a cambiarla al entrar se le agotaba el cupo entrando, y
+// la pantalla de cambio le respondía «demasiadas peticiones».
 authRouter.post(
   '/change-password',
-  authRateLimit,
   authenticate,
   validate({ body: changePasswordSchema }),
   asyncHandler(changePasswordController),
