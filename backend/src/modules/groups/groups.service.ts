@@ -2,16 +2,16 @@ import { z } from 'zod';
 import {
   AUDIT_ACTION,
   ERROR_CODE,
-  ROLE,
   type LocalizedText,
   type Paginated,
   type Role,
+  teaches,
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
-import { assertInScope, isAdmin } from '../../middleware/authorize.js';
+import { assertInScope, canManageAllGroups } from '../../middleware/authorize.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 
 /**
@@ -61,6 +61,7 @@ export interface GroupView {
 interface Actor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
 }
 
 /**
@@ -81,9 +82,9 @@ interface Actor {
  * únicamente por administración.
  */
 function scopeFor(actor: Actor): Record<string, unknown> {
-  if (isAdmin(actor)) return {};
+  if (canManageAllGroups(actor)) return {};
 
-  if (actor.roles.includes(ROLE.TEACHER)) {
+  if (teaches(actor.roles)) {
     return {
       OR: [
         { homeroomTeacherId: actor.userId },
@@ -171,8 +172,45 @@ export async function listGroups(
 }
 
 /** Comprueba que el actor puede operar sobre el grupo indicado. */
+/**
+ * Todos los grupos del año, en versión mínima.
+ *
+ * Para armar un grupo mixto —una electiva con estudiantes de 10A, 10B y 11A—
+ * hay que poder filtrar por el curso de origen, y un docente solo alcanza sus
+ * propios grupos. Esto le deja ver que existen los demás, sin ver a nadie:
+ * código, grado y cuántos estudiantes, nada más. Los nombres solo aparecen al
+ * buscar candidatos para un grupo propio.
+ */
+export async function listGroupCatalog(): Promise<
+  Array<{ id: string; code: string; gradeLevel: string; studentCount: number }>
+> {
+  const year = await prisma.academicYear.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+  if (!year) return [];
+
+  const filas = await prisma.group.findMany({
+    where: { academicYearId: year.id, deletedAt: null, active: true },
+    orderBy: { code: 'asc' },
+    select: {
+      id: true,
+      code: true,
+      gradeLevel: { select: { code: true } },
+      _count: { select: { memberships: { where: { active: true } } } },
+    },
+  });
+
+  return filas.map((fila) => ({
+    id: fila.id,
+    code: fila.code,
+    gradeLevel: fila.gradeLevel.code,
+    studentCount: fila._count.memberships,
+  }));
+}
+
 export async function assertGroupAccess(actor: Actor, groupId: string): Promise<void> {
-  if (isAdmin(actor)) return;
+  if (canManageAllGroups(actor)) return;
 
   const group = await prisma.group.findFirst({
     where: { id: groupId, deletedAt: null, ...scopeFor(actor) },
@@ -272,10 +310,10 @@ export async function createGroup(actor: Actor, input: CreateGroupInput): Promis
     });
   }
 
-  // Un docente que crea un grupo queda como titular salvo que sea un
-  // administrador asignando a otra persona: si no, crearía grupos que después
-  // no podría ver.
-  const homeroomTeacherId = isAdmin(actor)
+  // Un docente que crea un grupo queda como titular salvo que quien lo crea
+  // reparta grupos (administración o coordinación): si no, crearía grupos que
+  // después no podría ver.
+  const homeroomTeacherId = canManageAllGroups(actor)
     ? (input.homeroomTeacherId ?? null)
     : (input.homeroomTeacherId ?? actor.userId);
 
@@ -301,11 +339,25 @@ export async function updateGroup(
 ): Promise<GroupView> {
   await assertGroupAccess(actor, id);
 
-  // Solo un administrador puede cambiar de titular: si un docente pudiera,
-  // podría cederse a sí mismo cualquier grupo o perder el suyo por error.
-  if (input.homeroomTeacherId !== undefined && !isAdmin(actor)) {
-    throw AppError.forbidden(ERROR_CODE.INSUFFICIENT_PERMISSIONS, {
-      message: 'Only an administrator can reassign the homeroom teacher',
+  /*
+   * Cambiar de titular.
+   *
+   * Antes solo podía administración, y el formulario de grupo manda siempre el
+   * titular, así que un docente que corregía el nombre de su propio grupo
+   * recibía un 403. Ahora puede quien ya alcanza el grupo —`assertGroupAccess`
+   * lo acaba de comprobar—, con una salvaguarda: quien no reparte grupos y
+   * cede la titularidad sigue figurando como docente del grupo. Si no, un
+   * cambio de titular dejaría a esa persona fuera de su propio curso.
+   */
+  if (
+    input.homeroomTeacherId !== undefined &&
+    input.homeroomTeacherId !== actor.userId &&
+    !canManageAllGroups(actor)
+  ) {
+    await prisma.groupTeacher.upsert({
+      where: { groupId_teacherId: { groupId: id, teacherId: actor.userId } },
+      create: { groupId: id, teacherId: actor.userId },
+      update: {},
     });
   }
 

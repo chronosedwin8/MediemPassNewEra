@@ -22,7 +22,7 @@ export const createUserSchema = z.object({
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
   preferredLanguage: z.enum([LANGUAGE.ES, LANGUAGE.DE, LANGUAGE.EN]).default(LANGUAGE.ES),
-  roles: z.array(z.enum([ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT])).min(1),
+  roles: z.array(z.enum([ROLE.ADMIN, ROLE.COORDINATOR, ROLE.TEACHER, ROLE.STUDENT])).min(1),
   /**
    * Opcional a propósito: sin contraseña la cuenta nace en
    * `PENDING_ACTIVATION`, que es el camino de quienes entran por SSO.
@@ -46,7 +46,7 @@ export const updateUserSchema = z.object({
 });
 
 export const setRolesSchema = z.object({
-  roles: z.array(z.enum([ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT])).min(1),
+  roles: z.array(z.enum([ROLE.ADMIN, ROLE.COORDINATOR, ROLE.TEACHER, ROLE.STUDENT])).min(1),
 });
 
 export const resetPasswordSchema = z.object({
@@ -55,7 +55,7 @@ export const resetPasswordSchema = z.object({
 });
 
 export const listUsersQuery = paginationQuery.extend({
-  role: z.enum([ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT]).optional(),
+  role: z.enum([ROLE.ADMIN, ROLE.COORDINATOR, ROLE.TEACHER, ROLE.STUDENT]).optional(),
   /**
    * Varios roles a la vez, separados por comas.
    *
@@ -75,7 +75,7 @@ export const listUsersQuery = paginationQuery.extend({
     )
     .pipe(
       z
-        .array(z.enum([ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT]))
+        .array(z.enum([ROLE.ADMIN, ROLE.COORDINATOR, ROLE.TEACHER, ROLE.STUDENT]))
         .min(1)
         .optional(),
     ),

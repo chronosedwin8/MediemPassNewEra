@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ATTEMPT_STATUS, ROLE, type Role } from '@medienpass/shared';
+import { ATTEMPT_STATUS, type Role, teaches, PERMISSION } from '@medienpass/shared';
 import type { Prisma } from '@prisma/client';
 import { isAdmin } from '../../middleware/authorize.js';
 
@@ -35,6 +35,25 @@ export type StatisticsFilters = z.infer<typeof statisticsFiltersSchema>;
 export interface StatisticsActor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
+}
+
+/**
+ * Quien ve las estadísticas de todo el colegio.
+ *
+ * Administración, y cualquiera con `stats:read_global`, que hoy es
+ * coordinación: revisar cómo le fue al claustro en la capacitación exige ver
+ * más que los grupos propios.
+ */
+function seesEverything(actor: StatisticsActor): boolean {
+  return isAdmin(actor) || (actor.permissions?.includes(PERMISSION.STATS_READ_GLOBAL) ?? false);
+}
+
+/** Los grupos en los que da clase: titular o docente del grupo. */
+function teachingGroup(actor: StatisticsActor) {
+  return {
+    OR: [{ homeroomTeacherId: actor.userId }, { teachers: { some: { teacherId: actor.userId } } }],
+  };
 }
 
 /**
@@ -61,12 +80,14 @@ export const COUNTED_ATTEMPT_STATUSES = [
  * incluso cuando el usuario pide filtros más amplios: pedir no es poder.
  */
 function scopeClause(actor: StatisticsActor): Prisma.AttemptAnswerWhereInput {
-  if (isAdmin(actor)) return {};
+  if (seesEverything(actor)) return {};
 
-  if (actor.roles.includes(ROLE.TEACHER)) {
+  // Antes solo contaba ser titular, así que un co-docente no veía las
+  // estadísticas del grupo en el que da clase.
+  if (teaches(actor.roles)) {
     return {
       OR: [
-        { group: { homeroomTeacherId: actor.userId } },
+        { group: teachingGroup(actor) },
         { attempt: { version: { assessment: { createdById: actor.userId } } } },
       ],
     };
@@ -160,12 +181,12 @@ const ATTEMPT_FILTER_MAP: Array<{
 
 /** Alcance sobre intentos. Mismo criterio que el de respuestas. */
 function attemptScopeClause(actor: StatisticsActor): Prisma.AssessmentAttemptWhereInput | null {
-  if (isAdmin(actor)) return null;
+  if (seesEverything(actor)) return null;
 
-  if (actor.roles.includes(ROLE.TEACHER)) {
+  if (teaches(actor.roles)) {
     return {
       OR: [
-        { recipient: { assignment: { group: { homeroomTeacherId: actor.userId } } } },
+        { recipient: { assignment: { group: teachingGroup(actor) } } },
         { version: { assessment: { createdById: actor.userId } } },
       ],
     };

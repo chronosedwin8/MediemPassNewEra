@@ -45,7 +45,7 @@ const form = reactive({
   password: '',
 });
 
-const ROLES: Role[] = [ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT];
+const ROLES: Role[] = [ROLE.ADMIN, ROLE.COORDINATOR, ROLE.TEACHER, ROLE.STUDENT];
 
 const passwordValida = computed(
   () =>

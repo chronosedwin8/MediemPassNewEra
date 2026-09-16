@@ -87,7 +87,8 @@
   "roles": {
     "ADMIN": "Administrator",
     "TEACHER": "Teacher",
-    "STUDENT": "Student"
+    "STUDENT": "Student",
+    "COORDINATOR": "Coordinator"
   },
   "dashboard": {
     "student": {
@@ -430,7 +431,13 @@
     "addSelected": "Add {count}",
     "membersAdded": "{count} student(s) added.",
     "memberRemoved": "No longer in the group.",
-    "delete": "Remove the group"
+    "delete": "Remove the group",
+    "fromCourse": "Source course",
+    "anyCourse": "Any course",
+    "selectAll": "Pick all {count}",
+    "resetPassword": "New password",
+    "passwordIssued": "Password reset",
+    "passwordIssuedBody": "{name} signs in with the username {user} and this password. It is shown once and must be changed on sign-in."
   },
   "assignment": {
     "title": "Assignments",
@@ -466,7 +473,10 @@
     "cancelBody": "It stops applying to {code}. Attempts already submitted are kept.",
     "cancelConfirm": "Type \"{code}\" to confirm",
     "withWork": "{count} already started",
-    "dueAt": "Closes"
+    "dueAt": "Closes",
+    "editDates": "Dates",
+    "opens": "Opens",
+    "noEndHint": "Empty if it does not close: it stays open until you cancel it."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -1031,7 +1041,8 @@
       "admin": "Administration",
       "staff": "Teachers and administration",
       "student": "Students",
-      "teacher": "Teachers"
+      "teacher": "Teachers",
+      "coordinator": "Coordination"
     },
     "roleMeaning": {
       "ADMIN": "Can do everything: accounts, roles, passwords, deletions and anyone’s data.",
@@ -1102,5 +1113,21 @@
   "statistics": {
     "teacher": "Teacher",
     "period": "Period"
+  },
+  "phidiasImport": {
+    "open": "Bring courses from Phidias",
+    "title": "Bring courses from Phidias",
+    "intro": "Choose your courses. Each arrives as a group with its students, and you are added as its teacher. A course that already exists is not duplicated.",
+    "search": "Search a course, e.g. 10B",
+    "allGrades": "All grades",
+    "students": "{count} students",
+    "yours": "already yours",
+    "exists": "already exists",
+    "selection": "{courses} courses · {students} students",
+    "import": "Bring",
+    "done": "{count} group(s) ready.",
+    "groupStudents": "{count} students",
+    "summary": "{created} new accounts and {updated} updated.",
+    "issues": "Issues ({count})"
   }
 }

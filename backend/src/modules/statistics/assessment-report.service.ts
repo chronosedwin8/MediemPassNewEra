@@ -1,4 +1,4 @@
-import { ROLE, richTextToPlain, toPercentage } from '@medienpass/shared';
+import { richTextToPlain, toPercentage, teaches, PERMISSION } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { isAdmin } from '../../middleware/authorize.js';
 import { buildAnswerFilter, buildAttemptFilter } from './filters.js';
@@ -81,10 +81,25 @@ function labelOf(gradeLabel: unknown): string {
 
 /** El alcance del docente, aplicado también al recuento de destinatarios. */
 function recipientScope(actor: StatisticsActor) {
-  if (isAdmin(actor) || !actor.roles.includes(ROLE.TEACHER)) return {};
+  if (
+    isAdmin(actor) ||
+    (actor.permissions?.includes(PERMISSION.STATS_READ_GLOBAL) ?? false) ||
+    !teaches(actor.roles)
+  ) {
+    return {};
+  }
   return {
     OR: [
-      { assignment: { group: { homeroomTeacherId: actor.userId } } },
+      {
+        assignment: {
+          group: {
+            OR: [
+              { homeroomTeacherId: actor.userId },
+              { teachers: { some: { teacherId: actor.userId } } },
+            ],
+          },
+        },
+      },
       { assignment: { version: { assessment: { createdById: actor.userId } } } },
     ],
   };

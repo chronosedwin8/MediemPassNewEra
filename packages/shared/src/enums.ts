@@ -8,10 +8,33 @@
 
 export const ROLE = {
   ADMIN: 'ADMIN',
+  /**
+   * Coordinación académica.
+   *
+   * Un docente con tareas de claustro: prepara las evaluaciones de
+   * capacitación para el resto de docentes, reparte grupos entre ellos igual
+   * que administración, y revisa cómo les fue en la capacitación. No toca
+   * cuentas, roles ni configuración: eso sigue siendo de administración.
+   */
+  COORDINATOR: 'COORDINATOR',
   TEACHER: 'TEACHER',
   STUDENT: 'STUDENT',
 } as const;
 export type Role = (typeof ROLE)[keyof typeof ROLE];
+
+/**
+ * Los roles que dan clase.
+ *
+ * Coordinación también tiene grupos y alumnado, así que todo lo que antes
+ * preguntaba «¿es docente?» para decidir un alcance tiene que preguntar esto.
+ * Sin ello, alguien con solo el rol de coordinación caía en la rama de
+ * estudiante —«solo lo tuyo»— y no veía ni una estadística.
+ */
+export const TEACHING_ROLES: readonly Role[] = [ROLE.TEACHER, ROLE.COORDINATOR];
+
+export function teaches(roles: readonly Role[]): boolean {
+  return roles.some((role) => TEACHING_ROLES.includes(role));
+}
 
 export const USER_STATUS = {
   /** Cuenta creada por sincronización, sin credenciales utilizables todavía. */

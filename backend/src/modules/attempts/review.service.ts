@@ -1,4 +1,6 @@
 import {
+  ASSESSMENT_PURPOSE,
+  ASSESSMENT_AUDIENCE,
   ERROR_CODE,
   PERMISSION,
   hasPermission,
@@ -70,10 +72,50 @@ export interface PendingAnswer {
   } | null;
 }
 
-/** Qué respuestas puede corregir esta persona. */
+/**
+ * Qué respuestas puede corregir esta persona.
+ *
+ * Tres caminos, y basta cualquiera:
+ *
+ *  - **Es suya la evaluación.** Lo de siempre.
+ *  - **Da clase en el grupo de quien respondió.** Antes no contaba, y en un
+ *    grupo con dos profesores el segundo no podía corregir ni una respuesta
+ *    de su propio alumnado si la evaluación la había creado el otro. La
+ *    respuesta ya lleva el grupo guardado, así que se filtra por él sin
+ *    recorrer intentos y asignaciones.
+ *  - **Revisa la capacitación y la respuesta es de un docente.** Es lo que
+ *    hace coordinación: corregir las evaluaciones de capacitación de todo el
+ *    claustro, aunque las haya preparado otra persona.
+ */
 function scopeClause(actor: Actor): Prisma.AttemptAnswerWhereInput {
   if (hasPermission(actor.permissions, [PERMISSION.RESULT_READ_ALL])) return {};
-  return { attempt: { version: { assessment: { createdById: actor.userId } } } };
+
+  const caminos: Prisma.AttemptAnswerWhereInput[] = [
+    { attempt: { version: { assessment: { createdById: actor.userId } } } },
+    {
+      group: {
+        OR: [
+          { homeroomTeacherId: actor.userId },
+          { teachers: { some: { teacherId: actor.userId } } },
+        ],
+      },
+    },
+  ];
+
+  if (hasPermission(actor.permissions, [PERMISSION.TRAINING_REVIEW])) {
+    caminos.push({
+      attempt: {
+        version: {
+          assessment: {
+            audience: ASSESSMENT_AUDIENCE.TEACHER,
+            purpose: ASSESSMENT_PURPOSE.TRAINING,
+          },
+        },
+      },
+    });
+  }
+
+  return { OR: caminos };
 }
 
 export async function listPendingReview(

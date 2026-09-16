@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { http, ApiError } from '@/services/http';
 import BaseButton from '@/design-system/BaseButton.vue';
@@ -38,6 +38,9 @@ const { t } = useI18n();
 const toast = useToast();
 
 const busqueda = ref('');
+/** Curso de origen: electivas se arman trayendo gente curso a curso. */
+const cursoOrigen = ref('');
+const cursos = ref<Array<{ id: string; code: string; studentCount: number }>>([]);
 const buscando = ref(false);
 const guardando = ref(false);
 const resultados = ref<Candidato[]>([]);
@@ -48,9 +51,29 @@ const dentro = computed(() => new Set(props.yaDentro));
 
 let temporizador: ReturnType<typeof setTimeout> | undefined;
 
+onMounted(async () => {
+  try {
+    // Todos los cursos del año, sin datos personales: solo para filtrar.
+    const catalogo =
+      await http.get<Array<{ id: string; code: string; studentCount: number }>>('/groups/catalog');
+    cursos.value = catalogo.filter((c) => c.id !== props.groupId);
+  } catch {
+    cursos.value = [];
+  }
+});
+
+watch(cursoOrigen, () => {
+  // Con un curso elegido se lista entero, sin esperar a que se escriba nada.
+  if (cursoOrigen.value) void buscar();
+  else if (busqueda.value.trim().length < 2) {
+    resultados.value = [];
+    buscado.value = false;
+  }
+});
+
 watch(busqueda, (valor) => {
   clearTimeout(temporizador);
-  if (valor.trim().length < 2) {
+  if (valor.trim().length < 2 && !cursoOrigen.value) {
     resultados.value = [];
     buscado.value = false;
     return;
@@ -65,8 +88,9 @@ async function buscar(): Promise<void> {
   try {
     const resultado = await http.list<Candidato>('/students', {
       availableForGroupId: props.groupId,
-      search: busqueda.value.trim(),
-      pageSize: 40,
+      ...(busqueda.value.trim().length >= 2 ? { search: busqueda.value.trim() } : {}),
+      ...(cursoOrigen.value ? { groupId: cursoOrigen.value } : {}),
+      pageSize: 100,
     });
     resultados.value = resultado.items;
     buscado.value = true;
@@ -75,6 +99,13 @@ async function buscar(): Promise<void> {
   } finally {
     buscando.value = false;
   }
+}
+
+/** Marca a todos los que aparecen y no están ya: un curso entero de un toque. */
+function elegirTodos(): void {
+  elegidos.value = new Set(
+    resultados.value.filter((c) => !dentro.value.has(c.id)).map((c) => c.id),
+  );
 }
 
 function alternar(id: string): void {
@@ -108,15 +139,35 @@ async function anadir(): Promise<void> {
   <div class="flex flex-col gap-3">
     <p class="text-sm text-ink-muted">{{ t('group.pickerHint') }}</p>
 
-    <label class="flex flex-col gap-1.5">
-      <span class="sr-only">{{ t('group.searchStudents') }}</span>
-      <input
-        v-model="busqueda"
-        type="search"
-        :placeholder="t('group.searchStudents')"
-        class="h-9 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
-      />
-    </label>
+    <div class="flex flex-wrap gap-2">
+      <label class="flex min-w-48 flex-1 flex-col gap-1.5">
+        <span class="sr-only">{{ t('group.searchStudents') }}</span>
+        <input
+          v-model="busqueda"
+          type="search"
+          :placeholder="t('group.searchStudents')"
+          class="h-9 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
+        />
+      </label>
+      <label class="flex flex-col gap-1.5">
+        <span class="sr-only">{{ t('group.fromCourse') }}</span>
+        <select
+          v-model="cursoOrigen"
+          class="h-9 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="">{{ t('group.anyCourse') }}</option>
+          <option v-for="c in cursos" :key="c.id" :value="c.id">
+            {{ c.code }} · {{ c.studentCount }}
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <div v-if="resultados.length > 0" class="flex justify-end">
+      <BaseButton variant="ghost" size="sm" @click="elegirTodos">
+        {{ t('group.selectAll', { count: resultados.filter((c) => !dentro.has(c.id)).length }) }}
+      </BaseButton>
+    </div>
 
     <BaseSpinner v-if="buscando" size="sm" />
 

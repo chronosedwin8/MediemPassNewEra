@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 import {
   ERROR_CODE,
+  PERMISSION,
   ROLE,
   hasAnyPermission,
   hasPermission,
@@ -75,6 +76,24 @@ export function requireRole(...roles: Role[]): RequestHandler {
 
 export function isAdmin(auth: { roles: Role[] }): boolean {
   return auth.roles.includes(ROLE.ADMIN);
+}
+
+/**
+ * Si alguien alcanza todos los grupos y a todo su alumnado.
+ *
+ * Por permiso y no por rol: administración lo tiene por serlo, y coordinación
+ * porque reparte grupos entre docentes, que es imposible si solo se ven los
+ * propios. Decidirlo con `roles.includes(...)` obligaría a tocar cada servicio
+ * el día que otro rol necesite lo mismo.
+ *
+ * `permissions` es opcional porque hay llamadas internas que solo conocen
+ * usuario y roles; sin permisos, cuenta únicamente ser administrador.
+ */
+export function canManageAllGroups(auth: {
+  roles: Role[];
+  permissions?: readonly string[];
+}): boolean {
+  return isAdmin(auth) || (auth.permissions?.includes(PERMISSION.GROUP_MANAGE_ALL) ?? false);
 }
 
 /**

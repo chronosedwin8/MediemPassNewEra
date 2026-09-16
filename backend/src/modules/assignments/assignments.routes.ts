@@ -13,6 +13,8 @@ import {
   listAssignments,
   listRecipients,
   syncGroupRecipients,
+  updateAssignment,
+  updateAssignmentSchema,
 } from './assignments.service.js';
 
 export const assignmentsRouter: Router = Router();
@@ -70,5 +72,15 @@ assignmentsRouter.delete(
   asyncHandler(async (req, res) => {
     await cancelAssignment(requireAuth(req), req.params['id']!);
     noContent(res);
+  }),
+);
+
+/** Fechas, intentos y tiempo de una asignación ya hecha. El destino no cambia. */
+assignmentsRouter.patch(
+  '/:id',
+  requirePermission(PERMISSION.ASSESSMENT_ASSIGN),
+  validate({ params: uuidParam(), body: updateAssignmentSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await updateAssignment(requireAuth(req), req.params['id']!, req.body));
   }),
 );

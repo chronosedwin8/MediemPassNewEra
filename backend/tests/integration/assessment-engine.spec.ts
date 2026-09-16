@@ -348,6 +348,59 @@ describe('ciclo de vida de una evaluación', () => {
   });
 });
 
+describe('cambiar las fechas de una asignación', () => {
+  async function patchAssignment(token: string, id: string, body: Record<string, unknown>) {
+    return request(app)
+      .patch(`/api/assignments/${id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(body);
+  }
+
+  it('quien la asignó mueve el cierre', async () => {
+    const { versionId } = await createPublishedAssessment(fixture);
+    const assignmentId = await assignToGroup(fixture, versionId);
+    const endAt = new Date(Date.now() + 7 * 24 * 3_600_000).toISOString();
+
+    const response = await patchAssignment(fixture.teacherToken, assignmentId, { endAt });
+
+    expect(response.status).toBe(200);
+    const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: assignmentId } });
+    expect(stored.endAt?.toISOString()).toBe(endAt);
+  });
+
+  it('rechaza un cierre anterior a la apertura que ya tenía', async () => {
+    const { versionId } = await createPublishedAssessment(fixture);
+    const assignmentId = await assignToGroup(fixture, versionId);
+
+    const response = await patchAssignment(fixture.teacherToken, assignmentId, {
+      endAt: new Date(Date.now() - 24 * 3_600_000).toISOString(),
+    });
+
+    expect(response.status).toBe(409);
+  });
+
+  it('el co-docente del grupo también puede, y un docente ajeno no', async () => {
+    const { versionId } = await createPublishedAssessment(fixture);
+    const assignmentId = await assignToGroup(fixture, versionId);
+    const coTeacher = await createTeacher({ username: 'docente.codocente' });
+    await createTeacher({ username: 'docente.ajeno.fechas' });
+    await prisma.groupTeacher.create({
+      data: { groupId: fixture.groupId, teacherId: coTeacher.id },
+    });
+    const body = { attemptsAllowed: 3 };
+
+    const shared = await patchAssignment(await tokenFor('docente.codocente'), assignmentId, body);
+    expect(shared.status).toBe(200);
+
+    const foreign = await patchAssignment(
+      await tokenFor('docente.ajeno.fechas'),
+      assignmentId,
+      body,
+    );
+    expect(foreign.status).toBe(403);
+  });
+});
+
 describe('realización de una evaluación', () => {
   it('recorre el flujo completo y calcula nota y estrellas', async () => {
     const { versionId, questionIds } = await createPublishedAssessment(fixture);

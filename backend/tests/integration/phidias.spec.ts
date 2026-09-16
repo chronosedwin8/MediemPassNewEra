@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { ENROLLMENT_STATUS, ERROR_CODE, EXTERNAL_SOURCE, USER_STATUS } from '@medienpass/shared';
+import {
+  ENROLLMENT_STATUS,
+  ERROR_CODE,
+  EXTERNAL_SOURCE,
+  ROLE,
+  USER_STATUS,
+} from '@medienpass/shared';
 import { createApp } from '../../src/app.js';
 import { prisma } from '../../src/infrastructure/database/prisma.js';
 import {
@@ -19,6 +25,7 @@ import {
   TEST_PASSWORD,
   createAdmin,
   createTeacher,
+  createUser,
   seedRolesAndPermissions,
 } from '../helpers/factories.js';
 
@@ -418,6 +425,69 @@ describe('POST /api/integrations/phidias/sync/students', () => {
     expect(logs[0]!.errorMessage).toContain('timed out');
     // Nada a medias: no se creó ningún estudiante.
     expect(await prisma.student.count()).toBe(0);
+  });
+});
+
+describe('un docente trae sus cursos de Phidias', () => {
+  it('lista los cursos y marca los que ya son suyos', async () => {
+    await createTeacher({ username: 'docente.lista' });
+    stub.sections = [
+      section('K8A', 'KLASSE 8', [student({ externalId: 4001 })]),
+      {
+        ...section('K8B', 'KLASSE 8', [student({ externalId: 4002 }), student({ externalId: 4003 })]),
+        externalId: 999,
+      },
+    ];
+
+    const response = await request(app)
+      .get('/api/integrations/phidias/sections')
+      .set('Authorization', `Bearer ${await tokenFor('docente.lista')}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+    const k8b = response.body.data.find((c: { code: string }) => c.code === 'K8B');
+    expect(k8b).toMatchObject({ studentCount: 2, group: null });
+    // Solo lo necesario para elegir: nada de datos de estudiantes.
+    expect(k8b.students).toBeUndefined();
+  });
+
+  it('importa un curso completo y queda como docente del grupo', async () => {
+    const docente = await createTeacher({ username: 'docente.importa' });
+    stub.sections = [
+      section('K8A', 'KLASSE 8', [student({ externalId: 4101 }), student({ externalId: 4102 })]),
+      // `section` deriva el id del grado, y aquí hacen falta dos distintos.
+      { ...section('K8B', 'KLASSE 8', [student({ externalId: 4103 })]), externalId: 999 },
+    ];
+    const elegido = stub.sections[0]!.externalId;
+
+    const response = await request(app)
+      .post('/api/integrations/phidias/sections/import')
+      .set('Authorization', `Bearer ${await tokenFor('docente.importa')}`)
+      .send({ sectionExternalIds: [elegido], joinAsTeacher: true });
+
+    expect(response.status).toBe(200);
+    const grupos = await prisma.group.findMany({ include: { teachers: true, memberships: true } });
+    // Solo el curso elegido, no la matrícula entera.
+    expect(grupos).toHaveLength(1);
+    expect(grupos[0]!.memberships).toHaveLength(2);
+    expect(grupos[0]!.teachers.map((fila) => fila.teacherId)).toContain(docente.id);
+
+    const misGrupos = await request(app)
+      .get('/api/groups')
+      .set('Authorization', `Bearer ${await tokenFor('docente.importa')}`);
+    expect(misGrupos.body.data).toHaveLength(1);
+  });
+
+  it('un estudiante no puede importar', async () => {
+    await createUser({ username: 'alumno.importa', role: ROLE.STUDENT });
+    stub.sections = [section('K8A', 'KLASSE 8', [student({ externalId: 4201 })])];
+
+    const response = await request(app)
+      .post('/api/integrations/phidias/sections/import')
+      .set('Authorization', `Bearer ${await tokenFor('alumno.importa')}`)
+      .send({ sectionExternalIds: [stub.sections[0]!.externalId], joinAsTeacher: true });
+
+    expect(response.status).toBe(403);
   });
 });
 

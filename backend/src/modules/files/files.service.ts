@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AUDIT_ACTION, ERROR_CODE, ROLE, type Role } from '@medienpass/shared';
+import { AUDIT_ACTION, ERROR_CODE, type Role, teaches } from '@medienpass/shared';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -444,7 +444,7 @@ function visibilityClause(actor: Actor): Prisma.StoredFileWhereInput {
     { kind: 'TRAINING_MEDIA' },
   ];
 
-  if (actor.roles.includes(ROLE.TEACHER)) {
+  if (teaches(actor.roles)) {
     clauses.push({ assessment: { createdById: actor.userId } });
   }
 

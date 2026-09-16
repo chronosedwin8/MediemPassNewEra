@@ -6,7 +6,12 @@ import { authenticate, requireAuth } from '../../../middleware/authenticate.js';
 import { requirePermission } from '../../../middleware/authorize.js';
 import { getQuery, validate } from '../../../middleware/validate.js';
 import { getPhidiasService } from '../../../infrastructure/external/phidias/phidias.service.js';
-import { listSyncLogs, syncStudents } from './phidias-sync.service.js';
+import {
+  importSections,
+  listSections,
+  listSyncLogs,
+  syncStudents,
+} from './phidias-sync.service.js';
 
 /**
  * Rutas de la integración con Phidias.
@@ -63,6 +68,36 @@ phidiasRouter.get(
   requirePermission(PERMISSION.PHIDIAS_READ),
   asyncHandler(async (req, res) => {
     ok(res, await syncStudents(requireAuth(req).userId, { dryRun: true }));
+  }),
+);
+
+/**
+ * Los cursos de este año, para elegir cuáles traer.
+ *
+ * Con `phidias:import` y no `phidias:read`: es la puerta del docente, y no
+ * enseña ni el estado de la integración ni la configuración, solo cursos.
+ */
+phidiasRouter.get(
+  '/sections',
+  requirePermission(PERMISSION.PHIDIAS_IMPORT),
+  asyncHandler(async (req, res) => {
+    ok(res, await listSections(requireAuth(req).userId));
+  }),
+);
+
+const importBody = z.object({
+  sectionExternalIds: z.array(z.number().int().positive()).min(1).max(20),
+  joinAsTeacher: z.boolean().default(true),
+});
+
+/** Trae los cursos elegidos como grupos. No desactiva a nadie. */
+phidiasRouter.post(
+  '/sections/import',
+  requirePermission(PERMISSION.PHIDIAS_IMPORT),
+  validate({ body: importBody }),
+  asyncHandler(async (req, res) => {
+    const { sectionExternalIds, joinAsTeacher } = req.body as z.infer<typeof importBody>;
+    ok(res, await importSections(requireAuth(req).userId, sectionExternalIds, joinAsTeacher));
   }),
 );
 

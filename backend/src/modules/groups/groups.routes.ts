@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, noContent, ok, paginated } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
-import { requirePermission } from '../../middleware/authorize.js';
+import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
 import { getQuery, paginationQuery, uuidParam, validate } from '../../middleware/validate.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 import {
@@ -12,7 +12,9 @@ import {
   createGroupSchema,
   deleteGroup,
   getGroup,
+  listGroupCatalog,
   listGroups,
+  assertGroupAccess,
   listMembers,
   membershipSchema,
   removeMember,
@@ -52,6 +54,15 @@ groupsRouter.post(
   validate({ body: createGroupSchema }),
   asyncHandler(async (req, res) => {
     created(res, await createGroup(requireAuth(req), req.body));
+  }),
+);
+
+/** Grupos del año sin datos personales, para filtrar al armar un grupo mixto. */
+groupsRouter.get(
+  '/catalog',
+  requirePermission(PERMISSION.GROUP_READ),
+  asyncHandler(async (_req, res) => {
+    ok(res, await listGroupCatalog());
   }),
 );
 
@@ -123,12 +134,22 @@ groupsRouter.put(
   }),
 );
 
+/*
+ * Contraseñas de un grupo entero.
+ *
+ * Antes exigía `user:reset_password`, que alcanza cualquier cuenta y es de
+ * administración, así que un docente no podía ayudar a su propio curso el día
+ * que medio grupo olvidó la contraseña. Ahora basta `student:reset_password`,
+ * y el alcance lo pone `assertGroupAccess`: solo los grupos propios.
+ */
 groupsRouter.post(
   '/:id/reset-student-passwords',
-  requirePermission(PERMISSION.USER_RESET_PASSWORD),
+  requireAnyPermission(PERMISSION.USER_RESET_PASSWORD, PERMISSION.STUDENT_RESET_PASSWORD),
   validate({ params: uuidParam(), body: resetGroupPasswordsSchema }),
   asyncHandler(async (req, res) => {
-    ok(res, await resetGroupPasswords(requireAuth(req).userId, req.params['id']!, req.body));
+    const auth = requireAuth(req);
+    await assertGroupAccess(auth, req.params['id']!);
+    ok(res, await resetGroupPasswords(auth.userId, req.params['id']!, req.body));
   }),
 );
 

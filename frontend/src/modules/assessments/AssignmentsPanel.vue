@@ -26,6 +26,7 @@ interface Asignacion {
   assessment: { versionNumber: number };
   /** Repartidos por estado: es lo que dice si cancelar tiene consecuencias. */
   recipients: { total: number; completed: number; inProgress: number; pending: number };
+  startAt: string;
   endAt: string | null;
   createdAt: string;
 }
@@ -40,6 +41,45 @@ const trabajando = ref<string | null>(null);
 const asignaciones = ref<Asignacion[]>([]);
 const cancelando = ref<Asignacion | null>(null);
 const confirmacion = ref('');
+const editando = ref<Asignacion | null>(null);
+const fechas = ref({ startAt: '', endAt: '' });
+
+/** `datetime-local` quiere la hora local sin zona, no un ISO en UTC. */
+function aLocal(iso: string | null): string {
+  if (!iso) return '';
+  const fecha = new Date(iso);
+  const desfase = fecha.getTimezoneOffset() * 60_000;
+  return new Date(fecha.getTime() - desfase).toISOString().slice(0, 16);
+}
+
+function abrirFechas(asignacion: Asignacion): void {
+  editando.value = asignacion;
+  fechas.value = { startAt: aLocal(asignacion.startAt), endAt: aLocal(asignacion.endAt) };
+}
+
+const fechasValidas = computed(
+  () =>
+    fechas.value.startAt !== '' &&
+    (fechas.value.endAt === '' || fechas.value.endAt > fechas.value.startAt),
+);
+
+async function guardarFechas(): Promise<void> {
+  if (!editando.value) return;
+  trabajando.value = editando.value.id;
+  try {
+    await http.patch(`/assignments/${editando.value.id}`, {
+      startAt: new Date(fechas.value.startAt).toISOString(),
+      endAt: fechas.value.endAt ? new Date(fechas.value.endAt).toISOString() : null,
+    });
+    toast.success(t('common.saved'));
+    editando.value = null;
+    await cargar();
+  } catch (error) {
+    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
+  } finally {
+    trabajando.value = null;
+  }
+}
 
 const puedeCancelar = computed(
   () => cancelando.value !== null && confirmacion.value.trim() === cancelando.value.group?.code,
@@ -134,6 +174,9 @@ async function cancelar(): Promise<void> {
         </span>
 
         <span class="ml-auto flex gap-2">
+          <BaseButton variant="secondary" size="sm" @click="abrirFechas(a)">
+            {{ t('assignment.editDates') }}
+          </BaseButton>
           <BaseButton
             variant="secondary"
             size="sm"
@@ -158,6 +201,51 @@ async function cancelar(): Promise<void> {
     </ul>
 
     <p class="text-xs text-ink-subtle">{{ t('assignment.resyncHint') }}</p>
+
+    <!-- Fechas: apertura y cierre, sin tocar el destino. -->
+    <div
+      v-if="editando"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="t('assignment.editDates')"
+    >
+      <form
+        class="flex w-full max-w-md flex-col gap-4 rounded-lg bg-surface p-6 shadow-xl"
+        @submit.prevent="guardarFechas"
+      >
+        <header>
+          <h2 class="text-lg font-semibold">{{ t('assignment.editDates') }}</h2>
+          <p class="mt-1 text-sm text-ink-muted">{{ editando.group?.code }}</p>
+        </header>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">{{ t('assignment.opens') }}</span>
+          <input
+            v-model="fechas.startAt"
+            type="datetime-local"
+            required
+            class="h-9 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
+          />
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">{{ t('assignment.dueAt') }}</span>
+          <input
+            v-model="fechas.endAt"
+            type="datetime-local"
+            class="h-9 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
+          />
+          <span class="text-xs text-ink-subtle">{{ t('assignment.noEndHint') }}</span>
+        </label>
+        <footer class="flex justify-end gap-2">
+          <BaseButton variant="ghost" type="button" @click="editando = null">
+            {{ t('common.cancel') }}
+          </BaseButton>
+          <BaseButton type="submit" :disabled="!fechasValidas" :loading="trabajando !== null">
+            {{ t('common.save') }}
+          </BaseButton>
+        </footer>
+      </form>
+    </div>
 
     <!-- Confirmación escrita: se cancela para un curso entero. -->
     <div

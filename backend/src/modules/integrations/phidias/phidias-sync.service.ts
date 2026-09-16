@@ -1,4 +1,5 @@
 import {
+  ERROR_CODE,
   AUDIT_ACTION,
   ENROLLMENT_STATUS,
   EXTERNAL_SOURCE,
@@ -9,6 +10,7 @@ import {
   institutionalEmail,
 } from '@medienpass/shared';
 import { prisma } from '../../../infrastructure/database/prisma.js';
+import { AppError } from '../../../shared/errors/app-error.js';
 import { createLogger } from '../../../shared/logger.js';
 import { recordAudit } from '../../audit/audit.service.js';
 import { getSetting } from '../../settings/settings.service.js';
@@ -645,6 +647,178 @@ export async function syncStudents(
     log.error({ err: error }, 'la sincronización falló');
     throw error;
   }
+}
+
+// --- Importación por cursos -------------------------------------------------
+
+/** Un curso de Phidias, con lo que hace falta para decidir si traerlo. */
+export interface SectionSummary {
+  externalId: number;
+  code: string;
+  courseName: string;
+  levelName: string;
+  studentCount: number;
+  /** El grupo que ya existe este año para ese curso, si alguien lo trajo. */
+  group: { id: string; code: string; teaching: boolean } | null;
+}
+
+/**
+ * Los cursos que Phidias tiene este año.
+ *
+ * Es la puerta del docente a la matrícula real. No escribe nada: lista cursos
+ * con su número de estudiantes y dice cuáles existen ya como grupo y si quien
+ * pregunta da clase en él, que es lo que decide si hace falta traerlo.
+ *
+ * No devuelve estudiantes. Nombres y códigos solo entran en la plataforma al
+ * importar un curso concreto, no por mirar la lista.
+ */
+export async function listSections(actorId: string): Promise<SectionSummary[]> {
+  const { sections } = await getPhidiasService().getEnrolledStudents();
+
+  const year = await prisma.academicYear.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+
+  const grupos = year
+    ? await prisma.group.findMany({
+        where: {
+          academicYearId: year.id,
+          deletedAt: null,
+          externalSource: EXTERNAL_SOURCE.PHIDIAS,
+          externalId: { in: sections.map((section) => section.externalId) },
+        },
+        select: {
+          id: true,
+          code: true,
+          externalId: true,
+          homeroomTeacherId: true,
+          teachers: { where: { teacherId: actorId }, select: { teacherId: true } },
+        },
+      })
+    : [];
+
+  const porCurso = new Map(grupos.map((grupo) => [grupo.externalId, grupo]));
+
+  return sections
+    .map((section) => {
+      const grupo = porCurso.get(section.externalId);
+      return {
+        externalId: section.externalId,
+        code: section.code,
+        courseName: section.courseName,
+        levelName: section.levelName,
+        studentCount: section.students.length,
+        group: grupo
+          ? {
+              id: grupo.id,
+              code: grupo.code,
+              teaching: grupo.homeroomTeacherId === actorId || grupo.teachers.length > 0,
+            }
+          : null,
+      };
+    })
+    .sort((a, b) => a.code.localeCompare(b.code, 'es', { numeric: true }));
+}
+
+export interface ImportResult {
+  groups: Array<{ id: string; code: string; students: number }>;
+  studentsCreated: number;
+  studentsUpdated: number;
+  membershipsAdded: number;
+  issues: SyncIssue[];
+}
+
+/**
+ * Trae cursos concretos de Phidias y los deja como grupos.
+ *
+ * Reutiliza exactamente el mismo proceso que la sincronización completa —las
+ * mismas cuentas, el mismo correo institucional, el mismo emparejamiento de
+ * grado—, así que un curso traído por un docente queda idéntico a uno traído
+ * por administración. Lo que no hace es desactivar a nadie: eso exige ver la
+ * matrícula completa para saber quién ya no está, y aquí solo se ven los
+ * cursos elegidos.
+ *
+ * Con `joinAsTeacher`, quien importa queda como docente de cada grupo, que es
+ * lo que un docente quiere casi siempre: traer su curso para evaluarlo. Quien
+ * reparte grupos puede importar sin apuntarse.
+ */
+export async function importSections(
+  actorId: string,
+  sectionExternalIds: number[],
+  joinAsTeacher: boolean,
+): Promise<ImportResult> {
+  const { sections } = await getPhidiasService().getEnrolledStudents();
+  const pedidos = new Set(sectionExternalIds);
+  const elegidas = sections.filter((section) => pedidos.has(section.externalId));
+
+  if (elegidas.length === 0) {
+    throw AppError.notFound(ERROR_CODE.NOT_FOUND, {
+      message: 'Ninguno de esos cursos está en la matrícula de Phidias de este año',
+    });
+  }
+
+  const context: SyncContext = {
+    issues: [],
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    membershipsAdded: 0,
+    groupsCreated: 0,
+    groupsMatched: 0,
+    seenExternalIds: new Set<number>(),
+    ...(await buildContext()),
+  };
+
+  const groups: ImportResult['groups'] = [];
+
+  for (const section of elegidas) {
+    await processSection(section, context);
+
+    const grupo = await prisma.group.findFirst({
+      where: {
+        academicYearId: context.academicYearId,
+        externalSource: EXTERNAL_SOURCE.PHIDIAS,
+        externalId: section.externalId,
+        deletedAt: null,
+      },
+      select: { id: true, code: true },
+    });
+
+    // Sin grupo: el grado no tenía equivalente y processSection ya lo anotó.
+    if (!grupo) continue;
+
+    if (joinAsTeacher) {
+      await prisma.groupTeacher.upsert({
+        where: { groupId_teacherId: { groupId: grupo.id, teacherId: actorId } },
+        create: { groupId: grupo.id, teacherId: actorId },
+        update: {},
+      });
+    }
+
+    groups.push({ ...grupo, students: section.students.length });
+  }
+
+  await recordAudit({
+    userId: actorId,
+    action: AUDIT_ACTION.SYNC_PHIDIAS,
+    entityType: 'group',
+    entityId: groups[0]?.id ?? 'ninguno',
+    metadata: {
+      scope: 'sections',
+      sections: elegidas.map((section) => section.code),
+      created: context.created,
+      updated: context.updated,
+    },
+  });
+
+  return {
+    groups,
+    studentsCreated: context.created,
+    studentsUpdated: context.updated,
+    membershipsAdded: context.membershipsAdded,
+    issues: context.issues,
+  };
 }
 
 export async function listSyncLogs(limit = 20) {

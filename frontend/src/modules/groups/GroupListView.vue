@@ -8,6 +8,7 @@ import BaseButton from '@/design-system/BaseButton.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
 import GroupFormDialog from './GroupFormDialog.vue';
+import PhidiasImportDialog from './PhidiasImportDialog.vue';
 import { useAuthStore } from '@/stores/auth';
 
 /** Grupos a cargo del usuario. El alcance lo aplica el servidor. */
@@ -26,6 +27,7 @@ const auth = useAuthStore();
 const groups = ref<Group[]>([]);
 const loading = ref(true);
 const creando = ref(false);
+const importando = ref(false);
 
 /*
  * Los docentes también crean grupos, no solo administración.
@@ -35,6 +37,8 @@ const creando = ref(false);
  * convierte una tarea de dos minutos en un trámite de dos días.
  */
 const puedeCrear = computed(() => auth.can(PERMISSION.GROUP_CREATE));
+/** Traer cursos completos de Phidias: la forma habitual de empezar. */
+const puedeImportar = computed(() => auth.can(PERMISSION.PHIDIAS_IMPORT));
 
 async function cargar(): Promise<void> {
   loading.value = true;
@@ -51,8 +55,11 @@ onMounted(cargar);
 
 <template>
   <div class="flex flex-col gap-4">
-    <header v-if="puedeCrear" class="flex justify-end">
-      <BaseButton @click="creando = true">{{ t('group.create') }}</BaseButton>
+    <header v-if="puedeCrear || puedeImportar" class="flex flex-wrap justify-end gap-2">
+      <BaseButton v-if="puedeImportar" variant="secondary" @click="importando = true">
+        {{ t('phidiasImport.open') }}
+      </BaseButton>
+      <BaseButton v-if="puedeCrear" @click="creando = true">{{ t('group.create') }}</BaseButton>
     </header>
 
     <BaseSpinner v-if="loading" size="lg" />
@@ -66,7 +73,14 @@ onMounted(cargar);
     -->
     <EmptyState v-else-if="groups.length === 0" :title="t('group.empty')">
       <template #action>
-        <BaseButton v-if="puedeCrear" @click="creando = true">{{ t('group.create') }}</BaseButton>
+        <span class="flex flex-wrap justify-center gap-2">
+          <BaseButton v-if="puedeImportar" @click="importando = true">
+            {{ t('phidiasImport.open') }}
+          </BaseButton>
+          <BaseButton v-if="puedeCrear" variant="secondary" @click="creando = true">
+            {{ t('group.create') }}
+          </BaseButton>
+        </span>
       </template>
     </EmptyState>
 
@@ -97,6 +111,15 @@ onMounted(cargar);
         </p>
       </BaseCard>
     </div>
+
+    <PhidiasImportDialog
+      v-if="importando"
+      @imported="
+        importando = false;
+        cargar();
+      "
+      @cancel="importando = false"
+    />
 
     <GroupFormDialog
       v-if="creando"

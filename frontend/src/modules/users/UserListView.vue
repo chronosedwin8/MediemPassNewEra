@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PERMISSION, ROLE, type Role } from '@medienpass/shared';
+import { PERMISSION, ROLE, teaches, type Role } from '@medienpass/shared';
 import { http, ApiError } from '@/services/http';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
@@ -49,14 +49,15 @@ const total = ref(0);
 const loading = ref(true);
 const search = ref('');
 
-/** Docentes y administración juntos: la pregunta que trae a esta pantalla. */
-const STAFF = `${ROLE.ADMIN},${ROLE.TEACHER}`;
+/** Personal junto: la pregunta que trae a esta pantalla. */
+const STAFF = `${ROLE.ADMIN},${ROLE.COORDINATOR},${ROLE.TEACHER}`;
 
 const scope = ref<string>(STAFF);
 
 const SCOPES = [
   { value: STAFF, labelKey: 'users.scope.staff' },
   { value: ROLE.ADMIN, labelKey: 'users.scope.admin' },
+  { value: ROLE.COORDINATOR, labelKey: 'users.scope.coordinator' },
   { value: ROLE.TEACHER, labelKey: 'users.scope.teacher' },
   { value: ROLE.STUDENT, labelKey: 'users.scope.student' },
 ];
@@ -118,8 +119,9 @@ async function load(): Promise<void> {
 onMounted(load);
 watch([scope, search], load);
 
-const roleTone: Record<string, 'danger' | 'info' | 'neutral'> = {
+const roleTone: Record<string, 'danger' | 'info' | 'neutral' | 'brand'> = {
   [ROLE.ADMIN]: 'danger',
+  [ROLE.COORDINATOR]: 'brand',
   [ROLE.TEACHER]: 'info',
   [ROLE.STUDENT]: 'neutral',
 };
@@ -273,13 +275,25 @@ async function resetPassword(user: UserSummary): Promise<void> {
               </td>
               <td class="px-3 py-2">
                 <span class="flex flex-wrap gap-2">
-                  <BaseButton variant="secondary" size="sm" @click="editingData = user">
+                  <!-- Cada acción con su permiso: sin él, el botón solo daría un 403. -->
+                  <BaseButton
+                    v-if="auth.can(PERMISSION.USER_UPDATE)"
+                    variant="secondary"
+                    size="sm"
+                    @click="editingData = user"
+                  >
                     {{ t('users.edit') }}
                   </BaseButton>
-                  <BaseButton variant="secondary" size="sm" @click="editing = user">
+                  <BaseButton
+                    v-if="auth.can(PERMISSION.USER_MANAGE_ROLES)"
+                    variant="secondary"
+                    size="sm"
+                    @click="editing = user"
+                  >
                     {{ t('users.editRoles') }}
                   </BaseButton>
                   <BaseButton
+                    v-if="auth.can(PERMISSION.USER_RESET_PASSWORD)"
                     variant="ghost"
                     size="sm"
                     :loading="resettingId === user.id"
@@ -288,7 +302,11 @@ async function resetPassword(user: UserSummary): Promise<void> {
                     {{ t('users.resetPassword') }}
                   </BaseButton>
                   <BaseButton
-                    v-if="user.roles.includes(ROLE.TEACHER) && teacherIdByUser.get(user.id)"
+                    v-if="
+                      teaches(user.roles) &&
+                      auth.can(PERMISSION.TEACHER_UPDATE) &&
+                      teacherIdByUser.get(user.id)
+                    "
                     variant="secondary"
                     size="sm"
                     @click="

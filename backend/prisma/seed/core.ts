@@ -33,6 +33,11 @@ export async function seedPermissionsAndRoles(prisma: PrismaClient): Promise<voi
 
   const roleNames: Record<Role, { es: string; de: string; en: string }> = {
     [ROLE.ADMIN]: { es: 'Administrador', de: 'Administrator', en: 'Administrator' },
+    [ROLE.COORDINATOR]: {
+      es: 'Coordinación académica',
+      de: 'Fachkoordination',
+      en: 'Academic coordinator',
+    },
     [ROLE.TEACHER]: { es: 'Docente', de: 'Lehrkraft', en: 'Teacher' },
     [ROLE.STUDENT]: { es: 'Estudiante', de: 'Schüler/in', en: 'Student' },
   };

@@ -32,6 +32,14 @@ export const PERMISSION = {
   STUDENT_CREATE: 'student:create',
   STUDENT_UPDATE: 'student:update',
   STUDENT_DELETE: 'student:delete',
+  /**
+   * Restablecer contraseñas del alumnado a cargo.
+   *
+   * Separado de `user:reset_password`, que alcanza cualquier cuenta y es de
+   * administración. Este solo llega a estudiantes de los grupos propios: el
+   * alcance lo pone el servidor, no la interfaz.
+   */
+  STUDENT_RESET_PASSWORD: 'student:reset_password',
 
   // --- Estructura académica -------------------------------------------------
   AREA_READ: 'area:read',
@@ -43,6 +51,14 @@ export const PERMISSION = {
   GROUP_UPDATE: 'group:update',
   GROUP_DELETE: 'group:delete',
   GROUP_MANAGE_MEMBERS: 'group:manage_members',
+  /**
+   * Ver y gestionar todos los grupos, no solo los propios.
+   *
+   * Es lo que permite repartir grupos entre docentes. Sin él, alguien solo
+   * alcanza los grupos que ya enseña, y nadie podría asignar a otro uno que
+   * todavía no es de nadie.
+   */
+  GROUP_MANAGE_ALL: 'group:manage_all',
   ACADEMIC_YEAR_READ: 'academic_year:read',
   ACADEMIC_YEAR_MANAGE: 'academic_year:manage',
 
@@ -83,6 +99,8 @@ export const PERMISSION = {
   // --- Capacitación ---------------------------------------------------------
   TRAINING_PARTICIPATE: 'training:participate',
   TRAINING_MANAGE: 'training:manage',
+  /** Corregir y ver los resultados de la capacitación de todos los docentes. */
+  TRAINING_REVIEW: 'training:review',
 
   // --- Inteligencia artificial ----------------------------------------------
   AI_GENERATE: 'ai:generate',
@@ -95,6 +113,15 @@ export const PERMISSION = {
   AUDIT_READ: 'audit:read',
   PHIDIAS_SYNC: 'phidias:sync',
   PHIDIAS_READ: 'phidias:read',
+  /**
+   * Traer cursos concretos desde Phidias y convertirlos en grupos propios.
+   *
+   * No es la sincronización del colegio entero, que sigue siendo de
+   * administración: trae solo las secciones que se eligen, crea o actualiza
+   * las cuentas de sus estudiantes y deja a quien importa como docente del
+   * grupo. Tampoco desactiva a nadie, porque no ve la matrícula completa.
+   */
+  PHIDIAS_IMPORT: 'phidias:import',
 } as const;
 
 export type Permission = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -111,6 +138,9 @@ const TEACHER_PERMISSIONS: readonly Permission[] = [
   PERMISSION.GROUP_CREATE,
   PERMISSION.GROUP_UPDATE,
   PERMISSION.GROUP_MANAGE_MEMBERS,
+  PERMISSION.GROUP_DELETE,
+  PERMISSION.STUDENT_RESET_PASSWORD,
+  PERMISSION.PHIDIAS_IMPORT,
   PERMISSION.KMK_READ,
   PERMISSION.ASSESSMENT_READ,
   PERMISSION.ASSESSMENT_CREATE,
@@ -130,6 +160,26 @@ const TEACHER_PERMISSIONS: readonly Permission[] = [
   PERMISSION.AI_GENERATE,
 ];
 
+/**
+ * Coordinación: todo lo del docente, más lo que toca al claustro.
+ *
+ * Reparte grupos entre docentes (`group:manage_all`, `teacher:update` para sus
+ * materias), prepara la capacitación (`training:manage`) y la revisa
+ * (`training:review`). Lee cuentas para poder elegir a quién asigna, pero no
+ * las crea, no cambia roles ni toca la configuración.
+ */
+const COORDINATOR_PERMISSIONS: readonly Permission[] = [
+  ...TEACHER_PERMISSIONS,
+  PERMISSION.USER_READ,
+  PERMISSION.TEACHER_UPDATE,
+  PERMISSION.GROUP_MANAGE_ALL,
+  PERMISSION.ASSESSMENT_READ_ALL,
+  PERMISSION.TRAINING_MANAGE,
+  PERMISSION.TRAINING_REVIEW,
+  PERMISSION.STATS_READ_GLOBAL,
+  PERMISSION.PHIDIAS_READ,
+];
+
 const STUDENT_PERMISSIONS: readonly Permission[] = [
   PERMISSION.ATTEMPT_TAKE,
   PERMISSION.RESULT_READ_OWN,
@@ -144,6 +194,7 @@ const STUDENT_PERMISSIONS: readonly Permission[] = [
  */
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   [ROLE.ADMIN]: ALL_PERMISSIONS,
+  [ROLE.COORDINATOR]: COORDINATOR_PERMISSIONS,
   [ROLE.TEACHER]: TEACHER_PERMISSIONS,
   [ROLE.STUDENT]: STUDENT_PERMISSIONS,
 };

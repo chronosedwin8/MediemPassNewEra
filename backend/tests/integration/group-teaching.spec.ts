@@ -7,6 +7,7 @@ import {
   TEST_PASSWORD,
   createAdmin,
   createTeacher,
+  createUser,
   seedRolesAndPermissions,
 } from '../helpers/factories.js';
 
@@ -183,5 +184,63 @@ describe('el rol sigue mandando', () => {
     // Administración sí los ve todos: es la contraparte del alcance restringido.
     expect(response.body.data.length).toBeGreaterThan(0);
     expect(ROLE.ADMIN).toBe('ADMIN');
+  });
+});
+
+describe('coordinación académica', () => {
+  const createCoordinator = (username: string) => createUser({ username, role: ROLE.COORDINATOR });
+
+  it('ve todos los grupos, aunque no dé clase en ninguno', async () => {
+    await montarGrupoSinTitular();
+    const coordinacion = await createCoordinator('coordinacion.ve');
+
+    const response = await request(app)
+      .get('/api/groups')
+      .set('Authorization', `Bearer ${await tokenFor(coordinacion.username)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+  });
+
+  it('asigna docentes a un grupo como administración', async () => {
+    const { grupoId } = await montarGrupoSinTitular();
+    const coordinacion = await createCoordinator('coordinacion.asigna');
+    const docente = await createTeacher({ username: 'docente.asignado' });
+
+    const response = await request(app)
+      .put(`/api/groups/${grupoId}/teachers`)
+      .set('Authorization', `Bearer ${await tokenFor(coordinacion.username)}`)
+      .send({ teachers: [{ teacherId: docente.id }] });
+
+    expect(response.status).toBe(204);
+  });
+
+  it('no administra cuentas', async () => {
+    const coordinacion = await createCoordinator('coordinacion.cuentas');
+    const docente = await createTeacher({ username: 'docente.cuenta' });
+
+    const response = await request(app)
+      .delete(`/api/users/${docente.id}`)
+      .set('Authorization', `Bearer ${await tokenFor(coordinacion.username)}`);
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe('co-docentes', () => {
+  it('el docente de un grupo añade a un compañero sin perder su sitio', async () => {
+    const { grupoId } = await montarGrupoSinTitular();
+    const docente = await createTeacher({ username: 'docente.principal' });
+    const companero = await createTeacher({ username: 'docente.companero' });
+    await prisma.groupTeacher.create({ data: { groupId: grupoId, teacherId: docente.id } });
+
+    const response = await request(app)
+      .put(`/api/groups/${grupoId}/teachers`)
+      .set('Authorization', `Bearer ${await tokenFor(docente.username)}`)
+      .send({ teachers: [{ teacherId: docente.id }, { teacherId: companero.id }] });
+
+    expect(response.status).toBe(204);
+    const filas = await prisma.groupTeacher.findMany({ where: { groupId: grupoId } });
+    expect(filas.map((fila) => fila.teacherId).sort()).toEqual([docente.id, companero.id].sort());
   });
 });

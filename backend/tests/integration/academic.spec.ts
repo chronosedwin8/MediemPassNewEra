@@ -301,7 +301,7 @@ describe('alcance del docente sobre sus grupos', () => {
     expect(response.body.data.homeroomTeacher.id).toBe(teacher.id);
   });
 
-  it('un docente no puede reasignar el titular de un grupo', async () => {
+  it('un docente que cede la titularidad sigue dando clase en el grupo', async () => {
     const teacher = await createTeacher({ username: 'docente.reasigna' });
     const other = await createTeacher({ username: 'docente.otro' });
     const { gradeLevel, year } = await seedStructure();
@@ -320,6 +320,39 @@ describe('alcance del docente sobre sus grupos', () => {
       .patch(`/api/groups/${group.id}`)
       .set('Authorization', `Bearer ${await tokenFor('docente.reasigna')}`)
       .send({ homeroomTeacherId: other.id });
+
+    /*
+     * Puede repartir su grupo con otro docente, pero no quedarse fuera por
+     * accidente: pasa a figurar como docente del grupo.
+     */
+    expect(response.status).toBe(200);
+    const updated = await prisma.group.findUniqueOrThrow({
+      where: { id: group.id },
+      include: { teachers: true },
+    });
+    expect(updated.homeroomTeacherId).toBe(other.id);
+    expect(updated.teachers.map((row) => row.teacherId)).toContain(teacher.id);
+  });
+
+  it('un docente no puede tocar un grupo que no es suyo', async () => {
+    await createTeacher({ username: 'docente.fuera' });
+    const owner = await createTeacher({ username: 'docente.dueno' });
+    const { gradeLevel, year } = await seedStructure();
+
+    const group = await prisma.group.create({
+      data: {
+        code: 'K8E',
+        name: 'K8E',
+        academicYearId: year.id,
+        gradeLevelId: gradeLevel.id,
+        homeroomTeacherId: owner.id,
+      },
+    });
+
+    const response = await request(app)
+      .patch(`/api/groups/${group.id}`)
+      .set('Authorization', `Bearer ${await tokenFor('docente.fuera')}`)
+      .send({ name: 'Mío' });
 
     expect(response.status).toBe(403);
   });
@@ -653,18 +686,64 @@ describe('contraseñas de un grupo', () => {
     expect(response.status).toBe(422);
   });
 
-  it('un docente no puede restablecer las contraseñas de un grupo', async () => {
+  it('el docente restablece las de su propio grupo', async () => {
     const fixture = await buildGroupWithStudents();
 
     const response = await resetPasswords(fixture.teacherToken, fixture.groupId, {
       mode: 'individual',
     });
 
+    expect(response.status).toBe(200);
+    expect(response.body.data.issued).toHaveLength(fixture.usernames.length);
+  });
+
+  it('un docente no puede restablecer las de un grupo ajeno', async () => {
+    const fixture = await buildGroupWithStudents();
+    await createTeacher({ username: 'docente.ajeno.claves' });
+
     /*
-     * Ni siquiera el titular del grupo: es la operación más ancha de la
-     * plataforma y entrega credenciales en claro de menores.
+     * Entrega credenciales en claro de menores: el permiso solo vale dentro
+     * de los grupos en los que da clase.
      */
+    const response = await resetPasswords(
+      await tokenFor('docente.ajeno.claves'),
+      fixture.groupId,
+      { mode: 'individual' },
+    );
+
     expect(response.status).toBe(403);
+  });
+
+  it('el docente restablece la de un estudiante suyo, y no la de uno ajeno', async () => {
+    const fixture = await buildGroupWithStudents();
+    await createTeacher({ username: 'docente.otro.claves' });
+    const student = await prisma.student.findFirstOrThrow({
+      where: { userId: fixture.userIds[0] },
+    });
+
+    const own = await request(app)
+      .post(`/api/students/${student.id}/reset-password`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+    expect(own.status).toBe(200);
+
+    const foreign = await request(app)
+      .post(`/api/students/${student.id}/reset-password`)
+      .set('Authorization', `Bearer ${await tokenFor('docente.otro.claves')}`);
+    // 404: a quien no es su docente no se le confirma ni que exista.
+    expect(foreign.status).toBe(404);
+  });
+
+  it('filtrar por un grupo ajeno no abre el alcance del docente', async () => {
+    const fixture = await buildGroupWithStudents();
+    await createTeacher({ username: 'docente.curioso' });
+
+    const response = await request(app)
+      .get('/api/students')
+      .query({ groupId: fixture.groupId })
+      .set('Authorization', `Bearer ${await tokenFor('docente.curioso')}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(0);
   });
 
   it('cierra las sesiones que estuvieran abiertas', async () => {

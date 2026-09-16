@@ -87,7 +87,8 @@
   "roles": {
     "ADMIN": "Administrador",
     "TEACHER": "Docente",
-    "STUDENT": "Estudiante"
+    "STUDENT": "Estudiante",
+    "COORDINATOR": "Coordinación"
   },
   "dashboard": {
     "student": {
@@ -430,7 +431,13 @@
     "addSelected": "Añadir {count}",
     "membersAdded": "{count} estudiante(s) añadido(s).",
     "memberRemoved": "Ya no pertenece al grupo.",
-    "delete": "Dar de baja el grupo"
+    "delete": "Dar de baja el grupo",
+    "fromCourse": "Curso de origen",
+    "anyCourse": "Cualquier curso",
+    "selectAll": "Elegir los {count}",
+    "resetPassword": "Nueva contraseña",
+    "passwordIssued": "Contraseña restablecida",
+    "passwordIssuedBody": "{name} entra con el usuario {user} y esta contraseña. Se muestra una sola vez y tendrá que cambiarla al entrar."
   },
   "assignment": {
     "title": "Asignaciones",
@@ -466,7 +473,10 @@
     "cancelBody": "Deja de estar asignada a {code}. Los intentos ya entregados se conservan.",
     "cancelConfirm": "Escriba «{code}» para confirmar",
     "withWork": "{count} con trabajo empezado",
-    "dueAt": "Cierra"
+    "dueAt": "Cierra",
+    "editDates": "Fechas",
+    "opens": "Abre",
+    "noEndHint": "Vacío si no cierra: queda abierta hasta que la cancele."
   },
   "errors": {
     "generic": "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
@@ -1031,7 +1041,8 @@
       "admin": "Administración",
       "staff": "Docentes y administración",
       "student": "Estudiantes",
-      "teacher": "Docentes"
+      "teacher": "Docentes",
+      "coordinator": "Coordinación"
     },
     "roleMeaning": {
       "ADMIN": "Puede hacerlo todo: cuentas, roles, contraseñas, borrados y los datos de cualquier persona.",
@@ -1102,5 +1113,21 @@
   "statistics": {
     "teacher": "Docente",
     "period": "Periodo"
+  },
+  "phidiasImport": {
+    "open": "Traer cursos de Phidias",
+    "title": "Traer cursos de Phidias",
+    "intro": "Elija sus cursos. Cada uno llega como grupo con sus estudiantes, y usted queda como docente. Un curso que ya existe no se duplica.",
+    "search": "Buscar curso, por ejemplo 10B",
+    "allGrades": "Todos los grados",
+    "students": "{count} estudiantes",
+    "yours": "ya es suyo",
+    "exists": "ya existe",
+    "selection": "{courses} cursos · {students} estudiantes",
+    "import": "Traer",
+    "done": "{count} grupo(s) listos.",
+    "groupStudents": "{count} estudiantes",
+    "summary": "{created} cuentas nuevas y {updated} actualizadas.",
+    "issues": "Incidencias ({count})"
   }
 }

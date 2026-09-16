@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { ENROLLMENT_STATUS, PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, ok, paginated } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
-import { requirePermission } from '../../middleware/authorize.js';
+import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
 import { getQuery, paginationQuery, uuidParam, validate } from '../../middleware/validate.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
 import {
@@ -16,6 +16,7 @@ import {
   listStudents,
   updateStudent,
   updateStudentSchema,
+  resetStudentPassword,
 } from './students.service.js';
 
 export const studentsRouter: Router = Router();
@@ -116,5 +117,15 @@ studentsRouter.post(
   asyncHandler(async (req, res) => {
     const { apply } = req.body as { apply: boolean };
     ok(res, await backfillInstitutionalEmails(requireAuth(req), !apply));
+  }),
+);
+
+/** La contraseña de un estudiante del alumnado propio. Se muestra una vez. */
+studentsRouter.post(
+  '/:id/reset-password',
+  requireAnyPermission(PERMISSION.USER_RESET_PASSWORD, PERMISSION.STUDENT_RESET_PASSWORD),
+  validate({ params: uuidParam() }),
+  asyncHandler(async (req, res) => {
+    ok(res, await resetStudentPassword(requireAuth(req), req.params['id']!));
   }),
 );

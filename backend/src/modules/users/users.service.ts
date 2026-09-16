@@ -163,7 +163,8 @@ async function ensureTeacherProfile(
   userId: string,
   roles: Role[],
 ): Promise<void> {
-  if (!roles.includes(ROLE.TEACHER)) return;
+  // Coordinación también da clase y figura en grupos: necesita la misma ficha.
+  if (!roles.includes(ROLE.TEACHER) && !roles.includes(ROLE.COORDINATOR)) return;
 
   const existing = await tx.teacher.findUnique({ where: { userId }, select: { id: true } });
   if (existing) return;

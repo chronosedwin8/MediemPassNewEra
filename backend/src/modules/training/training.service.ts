@@ -7,6 +7,7 @@ import {
   toPercentage,
   type LocalizedText,
   type Role,
+  PERMISSION,
 } from '@medienpass/shared';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -27,6 +28,7 @@ import { isAdmin } from '../../middleware/authorize.js';
 interface Actor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
 }
 
 export interface TrainingModuleView {
@@ -288,7 +290,11 @@ export async function getTrainingSummary(
   actor: Actor,
   targetUserId?: string,
 ): Promise<TrainingSummary> {
-  const userId = targetUserId && isAdmin(actor) ? targetUserId : actor.userId;
+  // Coordinación revisa la capacitación de todo el claustro: puede pedir el
+  // resumen de otro docente igual que administración.
+  const puedeVerOtros =
+    isAdmin(actor) || (actor.permissions?.includes(PERMISSION.TRAINING_REVIEW) ?? false);
+  const userId = targetUserId && puedeVerOtros ? targetUserId : actor.userId;
   const modules = await listModules({ ...actor, userId });
 
   const completed = modules.filter((module) => module.progress.status === 'COMPLETED').length;

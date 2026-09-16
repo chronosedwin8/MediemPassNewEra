@@ -31,7 +31,7 @@ const dialogRef = ref<HTMLElement | null>(null);
 
 onMounted(() => dialogRef.value?.focus());
 
-const ALL_ROLES: Role[] = [ROLE.ADMIN, ROLE.TEACHER, ROLE.STUDENT];
+const ALL_ROLES: Role[] = [ROLE.ADMIN, ROLE.COORDINATOR, ROLE.TEACHER, ROLE.STUDENT];
 
 function toggle(role: Role): void {
   selected.value = selected.value.includes(role)

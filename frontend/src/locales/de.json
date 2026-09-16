@@ -87,7 +87,8 @@
   "roles": {
     "ADMIN": "Administrator",
     "TEACHER": "Lehrkraft",
-    "STUDENT": "Schüler/in"
+    "STUDENT": "Schüler/in",
+    "COORDINATOR": "Koordination"
   },
   "dashboard": {
     "student": {
@@ -430,7 +431,13 @@
     "addSelected": "{count} hinzufügen",
     "membersAdded": "{count} Lernende hinzugefügt.",
     "memberRemoved": "Gehört der Gruppe nicht mehr an.",
-    "delete": "Gruppe stilllegen"
+    "delete": "Gruppe stilllegen",
+    "fromCourse": "Herkunftsklasse",
+    "anyCourse": "Jede Klasse",
+    "selectAll": "Alle {count} wählen",
+    "resetPassword": "Neues Passwort",
+    "passwordIssued": "Passwort zurückgesetzt",
+    "passwordIssuedBody": "{name} meldet sich mit dem Benutzer {user} und diesem Passwort an. Es wird nur einmal angezeigt und muss beim Anmelden geändert werden."
   },
   "assignment": {
     "title": "Zuweisungen",
@@ -466,7 +473,10 @@
     "cancelBody": "Sie gilt für {code} nicht mehr. Bereits abgegebene Versuche bleiben erhalten.",
     "cancelConfirm": "Geben Sie zur Bestätigung „{code}“ ein",
     "withWork": "{count} bereits begonnen",
-    "dueAt": "Endet"
+    "dueAt": "Endet",
+    "editDates": "Termine",
+    "opens": "Öffnet",
+    "noEndHint": "Leer, wenn sie nicht schließt: bleibt offen, bis Sie sie zurückziehen."
   },
   "errors": {
     "generic": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
@@ -1031,7 +1041,8 @@
       "admin": "Verwaltung",
       "staff": "Lehrkräfte und Verwaltung",
       "student": "Lernende",
-      "teacher": "Lehrkräfte"
+      "teacher": "Lehrkräfte",
+      "coordinator": "Koordination"
     },
     "roleMeaning": {
       "ADMIN": "Kann alles: Konten, Rollen, Passwörter, Löschungen und die Daten jeder Person.",
@@ -1102,5 +1113,21 @@
   "statistics": {
     "teacher": "Lehrkraft",
     "period": "Zeitraum"
+  },
+  "phidiasImport": {
+    "open": "Klassen aus Phidias holen",
+    "title": "Klassen aus Phidias holen",
+    "intro": "Wählen Sie Ihre Klassen. Jede kommt als Gruppe mit ihren Lernenden, und Sie werden als Lehrkraft eingetragen. Eine bestehende Klasse wird nicht doppelt angelegt.",
+    "search": "Klasse suchen, z. B. 10B",
+    "allGrades": "Alle Jahrgänge",
+    "students": "{count} Lernende",
+    "yours": "bereits Ihre",
+    "exists": "besteht bereits",
+    "selection": "{courses} Klassen · {students} Lernende",
+    "import": "Holen",
+    "done": "{count} Gruppe(n) bereit.",
+    "groupStudents": "{count} Lernende",
+    "summary": "{created} neue und {updated} aktualisierte Konten.",
+    "issues": "Hinweise ({count})"
   }
 }

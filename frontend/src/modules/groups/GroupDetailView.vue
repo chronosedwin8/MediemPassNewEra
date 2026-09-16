@@ -77,6 +77,34 @@ const filtered = computed(() => {
 const withoutEmail = computed(() => members.value.filter((member) => !member.email).length);
 
 const quitando = ref<string | null>(null);
+const restableciendo = ref<string | null>(null);
+/** Contraseña recién emitida: se enseña una vez y no se puede recuperar. */
+const emitida = ref<{ nombre: string; usuario: string; password: string } | null>(null);
+
+/**
+ * Restablece la contraseña de un estudiante del grupo.
+ *
+ * Es lo que pide un docente con más frecuencia y lo que menos sentido tenía
+ * pedirle a administración: alguien olvidó la contraseña en plena clase.
+ */
+async function restablecer(member: Member): Promise<void> {
+  restableciendo.value = member.studentId;
+  try {
+    const r = await http.post<{ temporaryPassword: string; username: string }>(
+      `/students/${member.studentId}/reset-password`,
+      {},
+    );
+    emitida.value = {
+      nombre: `${member.lastName}, ${member.firstName}`,
+      usuario: r.username,
+      password: r.temporaryPassword,
+    };
+  } catch (caught) {
+    toast.error(caught instanceof Error ? caught.message : t('errors.generic'));
+  } finally {
+    restableciendo.value = null;
+  }
+}
 const borrando = ref(false);
 const confirmaBorrado = ref('');
 
@@ -259,7 +287,9 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
       clase, aunque dirija el grupo.
     -->
     <GroupPasswordsPanel
-      v-if="group && auth.can('user:reset_password') && members.length > 0"
+      v-if="
+        group && auth.canAny('user:reset_password', 'student:reset_password') && members.length > 0
+      "
       :group-id="group.id"
       :group-code="group.code"
       :student-count="members.length"
@@ -292,6 +322,10 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
               <th class="pb-2 pr-4 font-medium">{{ t('student.email') }}</th>
               <th class="pb-2 pr-4 font-medium">{{ t('student.status') }}</th>
               <th class="pb-2 font-medium">{{ t('group.joinedAt') }}</th>
+              <th
+                v-if="auth.canAny('user:reset_password', 'student:reset_password')"
+                class="pb-2"
+              ></th>
               <th v-if="auth.can('group:manage_members')" class="pb-2"></th>
             </tr>
           </thead>
@@ -314,6 +348,19 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
               <td class="py-2 text-ink-muted tabular-nums">
                 {{ d(new Date(member.joinedAt), 'short') }}
               </td>
+              <td
+                v-if="auth.canAny('user:reset_password', 'student:reset_password')"
+                class="py-2 text-right"
+              >
+                <BaseButton
+                  variant="ghost"
+                  size="sm"
+                  :loading="restableciendo === member.studentId"
+                  @click="restablecer(member)"
+                >
+                  {{ t('group.resetPassword') }}
+                </BaseButton>
+              </td>
               <td v-if="auth.can('group:manage_members')" class="py-2 text-right">
                 <BaseButton
                   variant="ghost"
@@ -334,5 +381,26 @@ function statusTone(status: string): 'success' | 'warning' | 'neutral' {
         {{ t('common.noResults') }}
       </p>
     </template>
+    <!-- La contraseña emitida, una sola vez. -->
+    <div
+      v-if="emitida"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="t('group.passwordIssued')"
+    >
+      <div class="flex w-full max-w-md flex-col gap-3 rounded-lg bg-surface p-6 shadow-xl">
+        <h2 class="text-lg font-semibold">{{ t('group.passwordIssued') }}</h2>
+        <p class="text-sm text-ink-muted">
+          {{ t('group.passwordIssuedBody', { name: emitida.nombre, user: emitida.usuario }) }}
+        </p>
+        <p class="rounded-md border border-border bg-surface-muted p-3 font-mono text-lg">
+          {{ emitida.password }}
+        </p>
+        <footer class="flex justify-end">
+          <BaseButton @click="emitida = null">{{ t('common.close') }}</BaseButton>
+        </footer>
+      </div>
+    </div>
   </div>
 </template>

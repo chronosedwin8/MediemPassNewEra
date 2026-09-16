@@ -13,13 +13,16 @@ import {
   type LocalizedText,
   type Paginated,
   type Role,
+  teaches,
 } from '@medienpass/shared';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../infrastructure/database/prisma.js';
+import { resetUserPassword } from '../users/users.service.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { assertGroupAccess } from '../groups/groups.service.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
 import { hashPassword } from '../../shared/security/password.js';
-import { isAdmin } from '../../middleware/authorize.js';
+import { canManageAllGroups } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { getSetting } from '../settings/settings.service.js';
 import { createLogger } from '../../shared/logger.js';
@@ -146,6 +149,7 @@ function toView(row: StudentRow): StudentView {
 interface Actor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
 }
 
 /**
@@ -156,9 +160,9 @@ interface Actor {
  * justo lo que la minimización de datos pretende evitar.
  */
 function scopeFor(actor: Actor): Record<string, unknown> {
-  if (isAdmin(actor)) return {};
+  if (canManageAllGroups(actor)) return {};
 
-  if (actor.roles.includes(ROLE.TEACHER)) {
+  if (teaches(actor.roles)) {
     // Los de los grupos que dirige y los de aquellos en los que da clase. Solo
     // lo primero dejaba sin ver a su propio alumnado a quien enseña una
     // materia sin dirigir el curso, que es la mayoría del claustro.
@@ -216,28 +220,44 @@ export async function listStudents(
     ? await scopeForCandidates(actor, query.availableForGroupId)
     : scopeFor(actor);
 
-  const where = {
-    user: { deletedAt: null },
-    ...alcance,
-    ...(query.groupId ? { memberships: { some: { groupId: query.groupId, active: true } } } : {}),
-    ...(query.gradeLevelId ? { gradeLevelId: query.gradeLevelId } : {}),
-    ...(query.enrollmentStatus ? { enrollmentStatus: query.enrollmentStatus } : {}),
-    ...(query.evaluableOnly
-      ? { enrollmentStatus: { in: [...EVALUABLE_ENROLLMENT_STATUSES] } }
-      : {}),
-    ...(query.search
-      ? {
-          user: {
-            deletedAt: null,
-            OR: [
-              { firstName: { contains: query.search, mode: 'insensitive' as const } },
-              { lastName: { contains: query.search, mode: 'insensitive' as const } },
-              { username: { contains: query.search, mode: 'insensitive' as const } },
-            ],
-          },
-        }
-      : {}),
-  };
+  /*
+   * Cada condición va en su propia entrada de un AND, no mezclada con `...`.
+   *
+   * Mezclarlas era un fallo de seguridad silencioso: el alcance del docente
+   * y el filtro por grupo usan la misma clave, `memberships`, así que el
+   * filtro sobrescribía al alcance. Un docente que pidiera `groupId` de un
+   * grupo ajeno veía a sus estudiantes. Lo mismo pasaba con `user` entre el
+   * alcance de candidatos y la búsqueda. En un AND ninguna condición puede
+   * borrar a otra.
+   */
+  const condiciones: Prisma.StudentWhereInput[] = [
+    { user: { deletedAt: null } },
+    alcance as Prisma.StudentWhereInput,
+  ];
+
+  if (query.groupId) {
+    condiciones.push({ memberships: { some: { groupId: query.groupId, active: true } } });
+  }
+  if (query.gradeLevelId) condiciones.push({ gradeLevelId: query.gradeLevelId });
+  if (query.enrollmentStatus) condiciones.push({ enrollmentStatus: query.enrollmentStatus });
+  if (query.evaluableOnly) {
+    condiciones.push({ enrollmentStatus: { in: [...EVALUABLE_ENROLLMENT_STATUSES] } });
+  }
+  if (query.search) {
+    // El código también: es como se identifica a un estudiante en el colegio,
+    // y armar una electiva copiando códigos de una lista es lo habitual.
+    const texto = { contains: query.search, mode: 'insensitive' as const };
+    condiciones.push({
+      OR: [
+        { code: texto },
+        { user: { firstName: texto } },
+        { user: { lastName: texto } },
+        { user: { username: texto } },
+      ],
+    });
+  }
+
+  const where: Prisma.StudentWhereInput = { AND: condiciones };
 
   const [total, rows] = await Promise.all([
     prisma.student.count({ where }),
@@ -567,4 +587,26 @@ export async function backfillInstitutionalEmails(
 
   log.info({ ...result, conflicts: result.conflicts.length, dryRun }, 'correos institucionales');
   return result;
+}
+
+/**
+ * Restablece la contraseña de un estudiante del alumnado propio.
+ *
+ * El alcance es el de siempre para estudiantes: un docente solo encuentra a
+ * quien está en sus grupos, así que no puede tocar la cuenta de nadie más.
+ * No encontrarlo da 404 y no 403, porque desde fuera de su alcance ese
+ * estudiante, a efectos de este docente, no existe.
+ */
+export async function resetStudentPassword(
+  actor: Actor,
+  studentId: string,
+): Promise<{ temporaryPassword: string; username: string }> {
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, ...scopeFor(actor) },
+    select: { userId: true, user: { select: { username: true } } },
+  });
+  if (!student) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { studentId });
+
+  const { temporaryPassword } = await resetUserPassword(student.userId, undefined, actor.userId);
+  return { temporaryPassword, username: student.user.username };
 }

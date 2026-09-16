@@ -12,7 +12,7 @@ import {
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { buildPaginationMeta } from '../../shared/http/response.js';
-import { assertOwnership, isAdmin } from '../../middleware/authorize.js';
+import { assertOwnership, canManageAllGroups } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { assertGroupAccess } from '../groups/groups.service.js';
 import type { PaginationQuery } from '../../middleware/validate.js';
@@ -72,9 +72,51 @@ export const createAssignmentSchema = z
 
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;
 
+/**
+ * Lo que se puede cambiar de una asignación ya hecha.
+ *
+ * Fechas, intentos y tiempo. El destino no: cambiar el grupo de una
+ * asignación con intentos encima mezclaría notas de dos cursos distintos, y
+ * para eso está cancelar y volver a asignar.
+ */
+export const updateAssignmentSchema = z
+  .object({
+    startAt: z.coerce.date().optional(),
+    endAt: z.coerce.date().nullable().optional(),
+    attemptsAllowed: z.number().int().min(1).max(20).optional(),
+    timeLimitMinutes: z.number().int().min(0).max(600).nullable().optional(),
+  })
+  .refine((input) => !(input.startAt && input.endAt && input.endAt <= input.startAt), {
+    message: 'El cierre tiene que ser posterior a la apertura',
+    path: ['endAt'],
+  });
+
+export type UpdateAssignmentInput = z.infer<typeof updateAssignmentSchema>;
+
 interface Actor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
+}
+
+/**
+ * Quién puede tocar una asignación.
+ *
+ * Quien la hizo, y además cualquiera que alcance el grupo al que va: su
+ * co-docente, el titular o coordinación. Antes solo quien la hizo, y en un
+ * grupo con dos profesores el segundo no podía ni cambiar la fecha de una
+ * evaluación que también es suya.
+ */
+async function assertCanManageAssignment(
+  actor: Actor,
+  assignment: { id: string; assignedById: string; groupId: string | null },
+): Promise<void> {
+  if (assignment.assignedById === actor.userId) return;
+  if (assignment.groupId) {
+    await assertGroupAccess(actor, assignment.groupId);
+    return;
+  }
+  assertOwnership(actor, assignment.assignedById, { assignmentId: assignment.id });
 }
 
 export interface AssignmentSummary {
@@ -219,7 +261,21 @@ export async function listAssignments(
   query: PaginationQuery & { groupId?: string; assessmentId?: string },
 ): Promise<Paginated<AssignmentSummary>> {
   const where = {
-    ...(isAdmin(actor) ? {} : { assignedById: actor.userId }),
+    ...(canManageAllGroups(actor)
+      ? {}
+      : {
+          OR: [
+            { assignedById: actor.userId },
+            {
+              group: {
+                OR: [
+                  { homeroomTeacherId: actor.userId },
+                  { teachers: { some: { teacherId: actor.userId } } },
+                ],
+              },
+            },
+          ],
+        }),
     ...(query.groupId ? { groupId: query.groupId } : {}),
     ...(query.assessmentId ? { version: { assessmentId: query.assessmentId } } : {}),
   };
@@ -278,11 +334,11 @@ export async function listAssignments(
 export async function listRecipients(actor: Actor, assignmentId: string) {
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
-    select: { id: true, assignedById: true },
+    select: { id: true, assignedById: true, groupId: true },
   });
   if (!assignment) throw AppError.notFound(ERROR_CODE.ASSIGNMENT_NOT_FOUND, { assignmentId });
 
-  assertOwnership(actor, assignment.assignedById, { assignmentId });
+  await assertCanManageAssignment(actor, assignment);
 
   return prisma.assignmentRecipient.findMany({
     where: { assignmentId },
@@ -321,7 +377,7 @@ export async function syncGroupRecipients(
   });
   if (!assignment) throw AppError.notFound(ERROR_CODE.ASSIGNMENT_NOT_FOUND, { assignmentId });
 
-  assertOwnership(actor, assignment.assignedById, { assignmentId });
+  await assertCanManageAssignment(actor, assignment);
 
   if (assignment.targetType !== ASSIGNMENT_TARGET_TYPE.GROUP || !assignment.groupId) {
     throw AppError.conflict(ERROR_CODE.CONFLICT, 'Only group assignments can be resynchronised');
@@ -360,11 +416,11 @@ export async function syncGroupRecipients(
 export async function cancelAssignment(actor: Actor, assignmentId: string): Promise<void> {
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
-    select: { id: true, assignedById: true },
+    select: { id: true, assignedById: true, groupId: true },
   });
   if (!assignment) throw AppError.notFound(ERROR_CODE.ASSIGNMENT_NOT_FOUND, { assignmentId });
 
-  assertOwnership(actor, assignment.assignedById, { assignmentId });
+  await assertCanManageAssignment(actor, assignment);
 
   await prisma.$transaction([
     prisma.assignment.update({ where: { id: assignmentId }, data: { status: 'CANCELLED' } }),
@@ -378,4 +434,42 @@ export async function cancelAssignment(actor: Actor, assignmentId: string): Prom
       data: { status: RECIPIENT_STATUS.CANCELLED },
     }),
   ]);
+}
+
+/** Cambia fechas, intentos o tiempo de una asignación ya hecha. */
+export async function updateAssignment(
+  actor: Actor,
+  assignmentId: string,
+  input: UpdateAssignmentInput,
+): Promise<{ id: string; startAt: Date; endAt: Date | null }> {
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { id: true, assignedById: true, groupId: true, startAt: true, status: true },
+  });
+  if (!assignment) throw AppError.notFound(ERROR_CODE.ASSIGNMENT_NOT_FOUND, { assignmentId });
+
+  await assertCanManageAssignment(actor, assignment);
+
+  if (assignment.status === 'CANCELLED') {
+    throw AppError.conflict(ERROR_CODE.CONFLICT, 'Una asignación cancelada no se puede editar');
+  }
+
+  // El cierre se compara también contra la apertura que ya tenía, no solo
+  // contra la que viene: mover solo el cierre a antes de la apertura dejaría
+  // una asignación imposible de abrir.
+  const apertura = input.startAt ?? assignment.startAt;
+  if (input.endAt && input.endAt <= apertura) {
+    throw AppError.conflict(ERROR_CODE.CONFLICT, 'El cierre tiene que ser posterior a la apertura');
+  }
+
+  return prisma.assignment.update({
+    where: { id: assignmentId },
+    data: {
+      ...(input.startAt ? { startAt: input.startAt } : {}),
+      ...(input.endAt !== undefined ? { endAt: input.endAt } : {}),
+      ...(input.attemptsAllowed ? { attemptsAllowed: input.attemptsAllowed } : {}),
+      ...(input.timeLimitMinutes !== undefined ? { timeLimitMinutes: input.timeLimitMinutes } : {}),
+    },
+    select: { id: true, startAt: true, endAt: true },
+  });
 }
