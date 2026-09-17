@@ -99,6 +99,8 @@ export const PERMISSION = {
   // --- Capacitación ---------------------------------------------------------
   TRAINING_PARTICIPATE: 'training:participate',
   TRAINING_MANAGE: 'training:manage',
+  /** Escribir capacitaciones propias. El docente redacta; solo las suyas. */
+  TRAINING_CREATE: 'training:create',
   /** Corregir y ver los resultados de la capacitación de todos los docentes. */
   TRAINING_REVIEW: 'training:review',
 
@@ -157,6 +159,7 @@ const TEACHER_PERMISSIONS: readonly Permission[] = [
   PERMISSION.STATS_READ_OWN,
   PERMISSION.STATS_READ_SCOPED,
   PERMISSION.TRAINING_PARTICIPATE,
+  PERMISSION.TRAINING_CREATE,
   PERMISSION.AI_GENERATE,
 ];
 

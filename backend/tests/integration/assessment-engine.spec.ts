@@ -1711,3 +1711,238 @@ describe('integridad histórica', () => {
     expect(stored.body.data.passed).toBe(true);
   });
 });
+
+describe('la misma evaluación a varios grupos', () => {
+  /** Un segundo curso del mismo grado, con su estudiante y su docente. */
+  async function segundoGrupo(code: string) {
+    const gradeLevel = await prisma.gradeLevel.findFirstOrThrow({ where: { code: 'K8' } });
+    const year = await prisma.academicYear.findFirstOrThrow({ where: { isCurrent: true } });
+    const teacher = await prisma.user.findFirstOrThrow({ where: { username: 'docente.motor' } });
+
+    const group = await prisma.group.create({
+      data: {
+        code,
+        name: code,
+        academicYearId: year.id,
+        gradeLevelId: gradeLevel.id,
+        homeroomTeacherId: teacher.id,
+      },
+    });
+
+    const student = await createStudent({ username: `alumno.${code.toLowerCase()}` });
+    const profile = await prisma.student.create({
+      data: { userId: student.id, gradeLevelId: gradeLevel.id, enrollmentStatus: 'ACTIVE' },
+    });
+    await prisma.groupMembership.create({ data: { groupId: group.id, studentId: profile.id } });
+
+    return group.id;
+  }
+
+  it('crea una asignación por grupo, con las mismas fechas', async () => {
+    const { versionId } = await createPublishedAssessment(fixture);
+    const segundo = await segundoGrupo('K8B');
+    const startAt = new Date(Date.now() - 60_000).toISOString();
+
+    const response = await request(app)
+      .post('/api/assignments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        assessmentVersionId: versionId,
+        targetType: ASSIGNMENT_TARGET_TYPE.GROUP,
+        groupIds: [fixture.groupId, segundo],
+        startAt,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.assignments).toHaveLength(2);
+    // Dos personas en total, una por curso.
+    expect(response.body.data.recipientCount).toBe(2);
+
+    /*
+     * Cada grupo con la suya: así se puede cerrar la de un curso que se fue de
+     * salida sin tocar la del otro, y las notas no se mezclan.
+     */
+    const asignaciones = await prisma.assignment.findMany({
+      where: { assessmentVersionId: versionId },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(asignaciones).toHaveLength(2);
+    expect(new Set(asignaciones.map((fila) => fila.groupId))).toEqual(
+      new Set([fixture.groupId, segundo]),
+    );
+    expect(asignaciones[0]!.startAt.toISOString()).toBe(asignaciones[1]!.startAt.toISOString());
+  });
+
+  it('si un grupo no sale bien, no se asigna a ninguno', async () => {
+    const { versionId } = await createPublishedAssessment(fixture);
+    const gradeLevel = await prisma.gradeLevel.findFirstOrThrow({ where: { code: 'K8' } });
+    const year = await prisma.academicYear.findFirstOrThrow({ where: { isCurrent: true } });
+    const teacher = await prisma.user.findFirstOrThrow({ where: { username: 'docente.motor' } });
+
+    // Un curso sin estudiantes: asignarle algo no tiene destinatarios.
+    const vacio = await prisma.group.create({
+      data: {
+        code: 'K8Z',
+        name: 'K8Z',
+        academicYearId: year.id,
+        gradeLevelId: gradeLevel.id,
+        homeroomTeacherId: teacher.id,
+      },
+    });
+
+    const response = await request(app)
+      .post('/api/assignments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        assessmentVersionId: versionId,
+        targetType: ASSIGNMENT_TARGET_TYPE.GROUP,
+        groupIds: [fixture.groupId, vacio.id],
+        startAt: new Date().toISOString(),
+      });
+
+    expect(response.status).toBe(409);
+    // Ni siquiera la del primero: o todos los cursos elegidos, o ninguno.
+    expect(await prisma.assignment.count({ where: { assessmentVersionId: versionId } })).toBe(0);
+  });
+
+  it('una evaluación docente se asigna a varias personas de una vez', async () => {
+    const primero = await createTeacher({ username: 'docente.destino1' });
+    const segundo = await createTeacher({ username: 'docente.destino2' });
+
+    // La escala docente es porcentaje puro: sin una escala para su audiencia,
+    // una evaluación que no se podría calificar no llega a existir.
+    await prisma.gradingScale.create({
+      data: {
+        code: 'teacher-default',
+        version: 1,
+        name: trilingual('Porcentaje 0-100'),
+        audience: ASSESSMENT_AUDIENCE.TEACHER,
+        kind: SCALE_KIND.PERCENTAGE,
+        passingPercentage: 80,
+        lowerIsBetter: false,
+        isActive: true,
+      },
+    });
+
+    const assessment = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Formación interna', audience: ASSESSMENT_AUDIENCE.TEACHER });
+    expect(assessment.status).toBe(201);
+
+    await request(app)
+      .post(`/api/assessments/versions/${assessment.body.data.versionId}/questions`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        type: QUESTION_TYPE.SINGLE_CHOICE,
+        statement: '¿Cuál es la correcta?',
+        points: 5,
+        kmkCompetencyId: fixture.competencyIds[0],
+        feedbackCorrect: 'Correcto.',
+        feedbackIncorrect: 'Revisa el tema.',
+        payload: {
+          kind: QUESTION_TYPE.SINGLE_CHOICE,
+          options: [
+            { id: 'a', text: 'No', correct: false },
+            { id: 'b', text: 'Sí', correct: true },
+          ],
+        },
+      });
+
+    await request(app)
+      .post(`/api/assessments/versions/${assessment.body.data.versionId}/publish`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .expect(200);
+
+    const response = await request(app)
+      .post('/api/assignments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        assessmentVersionId: assessment.body.data.versionId,
+        targetType: ASSIGNMENT_TARGET_TYPE.USER,
+        userIds: [primero.id, segundo.id],
+        startAt: new Date().toISOString(),
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.recipientCount).toBe(2);
+  });
+});
+
+describe('materias y periodo de una evaluación', () => {
+  it('guarda varias materias y el periodo, y filtra por cualquiera de ellas', async () => {
+    const area = await prisma.academicArea.findFirstOrThrow();
+    const segunda = await prisma.subject.create({
+      data: { code: 'SOC', name: trilingual('Sociales'), areaId: area.id },
+    });
+    const periodo = await prisma.academicPeriod.findFirstOrThrow();
+
+    const creada = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({
+        title: 'Proyecto interdisciplinar',
+        subjectId: fixture.subjectId,
+        subjectIds: [segunda.id],
+        academicPeriodId: periodo.id,
+      });
+    expect(creada.status).toBe(201);
+
+    /*
+     * Filtrar por la segunda materia tiene que encontrarla: si solo contara la
+     * principal, la mitad del profesorado que la comparte no la vería.
+     */
+    const porSegunda = await request(app)
+      .get('/api/assessments')
+      .query({ subjectId: segunda.id })
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(porSegunda.body.data.map((fila: { id: string }) => fila.id)).toContain(
+      creada.body.data.assessmentId,
+    );
+
+    const porPeriodo = await request(app)
+      .get('/api/assessments')
+      .query({ academicPeriodId: periodo.id })
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+    expect(porPeriodo.body.data).toHaveLength(1);
+  });
+
+  it('cambiar las materias reemplaza el conjunto, no lo acumula', async () => {
+    const area = await prisma.academicArea.findFirstOrThrow();
+    const otra = await prisma.subject.create({
+      data: { code: 'ART', name: trilingual('Artes'), areaId: area.id },
+    });
+
+    const creada = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Con materias', subjectId: fixture.subjectId });
+
+    const actualizada = await request(app)
+      .patch(`/api/assessments/${creada.body.data.assessmentId}`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ subjectId: otra.id, subjectIds: [] });
+
+    expect(actualizada.status).toBe(200);
+    const filas = await prisma.assessmentSubject.findMany({
+      where: { assessmentId: creada.body.data.assessmentId },
+    });
+    expect(filas.map((fila) => fila.subjectId)).toEqual([otra.id]);
+  });
+
+  it('un docente no cambia la ficha de una evaluación ajena', async () => {
+    await createTeacher({ username: 'docente.ajeno.ficha' });
+    const creada = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: 'Mía' });
+
+    const response = await request(app)
+      .patch(`/api/assessments/${creada.body.data.assessmentId}`)
+      .set('Authorization', `Bearer ${await tokenFor('docente.ajeno.ficha')}`)
+      .send({ title: 'Secuestrada' });
+
+    expect(response.status).toBe(403);
+  });
+});

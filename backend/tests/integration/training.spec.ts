@@ -228,18 +228,70 @@ describe('módulos de capacitación', () => {
     expect(list.body.data[0].progress.contentsSeen).toBe(2);
   });
 
-  it('un docente no puede crear módulos', async () => {
+  it('un docente escribe su propia capacitación', async () => {
     const response = await request(app)
       .post('/api/training/admin/modules')
       .set('Authorization', `Bearer ${fixture.teacherToken}`)
       .send({
         code: 'KMK-M9',
         kmkCompetencyId: fixture.competencyId,
-        title: trilingual('Intruso'),
-        description: trilingual('No debería crearse'),
+        title: trilingual('La mía'),
+        description: trilingual('Escrita por un docente'),
       });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(201);
+  });
+
+  it('pero no toca la de otra persona', async () => {
+    const ajena = await request(app)
+      .post('/api/training/admin/modules')
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({
+        code: 'KMK-M10',
+        kmkCompetencyId: fixture.competencyId,
+        title: trilingual('De coordinación'),
+        description: trilingual('No es suya'),
+      });
+    expect(ajena.status).toBe(201);
+
+    /*
+     * Una capacitación publicada es la palabra del colegio sobre cómo se
+     * hacen las cosas: se abre la redacción al docente para lo suyo, no para
+     * reescribir lo de los demás.
+     */
+    const intento = await request(app)
+      .patch(`/api/training/admin/modules/${ajena.body.data.id}`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ title: trilingual('Secuestrada') });
+
+    expect(intento.status).toBe(403);
+  });
+
+  it('una capacitación dirigida a otros no le aparece', async () => {
+    const otro = await createTeacher({ username: 'docente.ajeno.capacitacion' });
+
+    const dirigida = await request(app)
+      .put(`/api/training/admin/modules/${fixture.moduleId}/audience`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({ mode: 'SELECTED', userIds: [otro.id] });
+    expect(dirigida.status).toBe(200);
+
+    /*
+     * El porcentaje de cumplimiento es el número por el que se decide si la
+     * formación funciona; contarle a cada docente formaciones que no le tocan
+     * lo vuelve ruido.
+     */
+    const lista = await request(app)
+      .get('/api/training/modules')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(lista.status).toBe(200);
+    expect(lista.body.data).toHaveLength(0);
+
+    const suya = await request(app)
+      .get('/api/training/modules')
+      .set('Authorization', `Bearer ${await tokenFor(otro.username)}`);
+    expect(suya.body.data).toHaveLength(1);
   });
 });
 
@@ -410,5 +462,131 @@ describe('evaluación del módulo con el motor común', () => {
     );
     expect(competency4.percentage).toBe(100);
     expect(competency4.answerCount).toBe(2);
+  });
+});
+
+describe('material que vive en otras plataformas', () => {
+  it('incrusta un Genially y rechaza una dirección que no se puede incrustar', async () => {
+    const bueno = await request(app)
+      .post(`/api/training/admin/modules/${fixture.moduleId}/contents`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({
+        type: 'EMBED',
+        title: trilingual('Presentación'),
+        url: 'https://view.genially.com/abc123',
+      });
+    expect(bueno.status).toBe(201);
+
+    /*
+     * Un incrustado que no se puede incrustar acaba siendo un enlace suelto en
+     * mitad del material, y quien lo escribió se entera al verlo publicado.
+     */
+    const malo = await request(app)
+      .post(`/api/training/admin/modules/${fixture.moduleId}/contents`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({
+        type: 'EMBED',
+        title: trilingual('Sitio cualquiera'),
+        url: 'https://sitio-cualquiera.example/algo',
+      });
+    expect(malo.status).toBe(422);
+  });
+
+  it('un bloque de audio exige su dirección', async () => {
+    const response = await request(app)
+      .post(`/api/training/admin/modules/${fixture.moduleId}/contents`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({ type: 'AUDIO', title: trilingual('Podcast') });
+
+    expect(response.status).toBe(422);
+  });
+
+  it('la evaluación se hace desde dentro del material', async () => {
+    const assessmentId = await createModuleAssessment(fixture);
+
+    const bloque = await request(app)
+      .post(`/api/training/admin/modules/${fixture.moduleId}/contents`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({ type: 'ASSESSMENT', title: trilingual('Compruébalo'), assessmentId });
+    expect(bloque.status).toBe(201);
+
+    const inicio = await request(app)
+      .post(`/api/training/modules/${fixture.moduleId}/assessment`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ assessmentId });
+
+    expect(inicio.status).toBe(200);
+    expect(inicio.body.data.recipientId).toBeTypeOf('string');
+  });
+
+  it('no admite dentro una evaluación de estudiantes', async () => {
+    // La calificaría con la escala alemana y la metería en las estadísticas
+    // del alumnado, que es lo contrario de lo que quería quien la puso ahí.
+    const deEstudiantes = await request(app)
+      .post('/api/assessments')
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({ title: 'Para el curso', audience: 'STUDENT' });
+
+    const response = await request(app)
+      .post(`/api/training/admin/modules/${fixture.moduleId}/contents`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({
+        type: 'ASSESSMENT',
+        title: trilingual('No vale'),
+        assessmentId: deEstudiantes.body.data.assessmentId,
+      });
+
+    expect(response.status).toBe(409);
+  });
+
+  it('el identificador de una evaluación ajena al módulo no abre un intento', async () => {
+    const assessmentId = await createModuleAssessment(fixture);
+    // Existe y es de docentes, pero no está en el material de este módulo.
+
+    const response = await request(app)
+      .post(`/api/training/modules/${fixture.moduleId}/assessment`)
+      .set('Authorization', `Bearer ${fixture.teacherToken}`)
+      .send({ assessmentId });
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe('cuánto claustro se ha capacitado', () => {
+  it('cuenta sobre quien la tiene asignada, no sobre todos', async () => {
+    const otro = await createTeacher({ username: 'docente.no.destinatario' });
+
+    await request(app)
+      .put(`/api/training/admin/modules/${fixture.moduleId}/audience`)
+      .set('Authorization', `Bearer ${fixture.adminToken}`)
+      .send({ mode: 'SELECTED', userIds: [otro.id] });
+
+    // El destinatario recorre el material entero.
+    await request(app)
+      .put(`/api/training/modules/${fixture.moduleId}/progress`)
+      .set('Authorization', `Bearer ${await tokenFor(otro.username)}`)
+      .send({ contentsSeen: 2 });
+
+    const informe = await request(app)
+      .get('/api/statistics/training/completion')
+      .set('Authorization', `Bearer ${fixture.adminToken}`);
+
+    expect(informe.status).toBe(200);
+    const modulo = informe.body.data.modules[0];
+    /*
+     * Una formación dirigida a una persona no puede parecer un fracaso porque
+     * los demás no la hicieran: el denominador son sus destinatarios.
+     */
+    expect(modulo.targeted).toBe(1);
+    expect(modulo.completed).toBe(1);
+    expect(modulo.completionRate).toBe(100);
+  });
+
+  it('un docente no ve el cumplimiento del claustro', async () => {
+    const response = await request(app)
+      .get('/api/statistics/training/completion')
+      .set('Authorization', `Bearer ${fixture.teacherToken}`);
+
+    expect(response.status).toBe(403);
   });
 });

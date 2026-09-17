@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { localize, type LocalizedText } from '@medienpass/shared';
+import { TRAINING_CONTENT_TYPES, localize, type LocalizedText } from '@medienpass/shared';
 import { http, ApiError } from '@/services/http';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseButton from '@/design-system/BaseButton.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import EmptyState from '@/design-system/EmptyState.vue';
-import LocalizedField from '@/design-system/LocalizedField.vue';
 import { useToast } from '@/composables/useToast';
 import ContentBlockEditor from './ContentBlockEditor.vue';
 import ModuleAssessmentLink from './ModuleAssessmentLink.vue';
+import ModuleDataForm from './ModuleDataForm.vue';
+import TrainingAudiencePanel from './TrainingAudiencePanel.vue';
 
 /**
  * Redacción de un módulo de capacitación.
@@ -37,10 +38,11 @@ interface StoredFile {
 
 interface ContentBlock {
   id: string;
-  type: 'TEXT' | 'VIDEO' | 'DOCUMENT' | 'LINK' | 'ACTIVITY';
+  type: string;
   title: LocalizedText;
   body: LocalizedText | null;
   url: string | null;
+  assessmentId: string | null;
   position: number;
   files: StoredFile[];
 }
@@ -57,12 +59,9 @@ interface ModuleDetail {
   kmkCompetency: { id: string; code: string; name: LocalizedText; color: string };
   contents: ContentBlock[];
   assessment: { id: string; title: string } | null;
-}
-
-interface Competency {
-  id: string;
-  code: string;
-  name: LocalizedText;
+  academicPeriodId: string | null;
+  audienceMode: string;
+  audience: Array<{ userId: string; dueDate: string | null }>;
 }
 
 const route = useRoute();
@@ -71,34 +70,19 @@ const { t, locale, d } = useI18n();
 const toast = useToast();
 
 const module = ref<ModuleDetail | null>(null);
-const competencies = ref<Competency[]>([]);
 const loading = ref(true);
-const savingModule = ref(false);
 const busy = ref(false);
 
-const draft = reactive({
-  title: {} as Partial<LocalizedText>,
-  description: {} as Partial<LocalizedText>,
-  kmkCompetencyId: '',
-  estimatedMinutes: 0,
-});
+/** Tipo del próximo bloque: se elige antes de crearlo, como en un editor. */
+const nuevoTipo = ref<string>('TEXT');
+const TYPES = TRAINING_CONTENT_TYPES;
 
 const moduleId = computed(() => route.params['id'] as string);
 const isPublished = computed(() => module.value?.status === 'PUBLISHED');
 const canPublish = computed(() => (module.value?.contents.length ?? 0) > 0);
 
 async function load(): Promise<void> {
-  const [detail, kmk] = await Promise.all([
-    http.get<ModuleDetail>(`/training/admin/modules/${moduleId.value}`),
-    http.get<Competency[]>('/kmk/competencies'),
-  ]);
-  module.value = detail;
-  competencies.value = kmk;
-
-  draft.title = { ...detail.title };
-  draft.description = { ...detail.description };
-  draft.kmkCompetencyId = detail.kmkCompetencyId;
-  draft.estimatedMinutes = detail.estimatedMinutes ?? 0;
+  module.value = await http.get<ModuleDetail>(`/training/admin/modules/${moduleId.value}`);
 }
 
 onMounted(async () => {
@@ -124,30 +108,17 @@ async function run(action: () => Promise<unknown>, successKey?: string): Promise
   }
 }
 
-async function saveModule(): Promise<void> {
-  savingModule.value = true;
-  try {
-    await http.patch(`/training/admin/modules/${moduleId.value}`, {
-      title: draft.title,
-      description: draft.description,
-      kmkCompetencyId: draft.kmkCompetencyId,
-      // Cero significa «sin estimación», no «cero minutos».
-      estimatedMinutes: draft.estimatedMinutes > 0 ? draft.estimatedMinutes : null,
-    });
-    await load();
-    toast.success(t('common.saved'));
-  } catch (error) {
-    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
-  } finally {
-    savingModule.value = false;
-  }
-}
-
 const addBlock = () =>
   run(() =>
     http.post(`/training/admin/modules/${moduleId.value}/contents`, {
-      type: 'TEXT',
-      title: { [locale.value]: t('training.admin.newBlock') },
+      type: nuevoTipo.value,
+      title: { [locale.value]: t(`training.admin.type.${nuevoTipo.value}`) },
+      // Los tipos que exigen dirección nacen con una de relleno; el servidor
+      // la pide, y un bloque que no se puede crear no se puede empezar.
+      ...(['VIDEO', 'AUDIO', 'EMBED', 'LINK'].includes(nuevoTipo.value)
+        ? { url: 'https://example.org' }
+        : {}),
+      ...(nuevoTipo.value === 'ASSESSMENT' ? { assessmentId: null } : {}),
     }),
   );
 
@@ -255,53 +226,35 @@ const inputClass =
       </p>
     </header>
 
-    <!-- Datos del módulo -->
-    <BaseCard class="flex flex-col gap-4">
-      <h2 class="text-lg font-semibold">{{ t('training.admin.moduleData') }}</h2>
-
-      <LocalizedField v-model="draft.title" :label="t('training.admin.moduleTitle')" />
-      <LocalizedField
-        v-model="draft.description"
-        rich
-        :label="t('training.admin.moduleDescription')"
-        :hint="t('training.admin.moduleDescriptionHint')"
-      />
-
-      <div class="grid gap-4 sm:grid-cols-2">
-        <label class="flex flex-col gap-1.5">
-          <span class="text-sm font-medium">{{ t('kmk.competency') }}</span>
-          <select v-model="draft.kmkCompetencyId" :class="inputClass">
-            <option v-for="competency in competencies" :key="competency.id" :value="competency.id">
-              KMK {{ competency.code }} — {{ localize(competency.name, locale as never) }}
-            </option>
-          </select>
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <span class="text-sm font-medium">{{ t('training.admin.estimatedMinutes') }}</span>
-          <input
-            v-model.number="draft.estimatedMinutes"
-            type="number"
-            min="0"
-            max="600"
-            :class="inputClass"
-          />
-          <span class="text-xs text-ink-subtle">{{ t('training.admin.estimatedHint') }}</span>
-        </label>
-      </div>
-
-      <div>
-        <BaseButton :loading="savingModule" @click="saveModule">{{ t('common.save') }}</BaseButton>
-      </div>
-    </BaseCard>
+    <ModuleDataForm
+      :module-id="module.id"
+      :title="module.title"
+      :description="module.description"
+      :kmk-competency-id="module.kmkCompetencyId"
+      :estimated-minutes="module.estimatedMinutes"
+      :academic-period-id="module.academicPeriodId"
+      @saved="load()"
+    />
 
     <!-- Material -->
     <section class="flex flex-col gap-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="text-lg font-semibold">{{ t('training.material') }}</h2>
-        <BaseButton size="sm" :loading="busy" @click="addBlock">
-          {{ t('training.admin.addBlock') }}
-        </BaseButton>
+        <!--
+          Se elige el tipo antes de crear el bloque, no después: quien va a
+          poner un vídeo no quiere un bloque de texto que luego hay que
+          convertir.
+        -->
+        <div class="flex items-center gap-2">
+          <select v-model="nuevoTipo" :class="inputClass" :aria-label="t('training.admin.blockType')">
+            <option v-for="type in TYPES" :key="type" :value="type">
+              {{ t(`training.admin.type.${type}`) }}
+            </option>
+          </select>
+          <BaseButton size="sm" :loading="busy" @click="addBlock">
+            {{ t('training.admin.addBlock') }}
+          </BaseButton>
+        </div>
       </div>
 
       <EmptyState v-if="module.contents.length === 0" :title="t('training.admin.noBlocks')" />
@@ -317,6 +270,21 @@ const inputClass =
         @move="moveBlock(index, $event)"
       />
     </section>
+
+    <!-- A quién va dirigida -->
+    <BaseCard class="flex flex-col gap-3">
+      <div>
+        <h2 class="text-lg font-semibold">{{ t('training.admin.audience') }}</h2>
+        <p class="mt-1 text-sm text-ink-muted">{{ t('training.admin.audienceHint') }}</p>
+      </div>
+      <TrainingAudiencePanel
+        :key="module.audienceMode + module.audience.length"
+        :module-id="module.id"
+        :mode="module.audienceMode"
+        :selected="module.audience"
+        @changed="load()"
+      />
+    </BaseCard>
 
     <!-- Evaluación vinculada -->
     <BaseCard class="flex flex-col gap-3">

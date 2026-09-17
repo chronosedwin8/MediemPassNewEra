@@ -33,7 +33,9 @@
     "noResults": "Keine Ergebnisse",
     "showingPage": "Seite {page} von {total}",
     "choose": "Bitte wählen",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "showAll": "Alle anzeigen",
+    "showLess": "Weniger anzeigen"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -228,7 +230,8 @@
     "purposeEvaluation": "Beurteilung",
     "purposeDiagnostic": "Diagnose",
     "purposeTraining": "Fortbildung",
-    "trainingHint": "Mit diesen beiden Einstellungen lässt sie sich einem Fortbildungsmodul zuordnen und zertifiziert Lehrkräfte."
+    "trainingHint": "Mit diesen beiden Einstellungen lässt sie sich einem Fortbildungsmodul zuordnen und zertifiziert Lehrkräfte.",
+    "moreSubjects": "Weitere geprüfte Fächer ({count})"
   },
   "question": {
     "add": "Aufgabe hinzufügen",
@@ -476,7 +479,13 @@
     "dueAt": "Endet",
     "editDates": "Termine",
     "opens": "Öffnet",
-    "noEndHint": "Leer, wenn sie nicht schließt: bleibt offen, bis Sie sie zurückziehen."
+    "noEndHint": "Leer, wenn sie nicht schließt: bleibt offen, bis Sie sie zurückziehen.",
+    "groups": "Gruppen",
+    "teachers": "Lehrkräfte",
+    "selectAll": "Alle {count} auswählen",
+    "closes": "Schließt",
+    "noTeachers": "Keine Lehrkräfte vorhanden.",
+    "assignedToTargets": "An {targets} Ziele zugewiesen · {count} Personen"
   },
   "errors": {
     "generic": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
@@ -675,14 +684,30 @@
         "VIDEO": "Video",
         "DOCUMENT": "Dokument",
         "LINK": "Link",
-        "ACTIVITY": "Aktivität"
+        "ACTIVITY": "Aktivität",
+        "AUDIO": "Audio",
+        "EMBED": "Eingebetteter Inhalt",
+        "ASSESSMENT": "Bewertung"
       },
       "linked": "Verknüpft",
       "noCandidates": "Es gibt keine Beurteilung mit Zielgruppe Lehrkräfte und Zweck Fortbildung. Legen Sie zuerst eine unter Beurteilungen an, mit genau diesen beiden Einstellungen.",
       "chooseAssessment": "Beurteilung, die das Modul zertifiziert",
       "link": "Verknüpfen",
       "relink": "Ändern",
-      "assessmentHint": "Ohne Beurteilung lässt sich das Modul lesen, aber nicht bestehen, und es zählt nicht für die Fortbildungsstatistik."
+      "assessmentHint": "Ohne Beurteilung lässt sich das Modul lesen, aber nicht bestehen, und es zählt nicht für die Fortbildungsstatistik.",
+      "embedHint": "Einbettbar: {platforms}. Andere Adressen bleiben ein Link.",
+      "blockAssessment": "Bewertung an dieser Stelle",
+      "blockAssessmentHint": "Nur veröffentlichte Bewertungen für Lehrkräfte.",
+      "audience": "Für wen ist sie bestimmt",
+      "audienceHint": "Das gesamte Kollegium oder bestimmte Lehrkräfte.",
+      "audienceAll": "Gesamtes Kollegium",
+      "audienceSelected": "Bestimmte Lehrkräfte",
+      "audienceAllHint": "Alle Lehrkräfte sehen sie, und die Quote gilt für das gesamte Kollegium.",
+      "audienceCount": "Ausgewählt: {count}",
+      "selectAllTeachers": "Alle {count} auswählen",
+      "searchTeacher": "Lehrkraft suchen",
+      "dueDate": "Frist",
+      "anyPeriod": "Ohne Zeitraum"
     }
   },
   "ai": {
@@ -1112,7 +1137,17 @@
   },
   "statistics": {
     "teacher": "Lehrkraft",
-    "period": "Zeitraum"
+    "period": "Zeitraum",
+    "passRates": "Bestehensquote je Bewertung",
+    "noPassRates": "Mit diesen Filtern gibt es noch keine Ergebnisse.",
+    "students": "Schüler/innen",
+    "average": "Durchschnitt",
+    "trainingCompletion": "Lehrkräftefortbildung",
+    "noTraining": "Es sind keine Fortbildungen veröffentlicht.",
+    "trainingOverall": "Erfüllungsquote des Kollegiums ({count} Lehrkräfte)",
+    "completedOf": "{done} von {total}",
+    "certified": "{count} bestanden",
+    "byTeacher": "Nach Lehrkraft"
   },
   "phidiasImport": {
     "open": "Klassen aus Phidias holen",

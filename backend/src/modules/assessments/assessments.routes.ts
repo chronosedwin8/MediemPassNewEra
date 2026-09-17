@@ -27,6 +27,8 @@ import {
   updateVersion,
   setCertificateEnabled,
   certificateSettingSchema,
+  updateAssessment,
+  updateAssessmentSchema,
   updateVersionSchema,
 } from './assessments.service.js';
 import {
@@ -60,6 +62,7 @@ const listQuery = paginationQuery.extend({
     ])
     .optional(),
   subjectId: z.string().uuid().optional(),
+  academicPeriodId: z.string().uuid().optional(),
   status: z
     .enum([
       ASSESSMENT_VERSION_STATUS.DRAFT,
@@ -88,6 +91,16 @@ assessmentsRouter.post(
   validate({ body: createAssessmentSchema }),
   asyncHandler(async (req, res) => {
     created(res, await createAssessment(requireAuth(req), req.body));
+  }),
+);
+
+/** La ficha: título, materias, periodo y grado. Las preguntas van aparte. */
+assessmentsRouter.patch(
+  '/:id',
+  requirePermission(PERMISSION.ASSESSMENT_UPDATE),
+  validate({ params: uuidParam(), body: updateAssessmentSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await updateAssessment(requireAuth(req), req.params['id']!, req.body));
   }),
 );
 

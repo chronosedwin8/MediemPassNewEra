@@ -33,7 +33,9 @@
     "noResults": "Sin resultados",
     "showingPage": "Página {page} de {total}",
     "choose": "Elija una opción",
-    "remove": "Quitar"
+    "remove": "Quitar",
+    "showAll": "Ver todos",
+    "showLess": "Ver menos"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -228,7 +230,8 @@
     "purposeEvaluation": "Evaluación",
     "purposeDiagnostic": "Diagnóstico",
     "purposeTraining": "Capacitación",
-    "trainingHint": "Con estos dos ajustes podrá vincularla a un módulo de contenido formativo para certificar a los docentes."
+    "trainingHint": "Con estos dos ajustes podrá vincularla a un módulo de contenido formativo para certificar a los docentes.",
+    "moreSubjects": "Otras materias que mide ({count})"
   },
   "question": {
     "add": "Añadir pregunta",
@@ -476,7 +479,13 @@
     "dueAt": "Cierra",
     "editDates": "Fechas",
     "opens": "Abre",
-    "noEndHint": "Vacío si no cierra: queda abierta hasta que la cancele."
+    "noEndHint": "Vacío si no cierra: queda abierta hasta que la cancele.",
+    "groups": "Grupos",
+    "teachers": "Docentes",
+    "selectAll": "Elegir los {count}",
+    "closes": "Cierra",
+    "noTeachers": "No hay docentes que listar.",
+    "assignedToTargets": "Asignada a {targets} destinos · {count} personas"
   },
   "errors": {
     "generic": "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
@@ -675,14 +684,30 @@
         "VIDEO": "Vídeo",
         "DOCUMENT": "Documento",
         "LINK": "Enlace",
-        "ACTIVITY": "Actividad"
+        "ACTIVITY": "Actividad",
+        "AUDIO": "Audio",
+        "EMBED": "Contenido incrustado",
+        "ASSESSMENT": "Evaluación"
       },
       "linked": "Vinculada",
       "noCandidates": "No hay ninguna evaluación con audiencia docente y propósito de capacitación. Cree una primero en Evaluaciones, con esos dos ajustes.",
       "chooseAssessment": "Evaluación que certifica el módulo",
       "link": "Vincular",
       "relink": "Cambiar",
-      "assessmentHint": "Sin evaluación, el módulo se puede leer pero no aprobar, y no cuenta para las estadísticas de capacitación."
+      "assessmentHint": "Sin evaluación, el módulo se puede leer pero no aprobar, y no cuenta para las estadísticas de capacitación.",
+      "embedHint": "Se puede incrustar: {platforms}. Otra dirección quedará como enlace.",
+      "blockAssessment": "Evaluación que se hace aquí",
+      "blockAssessmentHint": "Solo evaluaciones dirigidas a docentes y ya publicadas.",
+      "audience": "A quién va dirigida",
+      "audienceHint": "Elige el claustro entero o los docentes concretos que deben hacerla.",
+      "audienceAll": "Todo el claustro",
+      "audienceSelected": "Docentes concretos",
+      "audienceAllHint": "La verán todos los docentes, y el cumplimiento se mide sobre el claustro completo.",
+      "audienceCount": "Elegidos: {count}",
+      "selectAllTeachers": "Elegir los {count}",
+      "searchTeacher": "Buscar docente",
+      "dueDate": "Fecha límite",
+      "anyPeriod": "Sin periodo"
     }
   },
   "ai": {
@@ -1112,7 +1137,17 @@
   },
   "statistics": {
     "teacher": "Docente",
-    "period": "Periodo"
+    "period": "Periodo",
+    "passRates": "Aprobación por evaluación",
+    "noPassRates": "Todavía no hay resultados con estos filtros.",
+    "students": "Estudiantes",
+    "average": "Promedio",
+    "trainingCompletion": "Capacitación docente",
+    "noTraining": "No hay capacitaciones publicadas.",
+    "trainingOverall": "Cumplimiento del claustro ({count} docentes)",
+    "completedOf": "{done} de {total}",
+    "certified": "{count} aprobaron",
+    "byTeacher": "Por docente"
   },
   "phidiasImport": {
     "open": "Traer cursos de Phidias",

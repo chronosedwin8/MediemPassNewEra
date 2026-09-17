@@ -52,6 +52,14 @@ export const createAssessmentSchema = z.object({
     ])
     .default(ASSESSMENT_PURPOSE.EVALUATION),
   subjectId: z.string().uuid().nullable().optional(),
+  /**
+   * Todas las materias que mide, cuando es más de una.
+   *
+   * Un trabajo sobre desinformación se evalúa en sociales y en informática a
+   * la vez, y con una sola materia había que elegir cuál de las dos mentía.
+   */
+  subjectIds: z.array(z.string().uuid()).max(10).optional(),
+  academicPeriodId: z.string().uuid().nullable().optional(),
   areaId: z.string().uuid().nullable().optional(),
   gradeLevelId: z.string().uuid().nullable().optional(),
   language: z.enum([LANGUAGE.ES, LANGUAGE.DE, LANGUAGE.EN]).default(LANGUAGE.ES),
@@ -59,6 +67,20 @@ export const createAssessmentSchema = z.object({
     .enum([DIFFICULTY.BASIC, DIFFICULTY.INTERMEDIATE, DIFFICULTY.ADVANCED])
     .default(DIFFICULTY.INTERMEDIATE),
   timeLimitMinutes: z.number().int().min(0).max(600).nullable().optional(),
+});
+
+/**
+ * Lo que se puede corregir de la evaluación después de crearla.
+ *
+ * Es la ficha, no el contenido: título, materias, periodo y grado. Las
+ * preguntas viven en la versión y tienen sus propias reglas.
+ */
+export const updateAssessmentSchema = z.object({
+  title: z.string().trim().min(3).max(200).optional(),
+  subjectId: z.string().uuid().nullable().optional(),
+  subjectIds: z.array(z.string().uuid()).max(10).optional(),
+  academicPeriodId: z.string().uuid().nullable().optional(),
+  gradeLevelId: z.string().uuid().nullable().optional(),
 });
 
 export const updateVersionSchema = z.object({
@@ -108,6 +130,8 @@ export interface AssessmentSummary {
   language: string;
   createdBy: { id: string; firstName: string; lastName: string };
   subject: { id: string; code: string } | null;
+  subjects: Array<{ id: string; code: string }>;
+  academicPeriod: { id: string; name: string } | null;
   gradeLevel: { id: string; code: string } | null;
   versionCount: number;
   latestVersion: {
@@ -123,6 +147,8 @@ export interface AssessmentSummary {
 const assessmentInclude = {
   createdBy: { select: { id: true, firstName: true, lastName: true } },
   subject: { select: { id: true, code: true } },
+  subjects: { select: { subject: { select: { id: true, code: true } } } },
+  academicPeriod: { select: { id: true, name: true } },
   gradeLevel: { select: { id: true, code: true } },
   versions: {
     orderBy: { versionNumber: 'desc' as const },
@@ -147,6 +173,8 @@ type AssessmentRow = {
   createdAt: Date;
   createdBy: { id: string; firstName: string; lastName: string };
   subject: { id: string; code: string } | null;
+  subjects: Array<{ subject: { id: string; code: string } }>;
+  academicPeriod: { id: string; name: string } | null;
   gradeLevel: { id: string; code: string } | null;
   versions: Array<{
     id: string;
@@ -168,6 +196,8 @@ function toSummary(row: AssessmentRow): AssessmentSummary {
     language: row.language,
     createdBy: row.createdBy,
     subject: row.subject,
+    subjects: row.subjects.map((fila) => fila.subject),
+    academicPeriod: row.academicPeriod,
     gradeLevel: row.gradeLevel,
     versionCount: row._count.versions,
     latestVersion: latest
@@ -201,6 +231,7 @@ export async function listAssessments(
     audience?: AssessmentAudience;
     purpose?: AssessmentPurpose;
     subjectId?: string;
+    academicPeriodId?: string;
     status?: string;
   },
 ): Promise<Paginated<AssessmentSummary>> {
@@ -209,9 +240,22 @@ export async function listAssessments(
     ...scopeFor(actor, canReadAll),
     ...(query.audience ? { audience: query.audience } : {}),
     ...(query.purpose ? { purpose: query.purpose } : {}),
-    ...(query.subjectId ? { subjectId: query.subjectId } : {}),
+    ...(query.academicPeriodId ? { academicPeriodId: query.academicPeriodId } : {}),
     ...(query.search ? { title: { contains: query.search, mode: 'insensitive' as const } } : {}),
     ...(query.status ? { versions: { some: { status: query.status as never } } } : {}),
+    /*
+     * Por materia cuenta cualquiera de las que mide, no solo la principal: una
+     * evaluación compartida entre dos materias tiene que salir al filtrar por
+     * las dos, que es justo para lo que existe el conjunto.
+     */
+    ...(query.subjectId
+      ? {
+          OR: [
+            { subjectId: query.subjectId },
+            { subjects: { some: { subjectId: query.subjectId } } },
+          ],
+        }
+      : {}),
   };
 
   const [total, rows] = await Promise.all([
@@ -259,6 +303,22 @@ export async function getAssessment(actor: Actor, canReadAll: boolean, id: strin
 }
 
 /**
+ * Las materias de la evaluación, con una de ellas como principal.
+ *
+ * La principal existe porque el informe por materia, el plan de evaluación y
+ * el histórico de respuestas ya la usaban, y convertirlos todos a una lista
+ * habría tocado media plataforma para el caso raro. Así el caso de siempre
+ * —una materia— funciona igual, y el de varias añade el resto al conjunto.
+ */
+function resolveSubjects(input: { subjectId?: string | null; subjectIds?: string[] }): {
+  principal: string | null;
+  todas: string[];
+} {
+  const todas = [...new Set([...(input.subjectIds ?? []), ...(input.subjectId ? [input.subjectId] : [])])];
+  return { principal: input.subjectId ?? todas[0] ?? null, todas };
+}
+
+/**
  * Crea la evaluación junto con su primera versión en borrador.
  *
  * Se hacen a la vez porque una evaluación sin versión no es editable ni
@@ -269,6 +329,7 @@ export async function createAssessment(
   input: CreateAssessmentInput,
 ): Promise<{ assessmentId: string; versionId: string }> {
   const scale = await getActiveScale(input.audience);
+  const materias = resolveSubjects(input);
 
   const result = await prisma.$transaction(async (tx) => {
     const assessment = await tx.assessment.create({
@@ -276,11 +337,13 @@ export async function createAssessment(
         title: input.title,
         audience: input.audience,
         purpose: input.purpose,
-        subjectId: input.subjectId ?? null,
+        subjectId: materias.principal,
+        academicPeriodId: input.academicPeriodId ?? null,
         areaId: input.areaId ?? null,
         gradeLevelId: input.gradeLevelId ?? null,
         language: input.language,
         createdById: actor.userId,
+        subjects: { create: materias.todas.map((subjectId) => ({ subjectId })) },
       },
     });
 
@@ -311,6 +374,56 @@ export async function createAssessment(
   });
 
   return result;
+}
+
+/**
+ * Corrige la ficha de la evaluación.
+ *
+ * Las materias se reemplazan enteras cuando vienen: media plataforma trata
+ * «lo que mide esta evaluación» como un conjunto, y fusionar lo enviado con lo
+ * que hubiera dejaría materias que alguien acaba de quitar.
+ */
+export async function updateAssessment(
+  actor: Actor,
+  id: string,
+  input: z.infer<typeof updateAssessmentSchema>,
+) {
+  const assessment = await prisma.assessment.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true, createdById: true, subjectId: true },
+  });
+  if (!assessment) throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { id });
+
+  assertOwnership(actor, assessment.createdById, { assessmentId: id });
+
+  const cambiaMaterias = input.subjectIds !== undefined || input.subjectId !== undefined;
+  const materias = resolveSubjects({
+    subjectId: input.subjectId === undefined ? assessment.subjectId : input.subjectId,
+    subjectIds: input.subjectIds,
+  });
+
+  return prisma.$transaction(async (tx) => {
+    if (cambiaMaterias) {
+      await tx.assessmentSubject.deleteMany({ where: { assessmentId: id } });
+      await tx.assessmentSubject.createMany({
+        data: materias.todas.map((subjectId) => ({ assessmentId: id, subjectId })),
+        skipDuplicates: true,
+      });
+    }
+
+    return tx.assessment.update({
+      where: { id },
+      data: {
+        ...(input.title ? { title: input.title } : {}),
+        ...(cambiaMaterias ? { subjectId: materias.principal } : {}),
+        ...(input.academicPeriodId !== undefined
+          ? { academicPeriodId: input.academicPeriodId }
+          : {}),
+        ...(input.gradeLevelId !== undefined ? { gradeLevelId: input.gradeLevelId } : {}),
+      },
+      include: assessmentInclude,
+    });
+  });
 }
 
 /** Comprueba que la versión existe, es del actor y admite modificación. */

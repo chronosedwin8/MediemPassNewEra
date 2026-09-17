@@ -3,9 +3,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { localize, type LocalizedText } from '@medienpass/shared';
 import { http } from '@/services/http';
+import { useAuthStore } from '@/stores/auth';
 import KmkChart from './KmkChart.vue';
 import KmkBreakdownTable from './KmkBreakdownTable.vue';
 import SmartPanel from './SmartPanel.vue';
+import PassRatesPanel from './PassRatesPanel.vue';
+import TrainingCompletionPanel from './TrainingCompletionPanel.vue';
 import type { BreakdownRow, Dimension } from './breakdown-types';
 import BaseCard from '@/design-system/BaseCard.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
@@ -50,6 +53,7 @@ interface Option {
 }
 
 const { t, locale, n } = useI18n();
+const auth = useAuthStore();
 
 const report = ref<KmkReport | null>(null);
 const loading = ref(true);
@@ -134,7 +138,7 @@ function clearFocus(): void {
 }
 
 const teachers = ref<Array<{ userId: string; firstName: string; lastName: string }>>([]);
-const periods = ref<Array<{ id: string; code: string }>>([]);
+const periods = ref<Array<{ id: string; name: string }>>([]);
 
 onMounted(async () => {
   const [subjectList, groupList, teacherList, year] = await Promise.all([
@@ -145,7 +149,7 @@ onMounted(async () => {
     }),
     // Los periodos cuelgan del año vigente: filtrar por «segundo trimestre»
     // sin decir de qué año no significa nada.
-    http.get<{ periods?: Array<{ id: string; code: string }> }>('/academic/years/current'),
+    http.get<{ periods?: Array<{ id: string; name: string }> }>('/academic/years/current'),
   ]);
   subjects.value = subjectList.items;
   groups.value = groupList.items;
@@ -208,7 +212,7 @@ const selectClass =
         </label>
         <select id="filter-period" v-model="filters.periodId" :class="selectClass">
           <option value="">{{ t('common.none') }}</option>
-          <option v-for="p in periods" :key="p.id" :value="p.id">{{ p.code }}</option>
+          <option v-for="p in periods" :key="p.id" :value="p.id">{{ p.name }}</option>
         </select>
       </div>
 
@@ -298,6 +302,15 @@ const selectClass =
       filtros, que es lo que permite preguntarse las dos cosas del mismo curso.
     -->
     <SmartPanel :filters="query" />
+
+    <!-- Cuántos aprobaron cada evaluación, que no es lo mismo que en qué fallan. -->
+    <PassRatesPanel :filters="query" />
+
+    <!--
+      La capacitación docente solo la ve quien puede verla: es información
+      sobre el desempeño de personas concretas.
+    -->
+    <TrainingCompletionPanel v-if="auth.canAny('stats:read_global', 'training:review')" />
 
     <!--
       El desglose se pinta aunque el agregado esté vacío por los filtros: es

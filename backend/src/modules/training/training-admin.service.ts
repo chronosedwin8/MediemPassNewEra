@@ -2,8 +2,13 @@ import { z } from 'zod';
 import {
   AUDIT_ACTION,
   ERROR_CODE,
+  PERMISSION,
   RICH_TEXT_MAX_LENGTH,
   SUPPORTED_LANGUAGES,
+  TRAINING_AUDIENCE_MODE,
+  TRAINING_CONTENT_TYPES,
+  TRAINING_CONTENT_TYPE,
+  isEmbeddable,
   type LocalizedText,
   type Role,
 } from '@medienpass/shared';
@@ -56,6 +61,7 @@ export const createModuleSchema = z.object({
   title: localizedText,
   description: localizedText,
   estimatedMinutes: z.number().int().min(0).max(600).nullable().optional(),
+  academicPeriodId: z.string().uuid().nullable().optional(),
 });
 
 export const updateModuleSchema = z.object({
@@ -63,15 +69,64 @@ export const updateModuleSchema = z.object({
   description: localizedText.optional(),
   kmkCompetencyId: z.string().uuid().optional(),
   estimatedMinutes: z.number().int().min(0).max(600).nullable().optional(),
+  academicPeriodId: z.string().uuid().nullable().optional(),
 });
 
-export const contentSchema = z.object({
-  type: z.enum(['TEXT', 'VIDEO', 'DOCUMENT', 'LINK', 'ACTIVITY']),
-  title: localizedText,
-  /** Cuerpo con formato. Opcional: un bloque de vídeo puede ser solo el enlace. */
-  body: localizedText.optional().nullable(),
-  url: z.string().trim().url().max(1000).nullable().optional(),
+/**
+ * A quién se le aplica la capacitación.
+ *
+ * Con `ALL` la ve el claustro entero y la lista de personas se vacía: dejarla
+ * guardada mientras el módulo es para todos produciría dos verdades sobre lo
+ * mismo, y a la siguiente edición nadie sabría cuál manda.
+ */
+export const audienceSchema = z.object({
+  mode: z.enum([TRAINING_AUDIENCE_MODE.ALL, TRAINING_AUDIENCE_MODE.SELECTED]),
+  userIds: z.array(z.string().uuid()).max(300).default([]),
+  dueDate: z.coerce.date().nullable().optional(),
 });
+
+export const contentSchema = z
+  .object({
+    type: z.enum(TRAINING_CONTENT_TYPES as [string, ...string[]]),
+    title: localizedText,
+    /** Cuerpo con formato. Opcional: un bloque de vídeo puede ser solo el enlace. */
+    body: localizedText.optional().nullable(),
+    url: z.string().trim().url().max(1000).nullable().optional(),
+    /** La evaluación que se hace desde dentro del material. */
+    assessmentId: z.string().uuid().nullable().optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (input.type === TRAINING_CONTENT_TYPE.ASSESSMENT && !input.assessmentId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['assessmentId'],
+        message: 'Elige la evaluación que va en este bloque',
+      });
+    }
+
+    const necesitaUrl = [
+      TRAINING_CONTENT_TYPE.VIDEO,
+      TRAINING_CONTENT_TYPE.AUDIO,
+      TRAINING_CONTENT_TYPE.EMBED,
+      TRAINING_CONTENT_TYPE.LINK,
+    ] as string[];
+    if (necesitaUrl.includes(input.type) && !input.url) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['url'], message: 'Falta la dirección' });
+    }
+
+    /*
+     * Un incrustado que no se puede incrustar acaba siendo un enlace suelto en
+     * mitad del material, y quien lo escribió se entera al verlo publicado.
+     * Mejor decirlo al guardar y nombrar las plataformas que sí sirven.
+     */
+    if (input.type === TRAINING_CONTENT_TYPE.EMBED && input.url && !isEmbeddable(input.url)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['url'],
+        message: 'Esa dirección no se puede incrustar. Usa YouTube, Genially, Vimeo, Drive, Canva, Wordwall, Padlet, H5P, Prezi o ThingLink.',
+      });
+    }
+  });
 
 export const reorderSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) });
 
@@ -82,6 +137,45 @@ export type ContentInput = z.infer<typeof contentSchema>;
 interface Actor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
+}
+
+/** Quien coordina toca cualquier módulo; el docente, los que escribió él. */
+function gestionaTodo(actor: Actor): boolean {
+  return actor.permissions?.includes(PERMISSION.TRAINING_MANAGE) ?? false;
+}
+
+/**
+ * Comprueba que el actor puede editar ese módulo, y lo devuelve.
+ *
+ * El docente escribe su propio material —es la mitad del sentido de abrirle la
+ * redacción—, pero no reescribe el de otro: una capacitación publicada es la
+ * palabra del colegio sobre cómo se hacen las cosas.
+ */
+export async function assertCanEditModule(actor: Actor, moduleId: string) {
+  const module = await prisma.trainingModule.findUnique({
+    where: { id: moduleId },
+    select: { id: true, code: true, createdById: true },
+  });
+  if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
+
+  if (!gestionaTodo(actor) && module.createdById !== actor.userId) {
+    throw AppError.forbidden(ERROR_CODE.FORBIDDEN, { moduleId, reason: 'not_the_author' });
+  }
+
+  return module;
+}
+
+/** El módulo al que pertenece un bloque, comprobando quién puede tocarlo. */
+async function assertCanEditContent(actor: Actor, contentId: string): Promise<string> {
+  const content = await prisma.trainingContent.findUnique({
+    where: { id: contentId },
+    select: { id: true, moduleId: true },
+  });
+  if (!content) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { contentId });
+
+  await assertCanEditModule(actor, content.moduleId);
+  return content.moduleId;
 }
 
 /**
@@ -104,7 +198,9 @@ function sanitizeLocalized(text: Record<string, string | undefined>, field: stri
 
 const moduleInclude = {
   kmkCompetency: { select: { id: true, code: true, name: true, color: true } },
-  _count: { select: { contents: true } },
+  academicPeriod: { select: { id: true, name: true } },
+  createdBy: { select: { id: true, firstName: true, lastName: true } },
+  _count: { select: { contents: true, audience: true } },
 } as const;
 
 /**
@@ -113,8 +209,16 @@ const moduleInclude = {
  * Es la diferencia con el listado del profesorado: quien redacta necesita ver
  * lo que está a medias, y quien se forma no.
  */
-export async function listAllModules() {
+export async function listAllModules(actor: Actor) {
   const modules = await prisma.trainingModule.findMany({
+    /*
+     * El docente ve lo suyo y lo que ya está publicado; quien coordina, todo.
+     * Un borrador ajeno a medio escribir no es información útil para nadie
+     * más que su autor.
+     */
+    where: gestionaTodo(actor)
+      ? {}
+      : { OR: [{ createdById: actor.userId }, { status: 'PUBLISHED' }] },
     orderBy: [{ position: 'asc' }],
     include: moduleInclude,
   });
@@ -130,6 +234,11 @@ export async function listAllModules() {
     position: module.position,
     contentCount: module._count.contents,
     hasAssessment: module.assessmentId !== null,
+    audienceMode: module.audienceMode,
+    audienceCount: module._count.audience,
+    academicPeriod: module.academicPeriod,
+    createdBy: module.createdBy,
+    mine: module.createdById === actor.userId,
     competency: {
       id: module.kmkCompetency.id,
       code: module.kmkCompetency.code,
@@ -140,7 +249,9 @@ export async function listAllModules() {
 }
 
 /** Un módulo con su material, tal como lo edita quien lo escribe. */
-export async function getModuleForEditing(moduleId: string) {
+export async function getModuleForEditing(actor: Actor, moduleId: string) {
+  await assertCanEditModule(actor, moduleId);
+
   const module = await prisma.trainingModule.findUnique({
     where: { id: moduleId },
     include: {
@@ -161,11 +272,86 @@ export async function getModuleForEditing(moduleId: string) {
         },
       },
       assessment: { select: { id: true, title: true } },
+      audience: {
+        select: {
+          userId: true,
+          dueDate: true,
+          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      },
     },
   });
   if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
 
   return module;
+}
+
+/**
+ * Elige a quién va dirigida la capacitación.
+ *
+ * Se reemplaza la lista entera en lugar de añadir y quitar: quien edita ve una
+ * lista de nombres y espera que lo que ve sea lo que queda guardado.
+ */
+export async function setAudience(
+  actor: Actor,
+  moduleId: string,
+  input: { mode: string; userIds: string[]; dueDate?: Date | null },
+) {
+  await assertCanEditModule(actor, moduleId);
+
+  const dirigido = input.mode === TRAINING_AUDIENCE_MODE.SELECTED;
+  const userIds = dirigido ? [...new Set(input.userIds)] : [];
+
+  if (dirigido && userIds.length === 0) {
+    throw AppError.validation([
+      {
+        path: 'userIds',
+        rule: 'empty_audience',
+        message: 'Elige al menos un docente, o dirígela a todo el claustro',
+      },
+    ]);
+  }
+
+  // Que existan y sean personal: asignarle una capacitación docente a un
+  // estudiante la dejaría eternamente pendiente en su cuenta.
+  if (userIds.length > 0) {
+    const encontrados = await prisma.user.count({
+      where: {
+        id: { in: userIds },
+        deletedAt: null,
+        roles: { some: { role: { code: { in: ['TEACHER', 'COORDINATOR', 'ADMIN'] } } } },
+      },
+    });
+    if (encontrados !== userIds.length) {
+      throw AppError.validation([
+        {
+          path: 'userIds',
+          rule: 'not_staff',
+          message: 'Alguna de las personas elegidas ya no está o no es del claustro',
+        },
+      ]);
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.trainingAudience.deleteMany({ where: { moduleId } });
+    if (userIds.length > 0) {
+      await tx.trainingAudience.createMany({
+        data: userIds.map((userId) => ({
+          moduleId,
+          userId,
+          assignedById: actor.userId,
+          dueDate: input.dueDate ?? null,
+        })),
+      });
+    }
+    await tx.trainingModule.update({
+      where: { id: moduleId },
+      data: { audienceMode: input.mode as never },
+    });
+  });
+
+  return { mode: input.mode, count: userIds.length };
 }
 
 export async function createModule(actor: Actor, input: CreateModuleInput) {
@@ -190,6 +376,8 @@ export async function createModule(actor: Actor, input: CreateModuleInput) {
       title: sanitizeLocalized(input.title, 'title'),
       description: sanitizeLocalized(input.description, 'description'),
       estimatedMinutes: input.estimatedMinutes ?? null,
+      academicPeriodId: input.academicPeriodId ?? null,
+      createdById: actor.userId,
       position: (maxPosition._max.position ?? -1) + 1,
       // Nace en borrador siempre: publicar es un acto, no un efecto.
       status: 'DRAFT',
@@ -209,11 +397,7 @@ export async function createModule(actor: Actor, input: CreateModuleInput) {
 }
 
 export async function updateModule(actor: Actor, moduleId: string, input: UpdateModuleInput) {
-  const module = await prisma.trainingModule.findUnique({
-    where: { id: moduleId },
-    select: { id: true },
-  });
-  if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
+  await assertCanEditModule(actor, moduleId);
 
   return prisma.trainingModule.update({
     where: { id: moduleId },
@@ -224,6 +408,9 @@ export async function updateModule(actor: Actor, moduleId: string, input: Update
         : {}),
       ...(input.kmkCompetencyId ? { kmkCompetencyId: input.kmkCompetencyId } : {}),
       ...(input.estimatedMinutes !== undefined ? { estimatedMinutes: input.estimatedMinutes } : {}),
+      ...(input.academicPeriodId !== undefined
+        ? { academicPeriodId: input.academicPeriodId }
+        : {}),
     },
     include: moduleInclude,
   });
@@ -237,6 +424,8 @@ export async function updateModule(actor: Actor, moduleId: string, input: Update
  * fiarse del resto.
  */
 export async function publishModule(actor: Actor, moduleId: string) {
+  await assertCanEditModule(actor, moduleId);
+
   const module = await prisma.trainingModule.findUnique({
     where: { id: moduleId },
     include: { _count: { select: { contents: true } } },
@@ -272,11 +461,7 @@ export async function publishModule(actor: Actor, moduleId: string) {
  * pasado y retirar el módulo no lo deshace.
  */
 export async function unpublishModule(actor: Actor, moduleId: string, archive: boolean) {
-  const module = await prisma.trainingModule.findUnique({
-    where: { id: moduleId },
-    select: { id: true, code: true },
-  });
-  if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
+  const module = await assertCanEditModule(actor, moduleId);
 
   const updated = await prisma.trainingModule.update({
     where: { id: moduleId },
@@ -303,6 +488,8 @@ export async function unpublishModule(actor: Actor, moduleId: string, archive: b
  * archivar.
  */
 export async function deleteModule(actor: Actor, moduleId: string) {
+  await assertCanEditModule(actor, moduleId);
+
   const module = await prisma.trainingModule.findUnique({
     where: { id: moduleId },
     include: { _count: { select: { progress: true } } },
@@ -334,12 +521,36 @@ export async function deleteModule(actor: Actor, moduleId: string) {
 
 // --- Bloques de contenido ----------------------------------------------------
 
-export async function addContent(moduleId: string, input: ContentInput) {
-  const module = await prisma.trainingModule.findUnique({
-    where: { id: moduleId },
-    select: { id: true },
+/**
+ * La evaluación que se incrusta, comprobada.
+ *
+ * Tiene que ser de audiencia docente: poner dentro de una capacitación una
+ * evaluación de estudiantes la calificaría con la escala alemana y la metería
+ * en las estadísticas del alumnado, que es exactamente lo contrario de lo que
+ * quería quien la puso ahí.
+ */
+async function resolveBlockAssessment(input: ContentInput): Promise<string | null> {
+  if (input.type !== TRAINING_CONTENT_TYPE.ASSESSMENT || !input.assessmentId) return null;
+
+  const assessment = await prisma.assessment.findFirst({
+    where: { id: input.assessmentId, deletedAt: null },
+    select: { id: true, audience: true },
   });
-  if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
+  if (!assessment) throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { id: input.assessmentId });
+
+  if (assessment.audience !== 'TEACHER') {
+    throw AppError.conflict(
+      ERROR_CODE.CONFLICT,
+      'Dentro de una capacitación solo va una evaluación dirigida a docentes',
+    );
+  }
+
+  return assessment.id;
+}
+
+export async function addContent(actor: Actor, moduleId: string, input: ContentInput) {
+  await assertCanEditModule(actor, moduleId);
+  const assessmentId = await resolveBlockAssessment(input);
 
   const maxPosition = await prisma.trainingContent.aggregate({
     where: { moduleId },
@@ -349,39 +560,34 @@ export async function addContent(moduleId: string, input: ContentInput) {
   return prisma.trainingContent.create({
     data: {
       moduleId,
-      type: input.type,
+      type: input.type as never,
       title: sanitizeLocalized(input.title, 'title'),
       body: input.body ? sanitizeLocalized(input.body, 'body') : undefined,
       url: input.url ?? null,
+      assessmentId,
       position: (maxPosition._max.position ?? -1) + 1,
     },
   });
 }
 
-export async function updateContent(contentId: string, input: ContentInput) {
-  const content = await prisma.trainingContent.findUnique({
-    where: { id: contentId },
-    select: { id: true },
-  });
-  if (!content) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { contentId });
+export async function updateContent(actor: Actor, contentId: string, input: ContentInput) {
+  await assertCanEditContent(actor, contentId);
+  const assessmentId = await resolveBlockAssessment(input);
 
   return prisma.trainingContent.update({
     where: { id: contentId },
     data: {
-      type: input.type,
+      type: input.type as never,
       title: sanitizeLocalized(input.title, 'title'),
       body: input.body ? sanitizeLocalized(input.body, 'body') : undefined,
       url: input.url ?? null,
+      assessmentId,
     },
   });
 }
 
 export async function deleteContent(actor: Actor, contentId: string) {
-  const content = await prisma.trainingContent.findUnique({
-    where: { id: contentId },
-    select: { id: true },
-  });
-  if (!content) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { contentId });
+  await assertCanEditContent(actor, contentId);
 
   await purgeFiles(actor, { trainingContentId: contentId }, 'training_content_delete');
   await prisma.trainingContent.delete({ where: { id: contentId } });
@@ -395,7 +601,13 @@ export async function deleteContent(actor: Actor, contentId: string) {
  * el tipo de optimización que produce listas con dos elementos en la posición
  * tres.
  */
-export async function reorderContents(moduleId: string, ids: string[]): Promise<void> {
+export async function reorderContents(
+  actor: Actor,
+  moduleId: string,
+  ids: string[],
+): Promise<void> {
+  await assertCanEditModule(actor, moduleId);
+
   const contents = await prisma.trainingContent.findMany({
     where: { moduleId },
     select: { id: true },

@@ -227,13 +227,20 @@ const routes: RouteRecordRaw[] = [
         path: '/admin/training',
         name: 'training-admin',
         component: () => import('@/modules/training/admin/TrainingAdminView.vue'),
-        meta: { permissions: [PERMISSION.TRAINING_MANAGE], titleKey: 'training.admin.title' },
+        meta: {
+          // Coordinación escribe para el claustro; el docente, lo suyo.
+          permissions: [PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE],
+          titleKey: 'training.admin.title',
+        },
       },
       {
         path: '/admin/training/:id',
         name: 'training-admin-module',
         component: () => import('@/modules/training/admin/TrainingModuleEditor.vue'),
-        meta: { permissions: [PERMISSION.TRAINING_MANAGE], titleKey: 'training.admin.title' },
+        meta: {
+          permissions: [PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE],
+          titleKey: 'training.admin.title',
+        },
       },
 
       // --- Administración --------------------------------------------------

@@ -9,6 +9,7 @@ import BaseButton from '@/design-system/BaseButton.vue';
 import BaseBadge from '@/design-system/BaseBadge.vue';
 import BaseSpinner from '@/design-system/BaseSpinner.vue';
 import ProgressBar from '@/design-system/ProgressBar.vue';
+import RichTextView from '@/design-system/RichTextView.vue';
 import TrainingVideo from './TrainingVideo.vue';
 import { useToast } from '@/composables/useToast';
 
@@ -23,11 +24,17 @@ import { useToast } from '@/composables/useToast';
 
 interface Content {
   id: string;
-  type: 'TEXT' | 'VIDEO' | 'DOCUMENT' | 'LINK' | 'ACTIVITY';
+  type: string;
   title: LocalizedText;
   body: LocalizedText | null;
   url: string | null;
   position: number;
+  /** El bloque de evaluación trae la suya, con su versión publicada. */
+  assessment: {
+    id: string;
+    title: string;
+    versions: Array<{ id: string; questionCount: number }>;
+  } | null;
 }
 
 interface ModuleDetail {
@@ -48,13 +55,19 @@ interface ModuleDetail {
   assessmentOutcome: { percentage: number | null; passed: boolean | null };
 }
 
-const CONTENT_ICONS: Record<Content['type'], string> = {
+const CONTENT_ICONS: Record<string, string> = {
   TEXT: '\u{1F4C4}',
   VIDEO: '\u{1F3AC}',
+  AUDIO: '\u{1F3A7}',
+  EMBED: '\u{1F9E9}',
   DOCUMENT: '\u{1F4CE}',
   LINK: '\u{1F517}',
   ACTIVITY: '\u{270D}\u{FE0F}',
+  ASSESSMENT: '\u{1F4DD}',
 };
+
+/** Los que se reproducen dentro; el resto sigue siendo un enlace. */
+const MEDIA_TYPES = ['VIDEO', 'AUDIO', 'EMBED'];
 
 const route = useRoute();
 const router = useRouter();
@@ -107,11 +120,18 @@ async function markSeen(contentId: string): Promise<void> {
   }
 }
 
-async function startAssessment(): Promise<void> {
+/**
+ * Abre la evaluación: la del módulo, o la que va incrustada en un bloque.
+ *
+ * Es el mismo motor que usan los estudiantes. Construir aquí un segundo
+ * habría duplicado la corrección de trece tipos de pregunta.
+ */
+async function startAssessment(assessmentId?: string): Promise<void> {
   starting.value = true;
   try {
     const { recipientId } = await http.post<{ recipientId: string }>(
       `/training/modules/${module.value!.id}/assessment`,
+      assessmentId ? { assessmentId } : {},
     );
     const attempt = await http.post<{ id: string }>('/attempts', { recipientId });
     await router.push(`/attempt/${attempt.id}`);
@@ -171,21 +191,43 @@ async function startAssessment(): Promise<void> {
             </span>
           </summary>
 
-          <div class="mt-3 flex flex-col gap-2 text-sm leading-relaxed text-ink-muted">
-            <p v-if="content.body" class="whitespace-pre-line">
-              {{ localize(content.body, locale as never) }}
-            </p>
+          <div class="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-ink-muted">
             <!--
-              Un vídeo se reproduce aquí mismo. El resto de recursos siguen
-              siendo un enlace, con `rel="noopener"`, que no es opcional: sin
-              él la página de destino puede manipular esta pestaña a través de
-              `window.opener`.
+              El cuerpo se escribió con formato, así que se pinta con formato:
+              antes salía por interpolación y quien leía veía las etiquetas.
+              Pasa por DOMPurify dentro del componente.
+            -->
+            <RichTextView v-if="content.body" :html="localize(content.body, locale as never)" />
+
+            <!--
+              Vídeo, audio e incrustados se reproducen aquí mismo; lo demás
+              sigue siendo un enlace, con `rel="noopener"`, que no es opcional:
+              sin él la página de destino puede manipular esta pestaña a través
+              de `window.opener`.
             -->
             <TrainingVideo
-              v-if="content.type === 'VIDEO' && content.url"
+              v-if="MEDIA_TYPES.includes(content.type) && content.url"
               :url="content.url"
               :title="localize(content.title, locale as never)"
             />
+
+            <!-- La evaluación, donde se estudió: no en otra pantalla. -->
+            <div
+              v-else-if="content.type === 'ASSESSMENT'"
+              class="flex flex-wrap items-center gap-3"
+            >
+              <template v-if="content.assessment && content.assessment.versions.length > 0">
+                <BaseButton :loading="starting" @click="startAssessment(content.assessment.id)">
+                  {{ t('training.startAssessment') }}
+                </BaseButton>
+                <span class="text-xs text-ink-subtle">
+                  {{ content.assessment.title }} &#183; {{ t('assessment.questions') }}:
+                  {{ content.assessment.versions[0]?.questionCount }}
+                </span>
+              </template>
+              <span v-else class="text-xs text-ink-subtle">{{ t('training.noAssessment') }}</span>
+            </div>
+
             <a
               v-else-if="content.url"
               :href="content.url"
@@ -229,7 +271,7 @@ async function startAssessment(): Promise<void> {
             </p>
           </div>
 
-          <BaseButton :loading="starting" @click="startAssessment">
+          <BaseButton :loading="starting" @click="startAssessment()">
             {{
               module.assessmentOutcome.percentage === null
                 ? t('training.startAssessment')

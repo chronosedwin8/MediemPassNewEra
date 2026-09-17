@@ -34,8 +34,17 @@ const toast = useToast();
 const title = ref('');
 const description = ref('');
 const instructions = ref('');
+/*
+ * La materia principal y el resto.
+ *
+ * Un trabajo sobre desinformación se evalúa en sociales y en informática a la
+ * vez; con una sola materia había que elegir cuál de las dos mentía. La
+ * principal sigue existiendo porque es la que ordena los informes.
+ */
 const subjectId = ref('');
+const extraSubjectIds = ref<Set<string>>(new Set());
 const gradeLevelId = ref('');
+const academicPeriodId = ref('');
 const timeLimitMinutes = ref<number | null>(null);
 
 /*
@@ -52,6 +61,7 @@ const purpose = ref<string>(ASSESSMENT_PURPOSE.EVALUATION);
 
 const subjects = ref<SubjectOption[]>([]);
 const gradeLevels = ref<GradeLevelOption[]>([]);
+const periods = ref<Array<{ id: string; name: string }>>([]);
 const submitting = ref(false);
 const fieldErrors = ref<Record<string, string>>({});
 
@@ -62,7 +72,24 @@ onMounted(async () => {
   ]);
   subjects.value = subjectList.items;
   gradeLevels.value = grades;
+
+  // Los periodos cuelgan del año vigente; si aún no hay, el campo no aparece.
+  try {
+    const year = await http.get<{ periods?: Array<{ id: string; name: string }> }>(
+      '/academic/years/current',
+    );
+    periods.value = year.periods ?? [];
+  } catch {
+    periods.value = [];
+  }
 });
+
+function alternarMateria(id: string): void {
+  const copia = new Set(extraSubjectIds.value);
+  if (copia.has(id)) copia.delete(id);
+  else copia.add(id);
+  extraSubjectIds.value = copia;
+}
 
 async function submit(): Promise<void> {
   submitting.value = true;
@@ -76,6 +103,8 @@ async function submit(): Promise<void> {
       audience: audience.value,
       purpose: purpose.value,
       subjectId: subjectId.value || null,
+      subjectIds: [...extraSubjectIds.value],
+      academicPeriodId: academicPeriodId.value || null,
       gradeLevelId: gradeLevelId.value || null,
       timeLimitMinutes: timeLimitMinutes.value,
     });
@@ -209,6 +238,30 @@ const label = (item: { name: LocalizedText; code: string }): string =>
                 {{ label(subject) }}
               </option>
             </select>
+
+            <!--
+              Las demás materias, si la evaluación mide en más de una. Van
+              detrás de un desplegable porque es lo excepcional: el formulario
+              no debe pedir trece decisiones para el caso de siempre.
+            -->
+            <details v-if="subjects.length > 0" class="mt-2">
+              <summary class="cursor-pointer text-xs text-ink-muted">
+                {{ t('assessment.moreSubjects', { count: extraSubjectIds.size }) }}
+              </summary>
+              <ul class="mt-2 grid max-h-40 gap-1 overflow-y-auto">
+                <li v-for="subject in subjects" :key="subject.id">
+                  <label class="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      class="size-4 accent-brand-600"
+                      :checked="extraSubjectIds.has(subject.id)"
+                      @change="alternarMateria(subject.id)"
+                    />
+                    {{ label(subject) }}
+                  </label>
+                </li>
+              </ul>
+            </details>
           </div>
 
           <div class="flex flex-col gap-1.5">
@@ -223,6 +276,27 @@ const label = (item: { name: LocalizedText; code: string }): string =>
                 {{ label(grade) }}
               </option>
             </select>
+
+            <!--
+              El periodo, porque las evaluaciones se discriminan por periodo:
+              sin él no hay forma de responder qué se evaluó en el segundo
+              trimestre sin mirar fechas una por una.
+            -->
+            <template v-if="periods.length > 0">
+              <label class="mt-4 text-sm font-medium" for="period">
+                {{ t('statistics.period') }}
+              </label>
+              <select
+                id="period"
+                v-model="academicPeriodId"
+                class="h-10 rounded-md border border-border bg-surface px-3 text-sm outline-none focus:border-brand-500"
+              >
+                <option value="">{{ t('common.none') }}</option>
+                <option v-for="period in periods" :key="period.id" :value="period.id">
+                  {{ period.name }}
+                </option>
+              </select>
+            </template>
           </div>
         </div>
 

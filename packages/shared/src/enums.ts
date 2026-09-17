@@ -174,6 +174,45 @@ export const MANUALLY_GRADED_QUESTION_TYPES: readonly QuestionType[] = [
   QUESTION_TYPE.SMART_GOAL,
 ];
 
+/**
+ * Qué clase de bloque es cada trozo del material de formación.
+ *
+ * `EMBED` y `ASSESSMENT` son los que cambian el modelo: el primero mete dentro
+ * del módulo lo que vive en otra plataforma —un Genially, una presentación—, y
+ * el segundo pone la evaluación en el sitio donde se estudia, en vez de
+ * obligar a buscarla en otra pantalla.
+ */
+export const TRAINING_CONTENT_TYPE = {
+  TEXT: 'TEXT',
+  VIDEO: 'VIDEO',
+  AUDIO: 'AUDIO',
+  EMBED: 'EMBED',
+  DOCUMENT: 'DOCUMENT',
+  LINK: 'LINK',
+  ACTIVITY: 'ACTIVITY',
+  ASSESSMENT: 'ASSESSMENT',
+} as const;
+export type TrainingContentType =
+  (typeof TRAINING_CONTENT_TYPE)[keyof typeof TRAINING_CONTENT_TYPE];
+
+export const TRAINING_CONTENT_TYPES = Object.values(TRAINING_CONTENT_TYPE);
+
+/**
+ * A quién va dirigida una capacitación.
+ *
+ * `ALL` es el claustro entero, y es lo que había antes de que existiera esta
+ * distinción. `SELECTED` nombra a las personas: una formación de un área o de
+ * quienes estrenan una herramienta no tiene por qué aparecerle a los demás
+ * como pendiente, porque entonces el porcentaje de cumplimiento no significa
+ * nada.
+ */
+export const TRAINING_AUDIENCE_MODE = {
+  ALL: 'ALL',
+  SELECTED: 'SELECTED',
+} as const;
+export type TrainingAudienceMode =
+  (typeof TRAINING_AUDIENCE_MODE)[keyof typeof TRAINING_AUDIENCE_MODE];
+
 export const ASSIGNMENT_TARGET_TYPE = {
   USER: 'USER',
   GROUP: 'GROUP',

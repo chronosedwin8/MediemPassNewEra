@@ -4,6 +4,7 @@ import {
   ASSESSMENT_VERSION_STATUS,
   ASSIGNMENT_TARGET_TYPE,
   ERROR_CODE,
+  TRAINING_AUDIENCE_MODE,
   toPercentage,
   type LocalizedText,
   type Role,
@@ -12,6 +13,7 @@ import {
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { isAdmin } from '../../middleware/authorize.js';
+import { assertCanEditModule } from './training-admin.service.js';
 
 /**
  * Capacitación docente en competencias KMK.
@@ -87,9 +89,22 @@ async function resolveAssessmentOutcome(
 export async function listModules(actor: Actor): Promise<TrainingModuleView[]> {
   const [modules, progress] = await Promise.all([
     prisma.trainingModule.findMany({
-      // Solo lo publicado: un borrador en la pantalla de quien se está
-      // formando es peor que no tener módulo.
-      where: { status: 'PUBLISHED' },
+      where: {
+        // Solo lo publicado: un borrador en la pantalla de quien se está
+        // formando es peor que no tener módulo.
+        status: 'PUBLISHED',
+        /*
+         * Y solo lo que va dirigido a esta persona. Una formación del área de
+         * ciencias apareciéndole como pendiente a todo el claustro hace dos
+         * daños: molesta a quien no le toca y estropea el porcentaje de
+         * cumplimiento, que es el número por el que se decide si la formación
+         * está funcionando.
+         */
+        OR: [
+          { audienceMode: TRAINING_AUDIENCE_MODE.ALL },
+          { audience: { some: { userId: actor.userId } } },
+        ],
+      },
       orderBy: { position: 'asc' },
       include: moduleInclude,
     }),
@@ -132,10 +147,36 @@ export async function listModules(actor: Actor): Promise<TrainingModuleView[]> {
 
 export async function getModule(actor: Actor, id: string) {
   const module = await prisma.trainingModule.findFirst({
-    where: { id, status: 'PUBLISHED' },
+    where: {
+      id,
+      status: 'PUBLISHED',
+      OR: [
+        { audienceMode: TRAINING_AUDIENCE_MODE.ALL },
+        { audience: { some: { userId: actor.userId } } },
+      ],
+    },
     include: {
       ...moduleInclude,
-      contents: { orderBy: { position: 'asc' } },
+      contents: {
+        orderBy: { position: 'asc' },
+        include: {
+          // El bloque de evaluación necesita saber si hay algo publicado que
+          // hacer; sin versión, se muestra como pendiente y no como un botón
+          // que falla al pulsarlo.
+          assessment: {
+            select: {
+              id: true,
+              title: true,
+              versions: {
+                where: { status: ASSESSMENT_VERSION_STATUS.PUBLISHED },
+                orderBy: { versionNumber: 'desc' },
+                take: 1,
+                select: { id: true, questionCount: true },
+              },
+            },
+          },
+        },
+      },
       assessment: {
         select: {
           id: true,
@@ -216,17 +257,36 @@ export async function recordProgress(
  * asignación dirigida a esa persona sobre la versión publicada. A partir de
  * ahí, el intento lo gestiona el motor común.
  */
-export async function startModuleAssessment(actor: Actor, moduleId: string): Promise<string> {
+export async function startModuleAssessment(
+  actor: Actor,
+  moduleId: string,
+  assessmentId?: string,
+): Promise<string> {
   const module = await prisma.trainingModule.findFirst({
     where: { id: moduleId, status: 'PUBLISHED' },
     select: { id: true, assessmentId: true },
   });
-  if (!module?.assessmentId) {
-    throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { moduleId });
-  }
+  if (!module) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { moduleId });
+
+  /*
+   * La evaluación del módulo, o una de las que van incrustadas en su material.
+   * Se comprueba que el bloque pertenezca a este módulo: sin eso, el
+   * identificador de cualquier evaluación docente valdría para abrir un
+   * intento desde aquí.
+   */
+  const elegida = assessmentId
+    ? (
+        await prisma.trainingContent.findFirst({
+          where: { moduleId, assessmentId },
+          select: { assessmentId: true },
+        })
+      )?.assessmentId
+    : module.assessmentId;
+
+  if (!elegida) throw AppError.notFound(ERROR_CODE.ASSESSMENT_NOT_FOUND, { moduleId });
 
   const version = await prisma.assessmentVersion.findFirst({
-    where: { assessmentId: module.assessmentId, status: ASSESSMENT_VERSION_STATUS.PUBLISHED },
+    where: { assessmentId: elegida, status: ASSESSMENT_VERSION_STATUS.PUBLISHED },
     orderBy: { versionNumber: 'desc' },
     select: { id: true },
   });
@@ -325,7 +385,9 @@ export async function getTrainingSummary(
  * por error una evaluación de estudiantes la calificaría con la escala 1.0–6.0
  * en lugar del porcentaje, y aparecería en las estadísticas del alumnado.
  */
-export async function linkAssessment(moduleId: string, assessmentId: string) {
+export async function linkAssessment(actor: Actor, moduleId: string, assessmentId: string) {
+  await assertCanEditModule(actor, moduleId);
+
   const [module, assessment] = await Promise.all([
     prisma.trainingModule.findUnique({ where: { id: moduleId }, select: { id: true } }),
     prisma.assessment.findFirst({

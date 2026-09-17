@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, noContent, ok } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
-import { requirePermission } from '../../middleware/authorize.js';
+import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
 import { uuidParam, validate } from '../../middleware/validate.js';
 import {
   addContent,
+  audienceSchema,
   contentSchema,
   createModule,
   createModuleSchema,
@@ -17,6 +18,7 @@ import {
   publishModule,
   reorderContents,
   reorderSchema,
+  setAudience,
   unpublishModule,
   updateContent,
   updateModule,
@@ -75,9 +77,17 @@ trainingRouter.put(
 trainingRouter.post(
   '/modules/:id/assessment',
   requirePermission(PERMISSION.TRAINING_PARTICIPATE),
-  validate({ params: uuidParam() }),
+  validate({
+    params: uuidParam(),
+    body: z.object({ assessmentId: z.string().uuid().optional() }).default({}),
+  }),
   asyncHandler(async (req, res) => {
-    const recipientId = await startModuleAssessment(requireAuth(req), req.params['id']!);
+    const { assessmentId } = req.body as { assessmentId?: string };
+    const recipientId = await startModuleAssessment(
+      requireAuth(req),
+      req.params['id']!,
+      assessmentId,
+    );
     ok(res, { recipientId });
   }),
 );
@@ -102,24 +112,24 @@ trainingRouter.get(
  */
 trainingRouter.get(
   '/admin/modules',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
-  asyncHandler(async (_req, res) => {
-    ok(res, await listAllModules());
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
+  asyncHandler(async (req, res) => {
+    ok(res, await listAllModules(requireAuth(req)));
   }),
 );
 
 trainingRouter.get(
   '/admin/modules/:id',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam() }),
   asyncHandler(async (req, res) => {
-    ok(res, await getModuleForEditing(req.params['id']!));
+    ok(res, await getModuleForEditing(requireAuth(req), req.params['id']!));
   }),
 );
 
 trainingRouter.post(
   '/admin/modules',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ body: createModuleSchema }),
   asyncHandler(async (req, res) => {
     created(res, await createModule(requireAuth(req), req.body));
@@ -128,7 +138,7 @@ trainingRouter.post(
 
 trainingRouter.patch(
   '/admin/modules/:id',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam(), body: updateModuleSchema }),
   asyncHandler(async (req, res) => {
     ok(res, await updateModule(requireAuth(req), req.params['id']!, req.body));
@@ -138,7 +148,7 @@ trainingRouter.patch(
 /** Publicar es un acto explícito: un módulo nunca se publica solo. */
 trainingRouter.post(
   '/admin/modules/:id/publish',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam() }),
   asyncHandler(async (req, res) => {
     ok(res, await publishModule(requireAuth(req), req.params['id']!));
@@ -147,7 +157,7 @@ trainingRouter.post(
 
 trainingRouter.post(
   '/admin/modules/:id/unpublish',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({
     params: uuidParam(),
     body: z.object({ archive: z.boolean().default(false) }),
@@ -160,7 +170,7 @@ trainingRouter.post(
 
 trainingRouter.delete(
   '/admin/modules/:id',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam() }),
   asyncHandler(async (req, res) => {
     await deleteModule(requireAuth(req), req.params['id']!);
@@ -172,36 +182,36 @@ trainingRouter.delete(
 
 trainingRouter.post(
   '/admin/modules/:id/contents',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam(), body: contentSchema }),
   asyncHandler(async (req, res) => {
-    created(res, await addContent(req.params['id']!, req.body));
+    created(res, await addContent(requireAuth(req), req.params['id']!, req.body));
   }),
 );
 
 trainingRouter.put(
   '/admin/modules/:id/contents/order',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam(), body: reorderSchema }),
   asyncHandler(async (req, res) => {
     const { ids } = req.body as { ids: string[] };
-    await reorderContents(req.params['id']!, ids);
+    await reorderContents(requireAuth(req), req.params['id']!, ids);
     noContent(res);
   }),
 );
 
 trainingRouter.patch(
   '/admin/contents/:id',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam(), body: contentSchema }),
   asyncHandler(async (req, res) => {
-    ok(res, await updateContent(req.params['id']!, req.body));
+    ok(res, await updateContent(requireAuth(req), req.params['id']!, req.body));
   }),
 );
 
 trainingRouter.delete(
   '/admin/contents/:id',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ params: uuidParam() }),
   asyncHandler(async (req, res) => {
     await deleteContent(requireAuth(req), req.params['id']!);
@@ -209,15 +219,25 @@ trainingRouter.delete(
   }),
 );
 
+/** A qué docentes se les aplica esta capacitación. */
+trainingRouter.put(
+  '/admin/modules/:id/audience',
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
+  validate({ params: uuidParam(), body: audienceSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await setAudience(requireAuth(req), req.params['id']!, req.body));
+  }),
+);
+
 trainingRouter.put(
   '/admin/modules/:id/assessment',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({
     params: uuidParam(),
     body: z.object({ assessmentId: z.string().uuid() }),
   }),
   asyncHandler(async (req, res) => {
     const { assessmentId } = req.body as { assessmentId: string };
-    ok(res, await linkAssessment(req.params['id']!, assessmentId));
+    ok(res, await linkAssessment(requireAuth(req), req.params['id']!, assessmentId));
   }),
 );

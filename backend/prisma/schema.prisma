@@ -239,9 +239,17 @@ enum TrainingModuleStatus {
 enum TrainingContentType {
   TEXT
   VIDEO
+  AUDIO
+  EMBED
   DOCUMENT
   LINK
   ACTIVITY
+  ASSESSMENT
+}
+
+enum TrainingAudienceMode {
+  ALL
+  SELECTED
 }
 
 enum TrainingProgressStatus {
@@ -309,6 +317,8 @@ model User {
   attempts             AssessmentAttempt[]
   assignmentRecipients AssignmentRecipient[]
   trainingProgress     TrainingProgress[]
+  trainingAudience     TrainingAudience[]    @relation("TrainingAudienceUser")
+  createdTrainings     TrainingModule[]      @relation("TrainingCreatedBy")
   notifications        Notification[]
   uploadedFiles        StoredFile[]          @relation("FileUploadedBy")
   auditLogs            AuditLog[]
@@ -476,9 +486,11 @@ model AcademicPeriod {
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
-  academicYear AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  planItems    EvaluationPlanItem[]
-  answers      AttemptAnswer[]
+  academicYear    AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  planItems       EvaluationPlanItem[]
+  answers         AttemptAnswer[]
+  assessments     Assessment[]
+  trainingModules TrainingModule[]
 
   @@unique([externalId])
   @@index([academicYearId, position])
@@ -557,11 +569,12 @@ model Subject {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  area          AcademicArea     @relation(fields: [areaId], references: [id])
+  area          AcademicArea        @relation(fields: [areaId], references: [id])
   teachers      TeacherSubject[]
   groups        Group[]
   groupTeachers GroupTeacher[]
   assessments   Assessment[]
+  assessmentSet AssessmentSubject[]
   plans         EvaluationPlan[]
   answers       AttemptAnswer[]
 
@@ -848,32 +861,58 @@ model GradingScaleBand {
 /// Contenedor lógico y estable de una evaluación. Todo lo que puede cambiar
 /// vive en sus versiones.
 model Assessment {
-  id           String             @id @default(uuid(7))
-  title        String
-  audience     AssessmentAudience
-  purpose      AssessmentPurpose  @default(EVALUATION)
-  subjectId    String?            @map("subject_id")
-  areaId       String?            @map("area_id")
-  gradeLevelId String?            @map("grade_level_id")
-  language     Language           @default(es)
-  createdById  String             @map("created_by_id")
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
-  deletedAt    DateTime?          @map("deleted_at")
+  id               String             @id @default(uuid(7))
+  title            String
+  audience         AssessmentAudience
+  purpose          AssessmentPurpose  @default(EVALUATION)
+  /// Materia principal. Las demas van en `subjects`: una evaluacion de un
+  /// proyecto interdisciplinar mide a la vez en informatica y en ciencias.
+  subjectId        String?            @map("subject_id")
+  areaId           String?            @map("area_id")
+  /// Periodo al que pertenece. Las evaluaciones se discriminan por periodo.
+  academicPeriodId String?            @map("academic_period_id")
+  gradeLevelId     String?            @map("grade_level_id")
+  language         Language           @default(es)
+  createdById      String             @map("created_by_id")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  deletedAt        DateTime?          @map("deleted_at")
 
   createdBy      User                 @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
   subject        Subject?             @relation(fields: [subjectId], references: [id])
   area           AcademicArea?        @relation(fields: [areaId], references: [id])
   gradeLevel     GradeLevel?          @relation(fields: [gradeLevelId], references: [id])
+  academicPeriod AcademicPeriod?      @relation(fields: [academicPeriodId], references: [id])
   versions       AssessmentVersion[]
   planItems      EvaluationPlanItem[]
   storedFiles    StoredFile[]
   trainingModule TrainingModule?
+  subjects       AssessmentSubject[]
+  trainingBlocks TrainingContent[]
 
   @@index([createdById, deletedAt])
   @@index([audience, purpose])
   @@index([subjectId])
+  @@index([academicPeriodId])
   @@map("assessments")
+}
+
+/// Las materias que mide una evaluacion, cuando es mas de una.
+///
+/// La principal sigue en `assessments.subject_id` para no reescribir las
+/// estadisticas que ya la usaban; esta tabla es el conjunto completo y la
+/// incluye tambien a ella.
+model AssessmentSubject {
+  assessmentId String   @map("assessment_id")
+  subjectId    String   @map("subject_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([assessmentId, subjectId])
+  @@index([subjectId])
+  @@map("assessment_subjects")
 }
 
 /// Instantánea inmutable una vez publicada. Contiene la configuración con la
@@ -1229,6 +1268,9 @@ model TrainingModule {
   id               String  @id @default(uuid(7))
   kmkCompetencyId  String  @map("kmk_competency_id")
   assessmentId     String? @unique @map("assessment_id")
+  /// Quien la escribio. Nulo en las que trajo la semilla, que no son de nadie.
+  createdById      String? @map("created_by_id")
+  academicPeriodId String? @map("academic_period_id")
   code             String  @unique
   title            Json
   description      Json
@@ -1244,33 +1286,64 @@ model TrainingModule {
   status      TrainingModuleStatus @default(DRAFT)
   publishedAt DateTime?            @map("published_at")
 
+  /// A quien va dirigida: al claustro entero o a quienes nombre `audience`.
+  audienceMode TrainingAudienceMode @default(ALL) @map("audience_mode")
+
   active    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  kmkCompetency KmkCompetency      @relation(fields: [kmkCompetencyId], references: [id])
-  assessment    Assessment?        @relation(fields: [assessmentId], references: [id])
-  contents      TrainingContent[]
-  progress      TrainingProgress[]
+  kmkCompetency  KmkCompetency      @relation(fields: [kmkCompetencyId], references: [id])
+  assessment     Assessment?        @relation(fields: [assessmentId], references: [id])
+  createdBy      User?              @relation("TrainingCreatedBy", fields: [createdById], references: [id])
+  academicPeriod AcademicPeriod?    @relation(fields: [academicPeriodId], references: [id])
+  contents       TrainingContent[]
+  progress       TrainingProgress[]
+  audience       TrainingAudience[]
 
   @@index([kmkCompetencyId, position])
   @@index([status])
+  @@index([createdById])
   @@map("training_modules")
 }
 
-model TrainingContent {
-  id        String              @id @default(uuid(7))
-  moduleId  String              @map("module_id")
-  type      TrainingContentType
-  title     Json
-  body      Json?
-  url       String?
-  position  Int
-  createdAt DateTime            @default(now()) @map("created_at")
-  updatedAt DateTime            @updatedAt @map("updated_at")
+/// A que docentes se les aplica una capacitacion.
+///
+/// Solo tiene filas cuando el modulo va dirigido a personas concretas. La
+/// fecha limite es informativa: ordena lo pendiente y permite decir quien va
+/// tarde, pero no cierra el acceso, porque cerrar una formacion por vencida
+/// deja sin hacerla justo a quien le hace falta.
+model TrainingAudience {
+  moduleId     String    @map("module_id")
+  userId       String    @map("user_id")
+  assignedById String?   @map("assigned_by_id")
+  dueDate      DateTime? @map("due_date") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  files  StoredFile[]
+  user   User           @relation("TrainingAudienceUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([moduleId, userId])
+  @@index([userId])
+  @@map("training_audience")
+}
+
+model TrainingContent {
+  id           String              @id @default(uuid(7))
+  moduleId     String              @map("module_id")
+  type         TrainingContentType
+  title        Json
+  body         Json?
+  url          String?
+  /// La evaluacion incrustada, en los bloques de tipo ASSESSMENT.
+  assessmentId String?             @map("assessment_id")
+  position     Int
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  module     TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  assessment Assessment?    @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+  files      StoredFile[]
 
   @@unique([moduleId, position])
   @@map("training_contents")

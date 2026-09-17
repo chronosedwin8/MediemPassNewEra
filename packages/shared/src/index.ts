@@ -1,3 +1,4 @@
+export * from './embeds.js';
 export * from './enums.js';
 export * from './errors.js';
 export * from './i18n.js';

@@ -33,12 +33,26 @@ import type { PaginationQuery } from '../../middleware/validate.js';
  * evaluación mientras tanto.
  */
 
+/** Los grupos destino, vengan de uno solo o de la lista, sin repetidos. */
+function targetGroupIds(input: { groupId?: string; groupIds?: string[] }): string[] {
+  return [...new Set([...(input.groupIds ?? []), ...(input.groupId ? [input.groupId] : [])])];
+}
+
 export const createAssignmentSchema = z
   .object({
     assessmentVersionId: z.string().uuid(),
     targetType: z.enum([ASSIGNMENT_TARGET_TYPE.USER, ASSIGNMENT_TARGET_TYPE.GROUP]),
-    /** Obligatorio si el destino es un grupo. */
+    /** Un grupo destino. Se mantiene por compatibilidad con `groupIds`. */
     groupId: z.string().uuid().optional(),
+    /**
+     * Varios grupos a la vez.
+     *
+     * La misma evaluación se pone a los tres décimos, y hacerlo tres veces
+     * producía tres fechas distintas por descuido. Cada grupo conserva su
+     * propia asignación: así se puede cerrar la de un curso que se fue de
+     * salida sin tocar la de los demás, y las notas no se mezclan.
+     */
+    groupIds: z.array(z.string().uuid()).max(30).optional(),
     /** Obligatorio si el destino son personas concretas. */
     userIds: z.array(z.string().uuid()).max(500).optional(),
     startAt: z.coerce.date(),
@@ -47,7 +61,8 @@ export const createAssignmentSchema = z
     timeLimitMinutes: z.number().int().min(0).max(600).nullable().optional(),
   })
   .superRefine((input, ctx) => {
-    if (input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP && !input.groupId) {
+    const grupos = targetGroupIds(input);
+    if (input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP && grupos.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['groupId'],
@@ -158,13 +173,17 @@ function resolveStatus(
  * está retirado o suspendido generaría pendientes que nadie va a completar y
  * ensuciaría todas las tasas de cumplimiento.
  */
-async function resolveRecipients(actor: Actor, input: CreateAssignmentInput): Promise<string[]> {
-  if (input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP) {
-    await assertGroupAccess(actor, input.groupId!);
+async function resolveRecipients(
+  actor: Actor,
+  input: CreateAssignmentInput,
+  groupId?: string,
+): Promise<string[]> {
+  if (groupId) {
+    await assertGroupAccess(actor, groupId);
 
     const memberships = await prisma.groupMembership.findMany({
       where: {
-        groupId: input.groupId!,
+        groupId,
         active: true,
         student: { enrollmentStatus: { in: [...EVALUABLE_ENROLLMENT_STATUSES] } },
       },
@@ -203,7 +222,14 @@ export async function createAssignment(actor: Actor, input: CreateAssignmentInpu
     });
   }
 
-  assertOwnership(actor, version.assessment.createdById, { versionId: version.id });
+  /*
+   * Coordinación asigna también lo que escribió otro: preparar la evaluación
+   * común de un área y repartirla entre los grupos es precisamente su trabajo.
+   * El resto solo asigna lo suyo.
+   */
+  if (!canManageAllGroups(actor)) {
+    assertOwnership(actor, version.assessment.createdById, { versionId: version.id });
+  }
 
   // Solo se asigna lo publicado: un borrador puede cambiar en cualquier
   // momento y no tiene puntos ni escala materializados.
@@ -215,45 +241,78 @@ export async function createAssignment(actor: Actor, input: CreateAssignmentInpu
     );
   }
 
-  const recipientIds = await resolveRecipients(actor, input);
+  const grupos = targetGroupIds(input);
+  const destinos =
+    input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP ? grupos : [undefined as string | undefined];
 
-  const assignment = await prisma.$transaction(async (tx) => {
-    const created = await tx.assignment.create({
-      data: {
-        assessmentVersionId: input.assessmentVersionId,
-        assignedById: actor.userId,
+  /*
+   * Los destinatarios de todos los grupos se resuelven antes de escribir
+   * nada. Así, si el segundo curso está vacío o queda fuera del alcance de
+   * quien asigna, no queda hecha la del primero: o se asigna a todos los
+   * grupos elegidos o a ninguno.
+   */
+  const porDestino: Array<{ groupId?: string; recipientIds: string[] }> = [];
+  for (const groupId of destinos) {
+    porDestino.push({ groupId, recipientIds: await resolveRecipients(actor, input, groupId) });
+  }
+
+  const creadas = await prisma.$transaction(async (tx) => {
+    const filas = [];
+    for (const destino of porDestino) {
+      const created = await tx.assignment.create({
+        data: {
+          assessmentVersionId: input.assessmentVersionId,
+          assignedById: actor.userId,
+          targetType: input.targetType,
+          groupId: destino.groupId ?? null,
+          startAt: input.startAt,
+          endAt: input.endAt ?? null,
+          attemptsAllowed: input.attemptsAllowed,
+          timeLimitMinutes: input.timeLimitMinutes ?? null,
+          status: resolveStatus(input.startAt, input.endAt ?? null, false) as never,
+        },
+      });
+
+      await tx.assignmentRecipient.createMany({
+        data: destino.recipientIds.map((userId) => ({ assignmentId: created.id, userId })),
+        skipDuplicates: true,
+      });
+
+      filas.push({ ...created, recipientCount: destino.recipientIds.length });
+    }
+    return filas;
+  });
+
+  for (const assignment of creadas) {
+    await recordAudit({
+      userId: actor.userId,
+      action: AUDIT_ACTION.ASSIGN_ASSESSMENT,
+      entityType: 'assignment',
+      entityId: assignment.id,
+      metadata: {
+        assessmentId: version.assessment.id,
+        versionNumber: version.versionNumber,
+        recipients: assignment.recipientCount,
         targetType: input.targetType,
-        groupId: input.targetType === ASSIGNMENT_TARGET_TYPE.GROUP ? input.groupId! : null,
-        startAt: input.startAt,
-        endAt: input.endAt ?? null,
-        attemptsAllowed: input.attemptsAllowed,
-        timeLimitMinutes: input.timeLimitMinutes ?? null,
-        status: resolveStatus(input.startAt, input.endAt ?? null, false) as never,
       },
     });
+  }
 
-    await tx.assignmentRecipient.createMany({
-      data: recipientIds.map((userId) => ({ assignmentId: created.id, userId })),
-      skipDuplicates: true,
-    });
-
-    return created;
-  });
-
-  await recordAudit({
-    userId: actor.userId,
-    action: AUDIT_ACTION.ASSIGN_ASSESSMENT,
-    entityType: 'assignment',
-    entityId: assignment.id,
-    metadata: {
-      assessmentId: version.assessment.id,
-      versionNumber: version.versionNumber,
-      recipients: recipientIds.length,
-      targetType: input.targetType,
-    },
-  });
-
-  return { ...assignment, recipientCount: recipientIds.length };
+  /*
+   * Se devuelve la primera en la raíz y la lista completa aparte: quien
+   * asigna a un grupo —lo habitual— sigue recibiendo lo de siempre, y quien
+   * asigna a varios necesita los identificadores de todas.
+   */
+  const primera = creadas[0]!;
+  return {
+    ...primera,
+    assignments: creadas.map((fila) => ({
+      id: fila.id,
+      groupId: fila.groupId,
+      recipientCount: fila.recipientCount,
+    })),
+    recipientCount: creadas.reduce((suma, fila) => suma + fila.recipientCount, 0),
+  };
 }
 
 export async function listAssignments(

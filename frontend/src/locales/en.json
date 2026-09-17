@@ -33,7 +33,9 @@
     "noResults": "No results",
     "showingPage": "Page {page} of {total}",
     "choose": "Choose one",
-    "remove": "Remove"
+    "remove": "Remove",
+    "showAll": "Show all",
+    "showLess": "Show less"
   },
   "auth": {
     "signIn": "Sign in",
@@ -228,7 +230,8 @@
     "purposeEvaluation": "Evaluation",
     "purposeDiagnostic": "Diagnostic",
     "purposeTraining": "Training",
-    "trainingHint": "With these two settings you can link it to a training module and certify teachers."
+    "trainingHint": "With these two settings you can link it to a training module and certify teachers.",
+    "moreSubjects": "Other subjects it measures ({count})"
   },
   "question": {
     "add": "Add question",
@@ -476,7 +479,13 @@
     "dueAt": "Closes",
     "editDates": "Dates",
     "opens": "Opens",
-    "noEndHint": "Empty if it does not close: it stays open until you cancel it."
+    "noEndHint": "Empty if it does not close: it stays open until you cancel it.",
+    "groups": "Groups",
+    "teachers": "Teachers",
+    "selectAll": "Select all {count}",
+    "closes": "Closes",
+    "noTeachers": "There are no teachers to list.",
+    "assignedToTargets": "Assigned to {targets} targets · {count} people"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -675,14 +684,30 @@
         "VIDEO": "Video",
         "DOCUMENT": "Document",
         "LINK": "Link",
-        "ACTIVITY": "Activity"
+        "ACTIVITY": "Activity",
+        "AUDIO": "Audio",
+        "EMBED": "Embedded content",
+        "ASSESSMENT": "Assessment"
       },
       "linked": "Linked",
       "noCandidates": "There is no assessment with a teacher audience and a training purpose. Create one first under Assessments, with those two settings.",
       "chooseAssessment": "Assessment that certifies the module",
       "link": "Link",
       "relink": "Change",
-      "assessmentHint": "Without an assessment the module can be read but not passed, and it does not count towards training statistics."
+      "assessmentHint": "Without an assessment the module can be read but not passed, and it does not count towards training statistics.",
+      "embedHint": "Embeddable: {platforms}. Any other address stays a link.",
+      "blockAssessment": "Assessment taken here",
+      "blockAssessmentHint": "Only published assessments aimed at teachers.",
+      "audience": "Who it is for",
+      "audienceHint": "The whole staff, or the teachers who must take it.",
+      "audienceAll": "All teaching staff",
+      "audienceSelected": "Selected teachers",
+      "audienceAllHint": "Every teacher sees it, and completion is measured over the whole staff.",
+      "audienceCount": "Selected: {count}",
+      "selectAllTeachers": "Select all {count}",
+      "searchTeacher": "Search teacher",
+      "dueDate": "Due date",
+      "anyPeriod": "No period"
     }
   },
   "ai": {
@@ -1112,7 +1137,17 @@
   },
   "statistics": {
     "teacher": "Teacher",
-    "period": "Period"
+    "period": "Period",
+    "passRates": "Pass rate by assessment",
+    "noPassRates": "No results yet with these filters.",
+    "students": "Students",
+    "average": "Average",
+    "trainingCompletion": "Teacher training",
+    "noTraining": "No training is published.",
+    "trainingOverall": "Staff completion ({count} teachers)",
+    "completedOf": "{done} of {total}",
+    "certified": "{count} passed",
+    "byTeacher": "By teacher"
   },
   "phidiasImport": {
     "open": "Bring courses from Phidias",

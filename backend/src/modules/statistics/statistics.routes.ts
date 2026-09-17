@@ -8,6 +8,7 @@ import { statisticsFiltersSchema, type StatisticsFilters } from './filters.js';
 import { getAssessmentReport } from './assessment-report.service.js';
 import { breakdownQuerySchema, getKmkBreakdown } from './kmk-breakdown.service.js';
 import { getSmartReport } from './smart.service.js';
+import { getAssessmentPassRates, getTrainingCompletion } from './training-report.service.js';
 import { getStudentPanel } from './student-panel.service.js';
 import { getTeacherPanel } from './teacher-panel.service.js';
 import {
@@ -35,6 +36,31 @@ const ANY_STATS_PERMISSION = [
   PERMISSION.STATS_READ_SCOPED,
   PERMISSION.STATS_READ_GLOBAL,
 ] as const;
+
+/**
+ * Cuánto claustro ha hecho cada capacitación.
+ *
+ * Pide permiso global o de revisión: es información sobre el desempeño de
+ * personas concretas, y un docente no tiene por qué ver quién de sus
+ * compañeros va con retraso.
+ */
+statisticsRouter.get(
+  '/training/completion',
+  requireAnyPermission(PERMISSION.STATS_READ_GLOBAL, PERMISSION.TRAINING_REVIEW),
+  asyncHandler(async (_req, res) => {
+    ok(res, await getTrainingCompletion());
+  }),
+);
+
+/** Cuántos estudiantes aprobaron cada evaluación, dentro del alcance de quien mira. */
+statisticsRouter.get(
+  '/assessments/pass-rates',
+  requireAnyPermission(...ANY_STATS_PERMISSION),
+  validate({ query: statisticsFiltersSchema }),
+  asyncHandler(async (req, res) => {
+    ok(res, await getAssessmentPassRates(requireAuth(req), getQuery<StatisticsFilters>(req)));
+  }),
+);
 
 /** Desempeño por competencia KMK. Es la consulta central de la plataforma. */
 statisticsRouter.get(

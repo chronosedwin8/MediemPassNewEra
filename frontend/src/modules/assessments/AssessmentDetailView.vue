@@ -42,6 +42,7 @@ interface Version {
 interface Assessment {
   id: string;
   title: string;
+  audience?: string;
   versions: Version[];
 }
 
@@ -320,7 +321,12 @@ const statusTone = (status: string): 'success' | 'warning' | 'neutral' =>
       @cancel="showDeleteDialog = false"
     />
 
-    <AssignPanel v-if="showAssignPanel" :version-id="currentVersion.id" />
+    <AssignPanel
+      v-if="showAssignPanel"
+      :version-id="currentVersion.id"
+      :audience="assessment?.audience"
+      @assigned="showAssignPanel = false"
+    />
 
     <!--
       Lo ya asignado. Va siempre visible, no detrás del botón de asignar:
