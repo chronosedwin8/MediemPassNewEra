@@ -3,14 +3,12 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Question } from '../types';
 import { isRichTextEmpty } from '@medienpass/shared';
-import { ApiError } from '@/services/http';
 import RichTextEditor from '@/design-system/RichTextEditor.vue';
 import EvidenceSettings from './EvidenceSettings.vue';
 import { seedPayload } from './seed-payload';
 import { translateIssue } from '@/app/validation';
 import { CHOICE_FAMILY, LIST_FAMILY, MEDIA_FAMILY } from './question-families';
 import { useSignedUpload } from '@/composables/useSignedUpload';
-import { useToast } from '@/composables/useToast';
 import {
   QUESTION_TYPE,
   localize,
@@ -67,7 +65,6 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
-const toast = useToast();
 
 const type = ref<QuestionType>(QUESTION_TYPE.SINGLE_CHOICE);
 const statement = ref('');
@@ -82,7 +79,6 @@ const allowsEvidence = ref(false);
 const requiresEvidence = ref(false);
 const maxEvidenceFiles = ref(3);
 const editorRef = ref<InstanceType<typeof RichTextEditor> | null>(null);
-const imageInput = ref<HTMLInputElement | null>(null);
 
 // Prellenado al editar. Se hace aquí, en la creación del componente, porque el
 // padre lo remonta con una `key` distinta por pregunta.
@@ -140,24 +136,22 @@ const canSave = computed(
  * Solo tiene sentido con la versión ya creada: la clave del archivo cuelga de
  * ella, y hasta que existe no hay dónde guardarla.
  */
-const imageUpload = useSignedUpload<{ downloadUrl: string }>({
+const imageUpload = useSignedUpload<{ downloadUrl: string; mediaUrl: string | null }>({
   request: '/files/question-media/upload-url',
   confirm: '/files/question-media/confirm',
   context: () => ({ versionId: props.versionId }),
 });
 
-async function uploadImage(event: Event): Promise<void> {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file || !props.versionId) return;
-
-  try {
-    const stored = await imageUpload.upload(file);
-    editorRef.value?.insertImage(stored.downloadUrl, file.name);
-  } catch (error) {
-    toast.error(error instanceof ApiError ? error.message : t('errors.generic'));
-  } finally {
-    if (imageInput.value) imageInput.value.value = '';
-  }
+/**
+ * Sube el archivo y devuelve la dirección que se guarda dentro del enunciado.
+ *
+ * Es `mediaUrl` y no `downloadUrl`: la segunda es una URL firmada que caduca a
+ * los cinco minutos, así que la imagen se veía mientras se escribía la
+ * pregunta y aparecía rota al abrirla al día siguiente.
+ */
+async function uploadFile(file: File): Promise<string> {
+  const stored = await imageUpload.upload(file);
+  return stored.mediaUrl ?? stored.downloadUrl;
 }
 
 function save(): void {
@@ -209,27 +203,17 @@ const inputClass =
 
     <div class="flex flex-col gap-1.5">
       <span class="text-sm font-medium">{{ t('question.statement') }}</span>
-      <RichTextEditor ref="editorRef" v-model="statement" :aria-label="t('question.statement')">
-        <template #toolbar-extra>
-          <span class="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-          <input
-            ref="imageInput"
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            class="sr-only"
-            @change="uploadImage"
-          />
-          <button
-            type="button"
-            class="h-8 rounded px-2 text-xs text-ink-muted hover:bg-surface-muted"
-            :disabled="imageUpload.uploading.value || !versionId"
-            :title="t('editor.insertImage')"
-            @click="imageInput?.click()"
-          >
-            {{ imageUpload.uploading.value ? t('common.saving') : t('editor.insertImage') }}
-          </button>
-        </template>
-      </RichTextEditor>
+<!--
+        El mismo editor que el material formativo: un enunciado puede llevar el
+        vídeo que hay que analizar o el Genially sobre el que se pregunta, y no
+        solo texto con una imagen.
+      -->
+      <RichTextEditor
+        ref="editorRef"
+        v-model="statement"
+        :upload-file="versionId ? uploadFile : undefined"
+        :aria-label="t('question.statement')"
+      />
     </div>
 
     <EvidenceSettings

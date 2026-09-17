@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AUDIT_ACTION, ERROR_CODE, type Role, teaches } from '@medienpass/shared';
+import { AUDIT_ACTION, ERROR_CODE, PERMISSION, type Role, teaches } from '@medienpass/shared';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -7,6 +7,7 @@ import { isAdmin } from '../../middleware/authorize.js';
 import { recordAudit } from '../audit/audit.service.js';
 import { createLogger } from '../../shared/logger.js';
 import { env } from '../../config/env.js';
+import { buildMediaUrl, isLinkableKind } from './media-link.js';
 import {
   ALLOWED_CONTENT_TYPES,
   buildEvidenceKey,
@@ -64,6 +65,7 @@ export type RequestQuestionMediaUploadInput = z.infer<typeof requestQuestionMedi
 interface Actor {
   userId: string;
   roles: Role[];
+  permissions?: readonly string[];
 }
 
 export interface UploadTicket {
@@ -282,7 +284,7 @@ export async function requestQuestionMediaUpload(
 export async function confirmQuestionMediaUpload(
   actor: Actor,
   input: RequestQuestionMediaUploadInput & { storageKey: string },
-): Promise<StoredFileView & { downloadUrl: string }> {
+): Promise<StoredFileView & { downloadUrl: string; mediaUrl: string | null }> {
   const version = await assertCanAttachMedia(actor, input.versionId);
 
   const actual = await getStorage().head(input.storageKey);
@@ -309,6 +311,8 @@ export async function confirmQuestionMediaUpload(
 
   return {
     ...toView(file),
+    // Lo que se guarda dentro del HTML: no caduca.
+    mediaUrl: mediaUrlFor(file),
     downloadUrl: await getStorage().createDownloadUrl(
       file.storageKey,
       file.originalName,
@@ -317,9 +321,42 @@ export async function confirmQuestionMediaUpload(
   };
 }
 
-/** Las imágenes se sirven en línea; el resto, como descarga. */
+/**
+ * Lo que el navegador muestra, frente a lo que descarga.
+ *
+ * Imágenes, audio y vídeo se ven y se oyen dentro de la lección; un PDF o un
+ * documento se descargan, porque servirlos en línea los abre en el dominio del
+ * almacenamiento y no hay motivo para permitir eso.
+ */
 function isInlineViewable(contentType: string): boolean {
-  return contentType.startsWith('image/');
+  return /^(image|audio|video)\//.test(contentType);
+}
+
+/**
+ * La dirección que se guarda dentro del HTML del material.
+ *
+ * Solo para material didáctico: las evidencias de estudiantes no tienen enlace
+ * estable, siguen pidiendo sesión y alcance.
+ */
+function mediaUrlFor(file: { id: string; kind: string }): string | null {
+  return isLinkableKind(file.kind) ? buildMediaUrl(file.id) : null;
+}
+
+/** El archivo detrás de un enlace estable, sin sesión pero con firma. */
+export async function resolveLinkedMedia(fileId: string): Promise<string> {
+  const file = await prisma.storedFile.findUnique({
+    where: { id: fileId },
+    select: { storageKey: true, originalName: true, contentType: true, kind: true },
+  });
+  if (!file || !isLinkableKind(file.kind)) {
+    throw AppError.notFound(ERROR_CODE.NOT_FOUND, { fileId });
+  }
+
+  return getStorage().createDownloadUrl(
+    file.storageKey,
+    file.originalName,
+    isInlineViewable(file.contentType),
+  );
 }
 
 // --- Material de capacitación ------------------------------------------------
@@ -331,20 +368,33 @@ function isInlineViewable(contentType: string): boolean {
  * es contenido de la plataforma y vive mientras viva su bloque. Por eso la fila
  * solo lleva `trainingContentId`, y por eso esa relación sí borra en cascada.
  */
-async function assertCanManageTraining(contentId: string) {
+async function assertCanManageTraining(actor: Actor, contentId: string) {
   const content = await prisma.trainingContent.findUnique({
     where: { id: contentId },
-    select: { id: true, module: { select: { code: true } } },
+    select: { id: true, module: { select: { code: true, createdById: true } } },
   });
   if (!content) throw AppError.notFound(ERROR_CODE.NOT_FOUND, { contentId });
+
+  /*
+   * Quien coordina sube material a cualquier módulo; el docente, al suyo. La
+   * comprobación se hace aquí y no llamando al módulo de capacitación porque
+   * ese ya depende de este para borrar archivos, y cerrar el círculo entre los
+   * dos deja una importación circular.
+   */
+  const gestionaTodo = actor.permissions?.includes(PERMISSION.TRAINING_MANAGE) ?? false;
+  if (!gestionaTodo && content.module.createdById !== actor.userId) {
+    throw AppError.forbidden(ERROR_CODE.FORBIDDEN, { contentId, reason: 'not_the_author' });
+  }
+
   return content;
 }
 
 export async function requestTrainingMediaUpload(
+  actor: Actor,
   input: RequestTrainingMediaUploadInput,
 ): Promise<UploadTicket> {
   assertWithinSizeLimit(input.sizeBytes);
-  const content = await assertCanManageTraining(input.contentId);
+  const content = await assertCanManageTraining(actor, input.contentId);
 
   const storageKey = buildTrainingMediaKey({
     moduleCode: content.module.code,
@@ -365,8 +415,8 @@ export async function requestTrainingMediaUpload(
 export async function confirmTrainingMediaUpload(
   actor: Actor,
   input: RequestTrainingMediaUploadInput & { storageKey: string },
-): Promise<StoredFileView & { downloadUrl: string }> {
-  await assertCanManageTraining(input.contentId);
+): Promise<StoredFileView & { downloadUrl: string; mediaUrl: string | null }> {
+  await assertCanManageTraining(actor, input.contentId);
 
   const actual = await getStorage().head(input.storageKey);
   if (!actual) {
@@ -392,6 +442,8 @@ export async function confirmTrainingMediaUpload(
 
   return {
     ...toView(file),
+    // Lo que se guarda dentro del HTML: no caduca.
+    mediaUrl: mediaUrlFor(file),
     downloadUrl: await getStorage().createDownloadUrl(
       file.storageKey,
       file.originalName,

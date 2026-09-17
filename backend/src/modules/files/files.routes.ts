@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PERMISSION } from '@medienpass/shared';
+import { ERROR_CODE, PERMISSION } from '@medienpass/shared';
 import { asyncHandler, created, noContent, ok } from '../../shared/http/response.js';
 import { authenticate, requireAuth } from '../../middleware/authenticate.js';
-import { requirePermission } from '../../middleware/authorize.js';
+import { requireAnyPermission, requirePermission } from '../../middleware/authorize.js';
 import { getQuery, uuidParam, validate } from '../../middleware/validate.js';
+import { AppError } from '../../shared/errors/app-error.js';
+import { verifyMediaSignature } from './media-link.js';
 import {
   confirmEvidenceUpload,
   confirmQuestionMediaUpload,
@@ -21,6 +23,7 @@ import {
   requestQuestionMediaUploadSchema,
   requestTrainingMediaUpload,
   requestTrainingMediaUploadSchema,
+  resolveLinkedMedia,
 } from './files.service.js';
 import {
   confirmResponseMediaSchema,
@@ -30,6 +33,37 @@ import {
 } from './response-media.service.js';
 
 export const filesRouter: Router = Router();
+
+/**
+ * El material incrustado en una lección, por enlace estable.
+ *
+ * Va **antes** de exigir sesión, y es a propósito: una etiqueta `<img>` o
+ * `<video>` dentro del contenido no manda la cabecera de autenticación, así
+ * que una ruta con sesión daría material roto en toda la capacitación. En su
+ * lugar el enlace lleva firma, que solo puede construir el servidor.
+ *
+ * Solo sirve material didáctico —imágenes de enunciados y medios de
+ * capacitación—, nunca evidencias de estudiantes, y responde con una
+ * redirección a una URL firmada del almacenamiento: así el archivo no pasa por
+ * la memoria de este servidor, que es pequeño.
+ */
+filesRouter.get(
+  '/:id/media',
+  validate({ params: uuidParam(), query: z.object({ s: z.string().min(16).max(128) }) }),
+  asyncHandler(async (req, res) => {
+    const fileId = req.params['id']!;
+    const { s } = getQuery<{ s: string }>(req);
+
+    if (!verifyMediaSignature(fileId, s)) {
+      throw AppError.notFound(ERROR_CODE.NOT_FOUND, { fileId });
+    }
+
+    const url = await resolveLinkedMedia(fileId);
+    // Privado y corto: la respuesta lleva dentro una URL firmada que caduca.
+    res.setHeader('Cache-Control', 'private, max-age=240');
+    res.redirect(302, url);
+  }),
+);
 
 filesRouter.use(authenticate);
 
@@ -131,16 +165,16 @@ filesRouter.post(
  */
 filesRouter.post(
   '/training-media/upload-url',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ body: requestTrainingMediaUploadSchema }),
   asyncHandler(async (req, res) => {
-    ok(res, await requestTrainingMediaUpload(req.body));
+    ok(res, await requestTrainingMediaUpload(requireAuth(req), req.body));
   }),
 );
 
 filesRouter.post(
   '/training-media/confirm',
-  requirePermission(PERMISSION.TRAINING_MANAGE),
+  requireAnyPermission(PERMISSION.TRAINING_MANAGE, PERMISSION.TRAINING_CREATE),
   validate({ body: requestTrainingMediaUploadSchema.merge(withKey) }),
   asyncHandler(async (req, res) => {
     created(res, await confirmTrainingMediaUpload(requireAuth(req), req.body));

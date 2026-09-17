@@ -1,5 +1,6 @@
 import sanitizeHtml from 'sanitize-html';
 import {
+  EMBED_ALLOWED_HOSTNAMES,
   RICH_TEXT_ALLOWED_ATTRIBUTES,
   RICH_TEXT_ALLOWED_SCHEMES,
   RICH_TEXT_ALLOWED_TAGS,
@@ -27,12 +28,39 @@ const OPTIONS: sanitizeHtml.IOptions = {
   ),
   allowedSchemes: [...RICH_TEXT_ALLOWED_SCHEMES],
   // Las imágenes pueden venir de nuestro almacenamiento por URL firmada.
-  allowedSchemesByTag: { img: [...RICH_TEXT_ALLOWED_SCHEMES] },
+  allowedSchemesByTag: {
+    img: [...RICH_TEXT_ALLOWED_SCHEMES],
+    // Los medios y los marcos, solo cifrados: un recurso por HTTP dentro de
+    // una página segura ni siquiera carga, y avisa de que algo va mal.
+    iframe: ['https'],
+    video: ['https'],
+    audio: ['https'],
+    source: ['https'],
+  },
+  /*
+   * La lista blanca de dominios incrustables. Es lo que convierte `iframe` en
+   * una etiqueta admisible: sin esto, cualquiera que pueda escribir material
+   * podría meter una página ajena —con su propio formulario de contraseña—
+   * dentro de una pantalla con sesión iniciada.
+   */
+  allowedIframeHostnames: [...EMBED_ALLOWED_HOSTNAMES],
   allowProtocolRelative: false,
   // Se descarta el contenido de estas etiquetas, no solo la etiqueta: dejar el
   // texto de dentro de un `<script>` suelto en el documento no sirve de nada y
   // confunde.
   nonTextTags: ['script', 'style', 'textarea', 'option', 'noscript'],
+
+  /*
+   * Un medio al que se le cayó la dirección se va entero.
+   *
+   * Cuando el marco apunta a un dominio que no admitimos, o el vídeo viene sin
+   * cifrar, el saneado quita el `src` pero deja la etiqueta: un marco vacío
+   * que no carga nada —inofensivo— y un hueco negro en mitad de la lección que
+   * nadie sabe de dónde salió. Quitarlo deja el contenido como si nunca se
+   * hubiera pegado, que es lo que quien lo lee espera.
+   */
+  exclusiveFilter: (frame) =>
+    ['iframe', 'video', 'audio', 'img', 'source'].includes(frame.tag) && !frame.attribs['src'],
 
   transformTags: {
     /*
@@ -44,6 +72,40 @@ const OPTIONS: sanitizeHtml.IOptions = {
     a: (tagName, attribs) => ({
       tagName,
       attribs: { ...attribs, target: '_blank', rel: 'noopener noreferrer' },
+    }),
+
+    /*
+     * El marco sale siempre con las mismas condiciones, vengan o no en lo que
+     * se guardó. `sandbox` es la parte que importa: la página incrustada puede
+     * ejecutar sus guiones y reproducir su vídeo, pero no navegar la pestaña
+     * que la contiene ni abrir descargas, que es como un incrustado se
+     * convierte en una redirección a una página de inicio de sesión falsa.
+     *
+     * `allow-same-origin` junto a `allow-scripts` solo sería un problema si lo
+     * incrustado viviera en nuestro propio origen —podría quitarse el propio
+     * cajón—, y no es el caso: la lista de dominios son todos de terceros.
+     * Sin él, YouTube y Genially no funcionan.
+     */
+    iframe: (tagName, attribs) => ({
+      tagName,
+      attribs: {
+        ...attribs,
+        loading: 'lazy',
+        referrerpolicy: 'strict-origin-when-cross-origin',
+        sandbox: 'allow-scripts allow-same-origin allow-presentation allow-popups',
+        allow: 'accelerometer; encrypted-media; picture-in-picture; fullscreen',
+      },
+    }),
+
+    // Sin controles no hay forma de reproducirlo, y sin `preload` el navegador
+    // se descarga vídeos enteros que quizá nadie mire.
+    video: (tagName, attribs) => ({
+      tagName,
+      attribs: { ...attribs, controls: 'controls', preload: 'metadata' },
+    }),
+    audio: (tagName, attribs) => ({
+      tagName,
+      attribs: { ...attribs, controls: 'controls', preload: 'metadata' },
     }),
   },
 };

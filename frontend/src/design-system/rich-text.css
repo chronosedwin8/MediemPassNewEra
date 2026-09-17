@@ -1,0 +1,149 @@
+/*
+ * Cómo se ve el contenido escrito por una persona.
+ *
+ * Vive en una hoja aparte y no dentro del componente porque el HTML viene de
+ * la base de datos: no se le pueden añadir clases a etiquetas que escribió un
+ * docente hace seis meses. Todo cuelga de `.rich-text`, así que no hace falta
+ * el ámbito del componente para que no se escape.
+ */
+.rich-text {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.rich-text p {
+  margin: 0 0 0.75em;
+}
+
+.rich-text p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text h3,
+.rich-text h4 {
+  margin: 1.25em 0 0.5em;
+  font-weight: 600;
+}
+
+.rich-text h3 {
+  font-size: 1.05rem;
+}
+
+.rich-text ul,
+.rich-text ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.4em;
+}
+
+.rich-text ul {
+  list-style: disc;
+}
+
+.rich-text ol {
+  list-style: decimal;
+}
+
+.rich-text li {
+  margin-bottom: 0.25em;
+}
+
+.rich-text blockquote {
+  margin: 0 0 0.75em;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--color-border-strong, #cbd5e1);
+  color: var(--color-ink-muted, #64748b);
+}
+
+.rich-text code {
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background: var(--color-surface-muted, #f1f5f9);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.rich-text pre {
+  margin: 0 0 0.75em;
+  padding: 0.75em;
+  border-radius: 0.5rem;
+  background: var(--color-surface-muted, #f1f5f9);
+  overflow-x: auto;
+}
+
+.rich-text pre code {
+  padding: 0;
+  background: none;
+}
+
+.rich-text a {
+  color: var(--color-brand-600, #2563eb);
+  text-decoration: underline;
+}
+
+/* Una imagen de enunciado no debe empujar el ancho de la pantalla. */
+.rich-text img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.5em 0;
+}
+
+/*
+ * Los medios ocupan el ancho disponible y guardan su proporción. El marco va
+ * dentro de un contenedor con proporción fija para que la página no dé un
+ * salto cuando termina de cargar.
+ */
+.rich-text video,
+.rich-text iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 0.75em 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #000;
+}
+
+.rich-text audio {
+  display: block;
+  width: 100%;
+  margin: 0.75em 0;
+}
+
+.rich-text figure {
+  margin: 0.75em 0;
+}
+
+.rich-text figcaption {
+  margin-top: 0.35em;
+  font-size: 0.85em;
+  color: var(--color-ink-muted, #64748b);
+}
+
+.rich-text table {
+  width: 100%;
+  margin: 0 0 0.75em;
+  border-collapse: collapse;
+}
+
+.rich-text th,
+.rich-text td {
+  padding: 0.4em 0.6em;
+  border: 1px solid var(--color-border, #e2e8f0);
+  text-align: left;
+}
+
+.rich-text th {
+  background: var(--color-surface-muted, #f1f5f9);
+  font-weight: 600;
+}
+
+.rich-text hr {
+  margin: 1.25em 0;
+  border: 0;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
+
+.rich-text--compact p {
+  margin-bottom: 0.35em;
+}

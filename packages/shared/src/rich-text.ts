@@ -19,7 +19,23 @@
  * por si algún día entra contenido por otra vía.
  */
 
-/** Etiquetas admitidas. Formato de texto y poco más: nada de estructura. */
+import { EMBED_PLATFORMS } from './embeds.js';
+
+/**
+ * Etiquetas admitidas.
+ *
+ * Además del formato de texto, el material admite medios: una capacitación que
+ * solo puede llevar párrafos obliga a enlazar fuera, y quien sale de la
+ * plataforma a ver el vídeo a menudo no vuelve.
+ *
+ * `iframe` es la etiqueta delicada, y por eso no basta con admitirla: su
+ * dirección tiene que estar además en la lista de plataformas conocidas
+ * (`EMBED_PLATFORMS`). Un marco que apunte a donde diga la base de datos puede
+ * imitar esta página entera y pedir una contraseña.
+ *
+ * Lo que sigue fuera: `script`, `style`, `form`, `input`, `object`, `embed` y
+ * cualquier atributo de evento. Y `svg`, que puede llevar guiones dentro.
+ */
 export const RICH_TEXT_ALLOWED_TAGS = [
   'p',
   'br',
@@ -37,10 +53,25 @@ export const RICH_TEXT_ALLOWED_TAGS = [
   'blockquote',
   'code',
   'pre',
+  'h2',
   'h3',
   'h4',
+  'hr',
   'a',
   'img',
+  // Medios y estructura, para escribir material de verdad.
+  'figure',
+  'figcaption',
+  'video',
+  'audio',
+  'source',
+  'iframe',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
 ] as const;
 
 /**
@@ -54,7 +85,60 @@ export const RICH_TEXT_ALLOWED_TAGS = [
 export const RICH_TEXT_ALLOWED_ATTRIBUTES: Record<string, readonly string[]> = {
   a: ['href', 'title', 'target', 'rel'],
   img: ['src', 'alt', 'title', 'width', 'height'],
+  /*
+   * En el marco no se admite `srcdoc` —es HTML arbitrario por otra puerta— ni
+   * `name`, ni nada que apunte a la ventana de origen. `sandbox` se impone al
+   * sanear, no se acepta de quien escribe.
+   */
+  iframe: [
+    'src',
+    'title',
+    'width',
+    'height',
+    'allow',
+    'allowfullscreen',
+    'loading',
+    'referrerpolicy',
+    'sandbox',
+  ],
+  video: ['src', 'controls', 'poster', 'preload', 'width', 'height', 'playsinline'],
+  audio: ['src', 'controls', 'preload'],
+  source: ['src', 'type'],
+  th: ['colspan', 'rowspan', 'scope'],
+  td: ['colspan', 'rowspan'],
 };
+
+/**
+ * Los dominios cuyo contenido se puede incrustar.
+ *
+ * Sale de la misma tabla que traduce cada dirección a su reproductor, para que
+ * no haya dos listas que se vayan separando con el tiempo.
+ */
+export const EMBED_ALLOWED_HOSTNAMES: readonly string[] = [
+  ...new Set(EMBED_PLATFORMS.flatMap((plataforma) => plataforma.hosts)),
+];
+
+/**
+ * Los medios se sirven por HTTPS o desde la propia plataforma.
+ *
+ * Una ruta que empieza por una sola barra es material propio; `//algo` no lo
+ * es —es una URL sin esquema que apunta fuera— y se descarta.
+ */
+export function isSafeMediaSrc(src: string): boolean {
+  const valor = src.trim();
+  if (valor.startsWith('/') && !valor.startsWith('//')) return true;
+  return /^https:\/\//i.test(valor);
+}
+
+/** Si esa dirección puede ir en un `iframe`: HTTPS y plataforma conocida. */
+export function isAllowedIframeSrc(src: string): boolean {
+  try {
+    const url = new URL(src.trim());
+    return url.protocol === 'https:' && EMBED_ALLOWED_HOSTNAMES.includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Esquemas de URL admitidos.
@@ -66,8 +150,13 @@ export const RICH_TEXT_ALLOWED_ATTRIBUTES: Record<string, readonly string[]> = {
  */
 export const RICH_TEXT_ALLOWED_SCHEMES = ['http', 'https', 'mailto'] as const;
 
-/** Longitud máxima del HTML ya saneado. */
-export const RICH_TEXT_MAX_LENGTH = 20_000;
+/**
+ * Longitud máxima del HTML ya saneado.
+ *
+ * Sube con los medios dentro: una lección con tres vídeos, sus pies de foto y
+ * un incrustado gasta en etiquetas lo que antes ocupaba el texto entero.
+ */
+export const RICH_TEXT_MAX_LENGTH = 80_000;
 
 /**
  * Texto plano a partir del HTML, para lo que no debe llevar formato.
@@ -97,8 +186,12 @@ export function richTextToPlain(html: string): string {
 /** `true` cuando el contenido no aporta nada aunque tenga etiquetas. */
 export function isRichTextEmpty(html: string | null | undefined): boolean {
   if (!html) return true;
-  // Una imagen sola es contenido, aunque no haya texto.
-  if (/<img\b/i.test(html)) return false;
+  /*
+   * Un medio solo es contenido, aunque no haya texto: una lección que es un
+   * vídeo y nada más es una lección legítima, y tratarla como vacía la
+   * descartaba al guardar sin decir por qué.
+   */
+  if (/<(img|video|audio|iframe)\b/i.test(html)) return false;
   return richTextToPlain(html).length === 0;
 }
 

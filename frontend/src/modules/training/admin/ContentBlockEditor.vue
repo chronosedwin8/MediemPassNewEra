@@ -98,6 +98,8 @@ const URL_TYPES: string[] = [
 ];
 
 const urlRequired = computed(() => URL_TYPES.includes(draft.type));
+/** El documento admite dirección, aunque no la exija: puede ir adjunto. */
+const usaUrl = computed(() => urlRequired.value || draft.type === TRAINING_CONTENT_TYPE.DOCUMENT);
 const esEvaluacion = computed(() => draft.type === TRAINING_CONTENT_TYPE.ASSESSMENT);
 
 /** Las plataformas que sí se incrustan, para decirlo antes y no después. */
@@ -145,15 +147,21 @@ const canSave = computed(
 );
 
 /** La subida de las imágenes que van dentro del texto. */
-const upload = useSignedUpload<StoredFile & { downloadUrl: string }>({
+const upload = useSignedUpload<StoredFile & { downloadUrl: string; mediaUrl: string | null }>({
   request: '/files/training-media/upload-url',
   confirm: '/files/training-media/confirm',
   context: () => ({ contentId: props.block.id }),
 });
 
-/** Sube una imagen del cuerpo y devuelve su URL para incrustarla. */
-async function uploadImage(file: File): Promise<string> {
-  return (await upload.upload(file)).downloadUrl;
+/**
+ * Sube un archivo del cuerpo y devuelve su dirección para incrustarla.
+ *
+ * Es `mediaUrl` y no `downloadUrl`: la segunda caduca a los cinco minutos, de
+ * modo que el material se veía al escribirlo y salía roto al día siguiente.
+ */
+async function uploadFile(file: File): Promise<string> {
+  const stored = await upload.upload(file);
+  return stored.mediaUrl ?? stored.downloadUrl;
 }
 
 async function save(): Promise<void> {
@@ -254,7 +262,12 @@ const inputClass =
 
       <LocalizedField v-model="draft.title" :label="t('training.admin.blockTitle')" />
 
-      <label class="flex flex-col gap-1.5">
+<!--
+        La dirección solo donde significa algo. En un bloque de texto el vídeo
+        y la imagen van dentro del cuerpo, insertados desde su barra, no en un
+        campo aparte que obliga a pensar dónde va cada cosa.
+      -->
+      <label v-if="usaUrl" class="flex flex-col gap-1.5">
         <span class="text-sm font-medium">
           {{ t('training.admin.url') }}
           <span v-if="urlRequired" class="text-danger">*</span>
@@ -292,7 +305,7 @@ const inputClass =
         rich
         :label="t('training.admin.blockBody')"
         :hint="t('training.admin.blockBodyHint')"
-        :upload-image="uploadImage"
+        :upload-file="uploadFile"
       />
 
       <BlockAttachments :content-id="block.id" :initial="block.files" />
